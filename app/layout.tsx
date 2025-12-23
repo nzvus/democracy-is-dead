@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/providers/auth-provider"; 
-import { Toaster } from "sonner"; 
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { Toaster } from "sonner";
+import { LanguageProvider } from "@/components/providers/language-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Democracy is Dead",
-  description: "Il voto è inutile, ma almeno divertiamoci.",
+  description: "Social Choice Theory App",
 };
 
 export default function RootLayout({
@@ -29,11 +30,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {}
         <AuthProvider>
-          {children}
-          {}
-          <Toaster position="top-center" richColors /> 
+          
+          <LanguageProvider>
+            
+            {children}
+            
+            <Toaster position="top-center" richColors />
+            
+          </LanguageProvider>
+
         </AuthProvider>
       </body>
     </html>
