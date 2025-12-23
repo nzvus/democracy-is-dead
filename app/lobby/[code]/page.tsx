@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import LobbyChat from '@/components/lobby/lobby-chat'
-import LobbySetup from '@/components/lobby/lobby-setup' 
+
+// Import dei componenti creati
+import LobbySetup from '@/components/lobby/lobby-setup'
 import LobbyWaiting from '@/components/lobby/lobby-waiting'
 import LobbyResults from '@/components/lobby/lobby-results'
+import LobbyChat from '@/components/lobby/lobby-chat'
 
 export default function LobbyPage() {
   const params = useParams()
@@ -20,38 +22,60 @@ export default function LobbyPage() {
   const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchLobbyData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUserId(user?.id || null)
+    const initLobby = async () => {
+      try {
+        // 1. AUTENTICAZIONE AUTOMATICA (Fix Link Diretto)
+        // Se arrivo da un link, potrei non avere una sessione. La creiamo al volo.
+        const { data: { user } } = await supabase.auth.getUser()
+        let currentUserId = user?.id
 
-      const { data: lobbyData, error } = await supabase
-        .from('lobbies')
-        .select('*')
-        .eq('code', params.code)
-        .single()
+        if (!currentUserId) {
+            const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
+            if (anonError) throw anonError
+            currentUserId = anonData.user?.id
+        }
+        
+        // Salviamo l'ID (servirà per la Chat e per capire se sono Host)
+        setUserId(currentUserId!)
 
-      if (error || !lobbyData) {
-        toast.error("Lobby non trovata!")
+        // 2. SCARICA DATI LOBBY
+        const { data: lobbyData, error } = await supabase
+          .from('lobbies')
+          .select('*')
+          .eq('code', params.code)
+          .single()
+
+        if (error || !lobbyData) {
+          toast.error("Lobby non trovata o scaduta!")
+          router.push('/') // Torna alla home
+          return
+        }
+
+        setLobby(lobbyData)
+        
+        // 3. SEI L'ADMIN?
+        if (currentUserId && lobbyData.host_id === currentUserId) {
+          setIsHost(true)
+        }
+        
+        setLoading(false)
+
+      } catch (err: any) {
+        console.error("Errore init:", err)
+        toast.error("Errore di connessione")
         router.push('/')
-        return
       }
-
-      setLobby(lobbyData)
-      
-      if (user && lobbyData.host_id === user.id) {
-        setIsHost(true)
-      }
-      
-      setLoading(false)
     }
 
-    fetchLobbyData()
+    initLobby()
 
+    // 4. REALTIME: Ascolta i cambiamenti di stato (es. Setup -> Voting)
     const channel = supabase
-      .channel('lobby_updates')
+      .channel('lobby_status_updates')
       .on('postgres_changes', 
           { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `code=eq.${params.code}` }, 
           (payload) => {
+             // Aggiorna lo stato locale con i nuovi dati dal server
              setLobby(payload.new)
           }
       )
@@ -60,46 +84,52 @@ export default function LobbyPage() {
     return () => { supabase.removeChannel(channel) }
   }, [params.code, router, supabase])
 
-  if (loading) return <div className="p-10 text-white text-center">Caricamento protocolli...</div>
+  // --- RENDER ---
 
-
-  if (lobby.status === 'setup') {
-    if (isHost) {
-        return <LobbySetup lobby={lobby} userId={userId!} />
-    } else {
-        return (
-            <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4 text-center">
-                <h1 className="text-3xl font-bold mb-4">🚧 Lavori in corso 🚧</h1>
-                <p className="text-gray-400">L'Host sta configurando l'elezione (Candidati e Regole).</p>
-                <p className="text-sm text-gray-600 mt-4 animate-pulse">Resta qui, si aggiornerà da solo.</p>
-            </div>
-        )
-    }
-  }
-
-  if (lobby.status === 'ended') {
-    return <LobbyResults lobby={lobby} />
-  }
-
-  let content = null;
-  if (lobby.status === 'setup') {
-    content = isHost ? <LobbySetup lobby={lobby} userId={userId!} /> : (
-        <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4 text-center">
-             <div className="animate-spin text-4xl mb-4">⚙️</div>
-             <h1 className="text-3xl font-bold mb-4">Lavori in corso</h1>
-             <p className="text-gray-400">L'Host sta configurando l'elezione.</p>
+  if (loading) {
+    return (
+        <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-10">
+            <div className="animate-spin text-4xl mb-4">⏳</div>
+            <p className="animate-pulse">Connessione al protocollo sicuro...</p>
         </div>
-    );
+    )
+  }
+
+  // DEFINIAMO IL CONTENUTO PRINCIPALE IN BASE ALLO STATO
+  let content = null;
+
+  if (lobby.status === 'setup') {
+    // FASE 1: CONFIGURAZIONE
+    if (isHost) {
+        // L'Admin vede il pannello di controllo
+        content = <LobbySetup lobby={lobby} userId={userId!} />;
+    } else {
+        // L'Ospite vede una sala d'attesa
+        content = (
+            <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4 text-center">
+                 <div className="animate-bounce text-6xl mb-6">🚧</div>
+                 <h1 className="text-3xl font-bold mb-4">Lavori in Corso</h1>
+                 <p className="text-gray-400 max-w-md mx-auto">
+                    L'Host sta configurando i candidati e i criteri di voto.
+                    Mettiti comodo, la pagina si aggiornerà automaticamente appena si parte.
+                 </p>
+            </div>
+        );
+    }
   } else if (lobby.status === 'ended') {
+    // FASE 3: RISULTATI
     content = <LobbyResults lobby={lobby} />;
   } else {
+    // FASE 2: VOTO (Status 'voting' o fallback)
     content = <LobbyWaiting lobby={lobby} isHost={isHost} />;
   }
 
+  // RITORNIAMO IL LAYOUT COMPLETO (Contenuto + Chat sovrapposta)
   return (
     <>
       {content}
       
+      {/* La chat è sempre presente, ma solo se abbiamo un utente valido */}
       {userId && <LobbyChat lobbyId={lobby.id} userId={userId} />}
     </>
   )
