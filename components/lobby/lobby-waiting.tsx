@@ -5,7 +5,6 @@ import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 
-// Definiamo i tipi per Typescript
 type Candidate = {
   id: string
   name: string
@@ -20,15 +19,14 @@ type Factor = {
 }
 
 export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: boolean }) {
-  const { t } = useLanguage() // Hook per le traduzioni
+  const { t } = useLanguage() 
   const supabase = createClient()
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
-  const [votes, setVotes] = useState<Record<string, any>>({}) // Mappa: candidate_id -> { factor_id: score }
+  const [votes, setVotes] = useState<Record<string, any>>({})
   const [hasVoted, setHasVoted] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // 1. Carica i Candidati
   useEffect(() => {
     const fetchData = async () => {
       const { data } = await supabase
@@ -41,7 +39,6 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
     fetchData()
   }, [lobby.id, supabase])
 
-  // 2. Gestione del cambiamento voto (Input slider)
   const handleVoteChange = (candidateId: string, factorId: string, value: number) => {
     setVotes(prev => ({
       ...prev,
@@ -52,7 +49,6 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
     }))
   }
 
-  // 3. Invio Voti al Database
   const submitVotes = async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -62,12 +58,9 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         return
     }
 
-    // Prepariamo l'array di voti da inviare
     const votesPayload = candidates.map(candidate => {
       const candidateVotes = votes[candidate.id] || {}
       
-      // Se l'utente non ha toccato uno slider, mettiamo 0 di default
-      // Assicuriamoci che 'factors' esista (fallback ad array vuoto)
       const currentFactors = lobby.settings.factors || []
       const scores = currentFactors.reduce((acc: any, factor: Factor) => {
         acc[factor.id] = candidateVotes[factor.id] || 0
@@ -78,7 +71,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         lobby_id: lobby.id,
         voter_id: user.id,
         candidate_id: candidate.id,
-        scores: scores, // Salviamo il JSON complesso: {"general": 8, "gusto": 9}
+        scores: scores,
         updated_at: new Date().toISOString()
       }
     })
@@ -96,14 +89,11 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
     setLoading(false)
   }
 
-  // --- RENDER ---
-  
-  // Se la lobby è finita, questo componente non dovrebbe essere visibile 
-  // (gestito dal parent), ma per sicurezza:
+ 
   if (lobby.status === 'ended') return null
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-4 md:p-6 pb-32">
+    <div className="min-h-screen bg-gray-950 text-white p-4 md:p-6 pb-64">
       <header className="max-w-3xl mx-auto mb-8 text-center space-y-2">
         <div className="inline-block bg-indigo-900/30 px-4 py-1 rounded-full text-indigo-300 text-sm font-bold border border-indigo-500/30">
             LOBBY: {lobby.code}
@@ -118,9 +108,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         {candidates.map((candidate) => (
           <div key={candidate.id} className="bg-gray-900 rounded-2xl p-5 md:p-6 border border-gray-800 shadow-xl">
             
-            {/* SEZIONE CANDIDATO (Con Fix CSS per testo lungo) */}
             <div className="flex items-start gap-4 mb-6">
-                {/* FOTO: shrink-0 impedisce che si schiacci */}
                 <div className="w-16 h-16 shrink-0 bg-gray-800 rounded-full flex items-center justify-center text-2xl overflow-hidden border border-gray-700">
                     {candidate.image_url ? (
                         <img src={candidate.image_url} alt={candidate.name} className="w-full h-full object-cover" />
@@ -129,7 +117,6 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
                     )} 
                 </div>
                 
-                {/* TESTI: min-w-0 e break-words gestiscono l'overflow */}
                 <div className="min-w-0 flex-1">
                     <h3 className="text-xl font-bold break-words leading-tight">{candidate.name}</h3>
                     <p className="text-gray-400 text-sm mt-1 break-words text-balance">
@@ -138,7 +125,6 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
                 </div>
             </div>
 
-            {/* SLIDER DEI FATTORI */}
             <div className="space-y-6 border-t border-gray-800 pt-6">
                 {(lobby.settings.factors || []).map((factor: Factor) => (
                     <div key={factor.id}>
@@ -170,7 +156,6 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         ))}
       </div>
 
-      {/* FOOTER FISSO (Azioni) */}
       <div className="fixed bottom-0 left-0 w-full bg-gray-950/90 backdrop-blur-lg border-t border-gray-800 p-4 z-50">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-3">
             <button

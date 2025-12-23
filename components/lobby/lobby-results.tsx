@@ -12,7 +12,7 @@ import {
   Legend,
 } from 'chart.js'
 import { Radar } from 'react-chartjs-2'
-import { calculateSchulze, calculateBorda } from '@/utils/voting-engine' // <--- IMPORTA IL MOTORE
+import { calculateSchulze, calculateBorda } from '@/utils/voting-engine'
 import { useLanguage } from '@/components/providers/language-provider'
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
@@ -26,7 +26,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
 
   useEffect(() => {
     const calculateResults = async () => {
-      // 1. Scarica Dati
       const { data: candidates } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id)
       const { data: votes } = await supabase.from('votes').select('*').eq('lobby_id', lobby.id)
 
@@ -34,7 +33,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
 
       const factors = lobby.settings.factors || []
 
-      // 2. CALCOLO CLASSICO (Media Pesata)
       const classicScores = candidates.map(candidate => {
         const candidateVotes = votes.filter(v => v.candidate_id === candidate.id)
         let totalScore = 0
@@ -52,17 +50,16 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
         const voteCount = candidateVotes.length || 1
         return {
           ...candidate,
-          finalScore: totalScore / voteCount, // Media
+          finalScore: totalScore / voteCount, 
           factorScores: factors.map((f: any) => factorScores[f.id] / voteCount)
         }
       }).sort((a, b) => b.finalScore - a.finalScore)
 
-      // 3. CALCOLO MATEMATICO (Schulze) 
       const schulzeResults = calculateSchulze(candidates, votes, factors)
       const bordaResults = calculateBorda(candidates, votes, factors)
 
       setResults(classicScores)
-      setSchulzeWinner(schulzeResults[0]) // Il vincitore di Condorcet
+      setSchulzeWinner(schulzeResults[0]) 
       setLoading(false)
     }
 
@@ -71,7 +68,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
 
   if (loading) return <div className="text-center text-white p-10 animate-pulse">🧮 Calcolo tensori sociali...</div>
 
-  // Grafico Radar (Top 2 Classici)
   const chartData = {
     labels: lobby.settings.factors.map((f: any) => f.name),
     datasets: results.slice(0, 2).map((r, index) => ({
@@ -95,7 +91,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
     plugins: { legend: { labels: { color: 'white' } } }
   }
 
-  // Verifica Paradosso: Se il vincitore Schulze è diverso dal vincitore Media
   const paradoxDetected = schulzeWinner && results[0] && schulzeWinner.id !== results[0].id
 
   return (
@@ -108,7 +103,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
           </h1>
         </header>
 
-        {/* --- SEZIONE PARADOSSO (Se esiste) ---  */}
         {paradoxDetected && (
             <div className="bg-red-900/20 border border-red-500 p-6 rounded-2xl text-center animate-pulse">
                 <h3 className="text-2xl font-bold text-red-400">⚠️ DEMOCRACY IS DEAD!</h3>
@@ -143,7 +137,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
             </div>
         </div>
 
-        {/* TABELLA COMPARATIVA METODI [cite: 362] */}
         <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
             <table className="w-full text-left">
                 <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
@@ -156,8 +149,6 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
                 <tbody className="divide-y divide-gray-800">
                     {results.map((r) => {
                         const sWin = schulzeWinner && schulzeWinner.id === r.id;
-                        // Trova i dati Schulze corrispondenti per questo candidato
-                        // (Nota: in produzione faremmo un merge migliore degli array)
                         return (
                             <tr key={r.id} className="hover:bg-gray-800/50">
                                 <td className="p-4 font-bold flex items-center gap-2">
@@ -165,8 +156,7 @@ export default function LobbyResults({ lobby }: { lobby: any }) {
                                 </td>
                                 <td className="p-4 font-mono text-indigo-400">{r.finalScore.toFixed(2)}</td>
                                 <td className="p-4 font-mono text-green-400">
-                                    {/* Placeholder per wins, richiederebbe merge array */}
-                                    {sWin ? 'VINCITORE' : '-'}
+\                                    {sWin ? 'VINCITORE' : '-'}
                                 </td>
                             </tr>
                         )

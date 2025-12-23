@@ -1,4 +1,3 @@
-// lib/i18n.ts
 
 export type Language = 'it' | 'en';
 
@@ -40,7 +39,13 @@ export const dictionaries = {
         candidate_desc_ph: "Descrizione...",
         upload_photo: "Carica Foto 📷",
         uploading: "Caricamento...",
-        delete: "Elimina"
+        delete: "Elimina",
+        chat_title: "Chat Lobby",
+        chat_placeholder: "Insulta la pizza...",
+        chat_send: "Invia",
+        chat_open: "Apri Chat",
+        chat_empty: "Nessun messaggio. Rompi il ghiaccio!",
+        anon_user: "Agente"
     },
     results: {
         winner_title: "IL VINCITORE È...",
@@ -84,7 +89,13 @@ export const dictionaries = {
         candidate_desc_ph: "Description...",
         upload_photo: "Upload Photo 📷",
         uploading: "Uploading...",
-        delete: "Delete"
+        delete: "Delete",
+        chat_title: "Lobby Chat",
+        chat_placeholder: "Roast the pizza...",
+        chat_send: "Send",
+        chat_open: "Open Chat",
+        chat_empty: "No messages. Break the ice!",
+        anon_user: "Agent"
     },
     results: {
         winner_title: "THE WINNER IS...",
