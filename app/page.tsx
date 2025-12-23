@@ -41,7 +41,7 @@ export default function Home() {
                 voting_method: 'schulze', 
                 allow_jolly: true,
                 timer_seconds: 0,
-                factors: [{ id: "general", name: "General Vote", weight: 1.0 }] // Uso inglese come chiave DB
+                factors: [{ id: "general", name: "General Vote", weight: 1.0 }]  
             } 
           }
         ])
@@ -86,7 +86,7 @@ export default function Home() {
                 disabled={loading}
                 className="group relative px-8 py-4 bg-white text-black font-bold text-xl rounded-full hover:scale-105 transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:scale-100"
             >
-                {loading ? t.home.cta_loading : t.home.cta_button} {/* <--- USA VARIABILI */}
+                {loading ? t.home.cta_loading : t.home.cta_button} 
                 <span className="absolute inset-0 rounded-full border border-white/50 animate-ping opacity-20"></span>
             </button>
             <p className="text-xs text-gray-600 uppercase tracking-widest font-bold">

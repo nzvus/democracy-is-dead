@@ -3,15 +3,28 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
+import { useLanguage } from '@/components/providers/language-provider'
+
+type Factor = { id: string; name: string; weight: number }
+type Candidate = { id: string; name: string; description: string; image_url: string | null }
 
 export default function LobbySetup({ lobby, userId }: { lobby: any, userId: string }) {
+  const { t } = useLanguage()
   const supabase = createClient()
-  const [candidates, setCandidates] = useState<any[]>([])
+  
+  const [activeTab, setActiveTab] = useState<'candidates' | 'settings'>('candidates')
+  const [candidates, setCandidates] = useState<Candidate[]>([])
+  
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
 
-  // Carica i candidati esistenti
+  const [privacy, setPrivacy] = useState(lobby.settings.privacy || 'private')
+  const [factors, setFactors] = useState<Factor[]>(lobby.settings.factors || [])
+  const [newFactorName, setNewFactorName] = useState('')
+  const [newFactorWeight, setNewFactorWeight] = useState(1)
+
   useEffect(() => {
     const fetchCandidates = async () => {
       const { data } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id)
@@ -20,134 +33,245 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
     fetchCandidates()
   }, [lobby.id, supabase])
 
-  // Aggiunge un candidato al DB
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    setUploading(true)
+    const file = e.target.files[0]
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Math.random()}.${fileExt}`
+    const filePath = `${lobby.code}/${fileName}`
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('candidates')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('candidates').getPublicUrl(filePath)
+      setImageUrl(data.publicUrl)
+      toast.success("Foto caricata!")
+    } catch (error: any) {
+      toast.error("Errore upload: " + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const addCandidate = async () => {
     if (!newName.trim()) return
-    
-    // Inseriamo anche "attributes" vuoto per supportare i fattori futuri
     const { data, error } = await supabase
       .from('candidates')
       .insert([{ 
         lobby_id: lobby.id, 
         name: newName, 
         description: newDesc,
+        image_url: imageUrl,
         attributes: {} 
       }])
-      .select()
-      .single()
+      .select().single()
 
-    if (error) {
-      toast.error("Errore: " + error.message)
-    } else {
+    if (error) toast.error(error.message)
+    else {
       setCandidates([...candidates, data])
-      setNewName('')
-      setNewDesc('')
+      setNewName(''); setNewDesc(''); setImageUrl(null);
       toast.success("Candidato aggiunto!")
     }
   }
 
-  // Fa partire l'elezione (Cambia stato da 'setup' a 'voting')
-  const startElection = async () => {
-    if (candidates.length < 2) {
-      toast.error("Servono almeno 2 candidati per votare!")
-      return
+  const addFactor = async () => {
+    if (!newFactorName.trim()) return
+    const newFactor = { 
+        id: Math.random().toString(36).substr(2, 9), 
+        name: newFactorName, 
+        weight: Number(newFactorWeight) 
     }
-    setLoading(true)
-    const { error } = await supabase
-      .from('lobbies')
-      .update({ status: 'voting' }) // <-- Questo sblocca tutti gli ospiti
-      .eq('id', lobby.id)
+    const updatedFactors = [...factors, newFactor]
+    
+    await updateSettingsInDB(updatedFactors, privacy)
+    
+    setFactors(updatedFactors)
+    setNewFactorName('')
+  }
 
-    if (error) toast.error("Impossibile avviare")
-    setLoading(false)
+  const removeFactor = async (id: string) => {
+      const updated = factors.filter(f => f.id !== id)
+      setFactors(updated)
+      await updateSettingsInDB(updated, privacy)
+  }
+
+  const updateSettingsInDB = async (currentFactors: Factor[], currentPrivacy: string) => {
+      const newSettings = {
+          ...lobby.settings,
+          privacy: currentPrivacy,
+          factors: currentFactors
+      }
+      const { error } = await supabase
+        .from('lobbies')
+        .update({ settings: newSettings })
+        .eq('id', lobby.id)
+      
+      if (error) toast.error("Errore salvataggio impostazioni")
+  }
+
+  const startElection = async () => {
+    if (candidates.length < 2) return toast.error("Serve almeno un duello (2 candidati)!")
+    await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobby.id)
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6 md:p-12">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-950 text-white p-4 md:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
         
-        <header className="border-b border-gray-800 pb-6">
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
-            Setup Elezione: {lobby.code}
-          </h1>
-          <p className="text-gray-400 mt-2">Configura candidati e regole prima di aprire le porte.</p>
+        <header className="flex flex-col md:flex-row justify-between items-center border-b border-gray-800 pb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
+              {t.lobby.setup_title}: {lobby.code}
+            </h1>
+          </div>
+          <button
+                onClick={startElection}
+                className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-900/20 transition-all hover:scale-105"
+            >
+                {t.lobby.start_btn}
+            </button>
         </header>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          
-          {/* COLONNA SINISTRA: Aggiungi Candidato */}
-          <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              ➕ Aggiungi Candidato
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-gray-500 uppercase font-bold">Nome (es. Buitoni, Mario Rossi)</label>
-                <input 
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 mt-1 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Nome del candidato..."
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 uppercase font-bold">Descrizione / Note</label>
-                <textarea 
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 mt-1 h-24 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Ingredienti, dettagli, slogan..."
-                />
-              </div>
-              <button 
-                onClick={addCandidate}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold shadow-lg shadow-indigo-900/20 transition-all"
-              >
-                Aggiungi alla Lista
-              </button>
-            </div>
-          </div>
-
-          {/* COLONNA DESTRA: Lista Candidati */}
-          <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 flex flex-col h-full">
-            <h2 className="text-xl font-bold mb-4">📋 In Gara ({candidates.length})</h2>
-            
-            <div className="flex-1 overflow-y-auto space-y-3 max-h-[400px] pr-2 custom-scrollbar">
-              {candidates.length === 0 ? (
-                <p className="text-gray-500 italic text-center py-10">Nessun candidato ancora.</p>
-              ) : (
-                candidates.map((c) => (
-                  <div key={c.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg border border-gray-700">
-                    <div>
-                      <h3 className="font-bold text-white">{c.name}</h3>
-                      {c.description && <p className="text-xs text-gray-400 truncate max-w-[200px]">{c.description}</p>}
-                    </div>
-                    <button 
-                        onClick={async () => {
-                            await supabase.from('candidates').delete().eq('id', c.id)
-                            setCandidates(candidates.filter(item => item.id !== c.id))
-                        }}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-900/30 p-2 rounded transition-colors"
-                    >
-                        🗑️
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM BAR: Azioni Finali */}
-        <div className="flex justify-end pt-6 border-t border-gray-800">
-            <button
-                onClick={startElection}
-                disabled={loading}
-                className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white font-bold text-lg rounded-xl shadow-xl shadow-green-900/20 transition-all hover:scale-105 flex items-center gap-2"
+        <div className="flex gap-4 border-b border-gray-800">
+            <button 
+                onClick={() => setActiveTab('candidates')}
+                className={`pb-3 px-4 font-bold transition-all ${activeTab === 'candidates' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-500'}`}
             >
-                {loading ? 'Avvio...' : '🚀 APRI LE VOTAZIONI'}
+                🍕 {t.lobby.tabs_candidates}
+            </button>
+            <button 
+                onClick={() => setActiveTab('settings')}
+                className={`pb-3 px-4 font-bold transition-all ${activeTab === 'settings' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-500'}`}
+            >
+                ⚙️ {t.lobby.tabs_settings}
             </button>
         </div>
+
+        {activeTab === 'candidates' && (
+            <div className="grid md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-4 h-fit">
+                    <h2 className="font-bold text-lg">{t.lobby.add_candidate}</h2>
+                    
+                    <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 bg-gray-800 rounded-lg overflow-hidden border border-gray-700 flex items-center justify-center">
+                            {imageUrl ? (
+                                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-2xl">📷</span>
+                            )}
+                        </div>
+                        <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-bold border border-gray-600 transition-all">
+                            {uploading ? t.lobby.uploading : t.lobby.upload_photo}
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </label>
+                    </div>
+
+                    <input 
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 outline-none focus:border-indigo-500"
+                        placeholder={t.lobby.candidate_name_ph}
+                    />
+                    <textarea 
+                        value={newDesc}
+                        onChange={(e) => setNewDesc(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 outline-none focus:border-indigo-500 h-20"
+                        placeholder={t.lobby.candidate_desc_ph}
+                    />
+                    <button onClick={addCandidate} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold">
+                        ➕ {t.lobby.add_candidate}
+                    </button>
+                </div>
+
+                <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    {candidates.map((c) => (
+                        <div key={c.id} className="flex gap-4 p-4 bg-gray-800 rounded-xl border border-gray-700 items-center">
+                            <div className="w-16 h-16 bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                                {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">🍕</div>}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-bold truncate">{c.name}</h3>
+                                <p className="text-xs text-gray-400 truncate">{c.description}</p>
+                            </div>
+                            <button 
+                                onClick={async () => {
+                                    await supabase.from('candidates').delete().eq('id', c.id)
+                                    setCandidates(candidates.filter(i => i.id !== c.id))
+                                }}
+                                className="text-red-400 hover:bg-red-900/20 p-2 rounded-lg"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'settings' && (
+            <div className="grid md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-6">
+                    <div>
+                        <h2 className="font-bold text-lg mb-4">{t.lobby.factors_title}</h2>
+                        <div className="flex gap-2 mb-4">
+                            <input 
+                                value={newFactorName}
+                                onChange={(e) => setNewFactorName(e.target.value)}
+                                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg p-2 outline-none"
+                                placeholder={t.lobby.factor_name_ph}
+                            />
+                            <input 
+                                type="number" min="1" max="10"
+                                value={newFactorWeight}
+                                onChange={(e) => setNewFactorWeight(Number(e.target.value))}
+                                className="w-20 bg-gray-800 border border-gray-700 rounded-lg p-2 outline-none text-center"
+                                placeholder="Weight"
+                            />
+                            <button onClick={addFactor} className="bg-indigo-600 px-4 rounded-lg font-bold hover:bg-indigo-500">+</button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            {factors.map((f) => (
+                                <div key={f.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700">
+                                    <span className="font-bold">{f.name}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs bg-indigo-900 px-2 py-1 rounded text-indigo-300">x{f.weight}</span>
+                                        {f.id !== 'general' && ( 
+                                            <button onClick={() => removeFactor(f.id)} className="text-red-400 hover:text-red-300">×</button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-6 h-fit">
+                    <h2 className="font-bold text-lg">{t.lobby.privacy_label}</h2>
+                    <div className="space-y-3">
+                        <button 
+                            onClick={() => { setPrivacy('public'); updateSettingsInDB(factors, 'public'); }}
+                            className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${privacy === 'public' ? 'bg-indigo-900/20 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'}`}
+                        >
+                            <span>🌍 {t.lobby.privacy_public}</span>
+                            {privacy === 'public' && <span>✅</span>}
+                        </button>
+                        <button 
+                            onClick={() => { setPrivacy('private'); updateSettingsInDB(factors, 'private'); }}
+                            className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${privacy === 'private' ? 'bg-indigo-900/20 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'}`}
+                        >
+                            <span>🔒 {t.lobby.privacy_private}</span>
+                            {privacy === 'private' && <span>✅</span>}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
       </div>
     </div>

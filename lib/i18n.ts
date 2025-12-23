@@ -16,6 +16,7 @@ export const dictionaries = {
     },
     lobby: {
         waiting_title: "Scheda Elettorale",
+        
         waiting_subtitle: "Assegna un punteggio ai candidati.\n(Il voto è segreto e matematicamente protetto).",
         factors: "Fattori",
         vote_btn: "Conferma Voti ✅",
@@ -25,7 +26,21 @@ export const dictionaries = {
         terminate_confirm: "Sei sicuro di voler chiudere le urne?",
         setup_title: "Setup Elezione",
         add_candidate: "Aggiungi Candidato",
-        start_btn: "🚀 APRI LE VOTAZIONI"
+        start_btn: "🚀 APRI LE VOTAZIONI",
+        tabs_candidates: "Candidati & Foto",
+        tabs_settings: "Regole & Fattori",
+        privacy_label: "Visibilità Lobby",
+        privacy_public: "Pubblica (Ricercabile)",
+        privacy_private: "Privata (Solo Link)",
+        factors_title: "Criteri di Valutazione",
+        add_factor: "Aggiungi Criterio",
+        factor_name_ph: "Es. Croccantezza",
+        factor_weight_ph: "Peso (1-10)",
+        candidate_name_ph: "Nome (es. Buitoni)",
+        candidate_desc_ph: "Descrizione...",
+        upload_photo: "Carica Foto 📷",
+        uploading: "Caricamento...",
+        delete: "Elimina"
     },
     results: {
         winner_title: "IL VINCITORE È...",
@@ -55,7 +70,21 @@ export const dictionaries = {
         terminate_confirm: "Are you sure you want to close the polls?",
         setup_title: "Election Setup",
         add_candidate: "Add Candidate",
-        start_btn: "🚀 OPEN VOTING"
+        start_btn: "🚀 OPEN VOTING",
+        tabs_candidates: "Candidates & Photos",
+        tabs_settings: "Rules & Factors",
+        privacy_label: "Lobby Visibility",
+        privacy_public: "Public (Searchable)",
+        privacy_private: "Private (Link Only)",
+        factors_title: "Evaluation Criteria",
+        add_factor: "Add Criteria",
+        factor_name_ph: "E.g. Crunchiness",
+        factor_weight_ph: "Weight (1-10)",
+        candidate_name_ph: "Name (e.g. Pizza A)",
+        candidate_desc_ph: "Description...",
+        upload_photo: "Upload Photo 📷",
+        uploading: "Uploading...",
+        delete: "Delete"
     },
     results: {
         winner_title: "THE WINNER IS...",

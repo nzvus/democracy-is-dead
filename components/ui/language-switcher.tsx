@@ -8,7 +8,6 @@ export default function LanguageSwitcher() {
   return (
     <div className="absolute top-6 right-6 z-50 flex gap-3 bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl">
       
-      {/* Bottone ITALIANO */}
       <button
         onClick={() => setLanguage('it')}
         className={`relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 border-2 ${
@@ -25,7 +24,6 @@ export default function LanguageSwitcher() {
         />
       </button>
 
-      {/* Bottone INGLESE */}
       <button
         onClick={() => setLanguage('en')}
         className={`relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 border-2 ${
