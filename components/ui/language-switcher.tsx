@@ -6,25 +6,42 @@ export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <div className="absolute top-4 right-4 z-50 flex gap-2 bg-black/20 backdrop-blur-md p-1 rounded-full border border-white/10">
+    <div className="absolute top-6 right-6 z-50 flex gap-3 bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl">
+      
+      {/* Bottone ITALIANO */}
       <button
         onClick={() => setLanguage('it')}
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-          language === 'it' ? 'bg-white/20 scale-110 shadow-lg' : 'opacity-50 hover:opacity-100'
+        className={`relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 border-2 ${
+          language === 'it' 
+            ? 'border-indigo-500 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.5)] grayscale-0' 
+            : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 grayscale'
         }`}
         title="Italiano"
       >
-        🇮🇹
+        <img 
+            src="https://flagcdn.com/w80/it.png" 
+            alt="Italiano" 
+            className="w-full h-full object-cover"
+        />
       </button>
+
+      {/* Bottone INGLESE */}
       <button
         onClick={() => setLanguage('en')}
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-          language === 'en' ? 'bg-white/20 scale-110 shadow-lg' : 'opacity-50 hover:opacity-100'
+        className={`relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 border-2 ${
+          language === 'en' 
+            ? 'border-indigo-500 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.5)] grayscale-0' 
+            : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 grayscale'
         }`}
         title="English"
       >
-        🇬🇧
+        <img 
+            src="https://flagcdn.com/w80/gb.png" 
+            alt="English" 
+            className="w-full h-full object-cover"
+        />
       </button>
+
     </div>
   );
 }
