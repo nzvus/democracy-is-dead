@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/client'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'

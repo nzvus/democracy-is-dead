@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/client'
 import { useLanguage } from '@/components/providers/language-provider'
 import { toast } from 'sonner'
 

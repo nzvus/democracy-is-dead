@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getScoreColor } from './utils'
