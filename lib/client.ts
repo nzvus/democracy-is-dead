@@ -1,15 +1,22 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
-export const createClient = () => {
+// Variable to hold the single instance
+let client: ReturnType<typeof createBrowserClient> | undefined
+
+export function createClient() {
+  // 1. Check if we already have a client. If yes, return it.
+  if (client) return client
+
+  // 2. If not, create a new one
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
-    console.error("⚠️ ERRORE: Variabili Supabase non trovate!")
+    throw new Error("Missing Supabase environment variables")
   }
 
-  return createSupabaseClient(
-    url || '', 
-    key || ''
-  )
+  client = createBrowserClient(url, key)
+
+  // 3. Return the new client
+  return client
 }
