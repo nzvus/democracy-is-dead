@@ -5,16 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
-import LanguageSwitcher from '@/components/ui/language-switcher'
 
 export default function Home() {
   const { t } = useLanguage()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [joinCode, setJoinCode] = useState('') // Stato per il codice input
+  const [joinCode, setJoinCode] = useState('')
   const supabase = createClient()
 
-  // Funzione condivisa per garantire l'accesso anonimo
+  // Funzione helper per garantire l'auth
   const ensureAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) return user.id
@@ -29,7 +28,10 @@ export default function Home() {
     const toastId = toast.loading(t.home.toast_init)
 
     try {
-      const userId = await ensureAuth() // Login anonimo o recupero utente
+      const userId = await ensureAuth()
+      // Generiamo un codice a 5 caratteri alfanumerici (più sicuro di 4 cifre)
+      // Nota: per ora usiamo random numerico semplice per coerenza col DB attuale, 
+      // ma idealmente passeremo a stringhe alfanumeriche.
       const code = Math.floor(1000 + Math.random() * 9000).toString()
 
       const { data, error } = await supabase
@@ -40,9 +42,7 @@ export default function Home() {
             status: 'setup',
             settings: { 
                 privacy: 'private', 
-                voting_method: 'schulze', 
-                allow_jolly: true,
-                timer_seconds: 0,
+                voting_scale: { max: 10 }, // Nuovo standard
                 factors: [{ id: "general", name: "General Vote", weight: 1.0 }]
             } 
           }])
@@ -63,16 +63,14 @@ export default function Home() {
     }
   }
 
-  // NUOVA FUNZIONE: Entra con codice
   const joinLobby = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!joinCode || joinCode.length < 4) return toast.error("Codice non valido")
+    if (!joinCode || joinCode.length < 4) return toast.error("Codice troppo corto")
     
     setLoading(true)
     try {
-        await ensureAuth() // Si assicura che tu sia loggato come anonimo
+        await ensureAuth()
         
-        // Controlla se la lobby esiste
         const { data, error } = await supabase
             .from('lobbies')
             .select('code')
@@ -81,7 +79,7 @@ export default function Home() {
             
         if (error || !data) throw new Error("Lobby non trovata")
         
-        router.push(`/lobby/${joinCode}`) // Redirect sicuro
+        router.push(`/lobby/${joinCode}`)
     } catch (error) {
         toast.error("Lobby inesistente o chiusa.")
     } finally {
@@ -91,53 +89,60 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-950 text-white relative overflow-hidden">
-      <LanguageSwitcher />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/10 via-gray-950 to-gray-950 z-0"></div>
+      
+      {/* Sfondo Decorativo */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/10 via-gray-950 to-gray-950 z-0 pointer-events-none"></div>
 
-      <div className="z-10 max-w-3xl text-center space-y-12">
+      <div className="z-10 w-full max-w-md md:max-w-2xl text-center space-y-10 md:space-y-16">
+        
+        {/* HERO SECTION */}
         <div className="space-y-4">
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 whitespace-pre-line">
+            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 whitespace-pre-line leading-tight">
             {t.home.title}
             </h1>
-            <p className="text-gray-400 text-lg md:text-xl font-mono">
+            <p className="text-gray-400 text-sm md:text-xl font-mono px-4">
             {t.home.subtitle}
             </p>
         </div>
         
-        <div className="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
-            {/* BOTTONE CREA */}
+        {/* ACTIONS CONTAINER */}
+        <div className="flex flex-col items-center gap-6 w-full px-4">
+            
+            {/* BOTTONE CREA (Principale) */}
             <button
                 onClick={createLobby}
                 disabled={loading}
-                className="w-full py-4 bg-white text-black font-bold text-xl rounded-full hover:scale-105 transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] disabled:opacity-50"
+                className="w-full py-4 bg-white text-black font-bold text-lg md:text-xl rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] disabled:opacity-50"
             >
                 {loading ? t.home.cta_loading : t.home.cta_button}
             </button>
 
-            <div className="flex items-center w-full gap-4">
-                <div className="h-px bg-gray-800 flex-1"></div>
-                <div className="h-px bg-gray-800 flex-1"></div>
+            {/* DIVIDER */}
+            <div className="flex items-center w-full gap-4 opacity-50">
+                <div className="h-px bg-gray-700 flex-1"></div>
+                <span className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">OPPURE</span>
+                <div className="h-px bg-gray-700 flex-1"></div>
             </div>
 
-            {/* FORM ENTRA CON CODICE */}
-            <form onSubmit={joinLobby} className="w-full flex gap-2">
+            {/* FORM ENTRA (Secondario) */}
+            <form onSubmit={joinLobby} className="w-full flex flex-col md:flex-row gap-3">
                 <input 
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
-                    placeholder="Codice Lobby (es. 1234)"
-                    className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-center font-mono text-lg tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    maxLength={4}
+                    placeholder="Codice (es. 1234)"
+                    className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-4 text-center font-mono text-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-700"
+                    maxLength={5}
                 />
                 <button 
                     type="submit"
                     disabled={loading || joinCode.length < 4}
-                    className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold px-6 rounded-xl transition-all"
+                    className="bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 text-white font-bold px-8 py-4 rounded-xl transition-all active:scale-[0.98]"
                 >
                     Entra ➤
                 </button>
             </form>
 
-            <p className="text-xs text-gray-600 uppercase tracking-widest font-bold mt-2">
+            <p className="text-[10px] md:text-xs text-gray-600 uppercase tracking-widest font-bold mt-4">
                 {t.home.no_registration}
             </p>
         </div>
