@@ -1,3 +1,4 @@
+// lib/i18n.ts
 
 export type Language = 'it' | 'en';
 
@@ -8,49 +9,73 @@ export const dictionaries = {
       subtitle: "Teoria della Scelta Sociale • Analisi Realtime • Costo Zero",
       cta_button: "Inizia Nuova Elezione",
       cta_loading: "Creazione...",
+      or_divider: "OPPURE",
+      join_placeholder: "Codice (es. 1234)",
+      join_btn: "Entra ➤",
       no_registration: "Nessuna registrazione richiesta",
       toast_init: "Inizializzazione protocollo democrazia...",
       toast_success: "Lobby creata! Reindirizzamento...",
       toast_error: "Errore critico: ",
+      error_code_short: "Codice troppo corto",
+      error_lobby_not_found: "Lobby non trovata o chiusa."
     },
     lobby: {
+        // Testi generali Lobby
         waiting_title: "Scheda Elettorale",
-        
         waiting_subtitle: "Assegna un punteggio ai candidati.\n(Il voto è segreto e matematicamente protetto).",
-        factors: "Fattori",
         vote_btn: "Conferma Voti ✅",
         update_btn: "Aggiorna Voto ↻",
         sending: "Invio in corso...",
         terminate_btn: "Termina Votazione",
         terminate_confirm: "Sei sicuro di voler chiudere le urne?",
+        
+        // Testi generali Admin/Setup
         setup_title: "Setup Elezione",
-        add_candidate: "Aggiungi Candidato",
-        start_btn: "🚀 APRI LE VOTAZIONI",
-        tabs_candidates: "Candidati & Foto",
-        tabs_settings: "Regole & Fattori",
-        privacy_label: "Visibilità Lobby",
-        privacy_public: "Pubblica (Ricercabile)",
-        privacy_private: "Privata (Solo Link)",
-        factors_title: "Criteri di Valutazione",
-        add_factor: "Aggiungi Criterio",
-        factor_name_ph: "Es. Croccantezza",
-        factor_weight_ph: "Peso (1-10)",
-        candidate_name_ph: "Nome (es. Buitoni)",
-        candidate_desc_ph: "Descrizione...",
-        upload_photo: "Carica Foto 📷",
-        uploading: "Caricamento...",
-        delete: "Elimina",
-        chat_title: "Chat Lobby",
-        chat_placeholder: "Insulta la pizza...",
-        chat_send: "Invia",
-        chat_open: "Apri Chat",
-        chat_empty: "Nessun messaggio. Rompi il ghiaccio!",
-        anon_user: "Agente",
+        start_btn: "AVVIA ELEZIONE 🚀",
+        code_label: "CODICE:",
+        share_link: "INVITA",
+        tab_candidates: "1. Candidati",
+        tab_settings: "2. Regole",
+        
+        // Modale Share
         invite_title: "Invita Amici",
         scan_qr: "Scansiona per entrare",
         copy_link: "Copia Link",
         link_copied: "Link copiato!",
-        share_btn: "Invita / QR"
+        share_btn: "Invita / QR",
+
+        // Chat
+        chat_title: "Chat Lobby",
+        chat_placeholder: "Insulta la pizza...",
+        chat_empty: "Nessun messaggio. Rompi il ghiaccio!",
+        anon_user: "Agente",
+
+        // Status Ospite
+        guest_title: "Lavori in Corso",
+        guest_desc: "L'Host sta configurando i candidati e le regole della votazione.",
+        status_label: "STATUS",
+        status_waiting: "In attesa dell'avvio...",
+    },
+    setup: {
+        // Sezione Candidati
+        add_placeholder: "Nome Candidato (es. Opzione A)",
+        upload_photo: "Carica Foto",
+        
+        // Sezione Settings
+        section_metrics: "Metrica di Voto",
+        scale_label: "Scala Massima",
+        scale_5: "⭐⭐⭐⭐⭐ (5 Punti)",
+        scale_10: "🏆 10 Punti (Standard)",
+        scale_100: "💯 100 Punti (Percentuale)",
+        
+        section_privacy: "Privacy Lobby",
+        privacy_public: "Pubblica",
+        privacy_private: "Privata",
+        
+        section_factors: "Criteri di Valutazione",
+        factor_placeholder: "Nuovo Criterio (es. Estetica)",
+        factor_weight_ph: "Peso",
+        min_factor_error: "Devi avere almeno un criterio di voto."
     },
     results: {
         winner_title: "IL VINCITORE È...",
@@ -64,48 +89,66 @@ export const dictionaries = {
       subtitle: "Social Choice Theory • Realtime Analysis • Zero Cost",
       cta_button: "Start New Election",
       cta_loading: "Creating...",
+      or_divider: "OR",
+      join_placeholder: "Code (e.g. 1234)",
+      join_btn: "Join ➤",
       no_registration: "No registration required",
       toast_init: "Initializing democracy protocol...",
       toast_success: "Lobby created! Redirecting...",
       toast_error: "Critical error: ",
+      error_code_short: "Code too short",
+      error_lobby_not_found: "Lobby not found or closed."
     },
     lobby: {
         waiting_title: "Ballot Paper",
         waiting_subtitle: "Score the candidates.\n(Voting is secret and mathematically protected).",
-        factors: "Factors",
         vote_btn: "Confirm Votes ✅",
         update_btn: "Update Vote ↻",
         sending: "Sending...",
         terminate_btn: "End Election",
         terminate_confirm: "Are you sure you want to close the polls?",
+        
         setup_title: "Election Setup",
-        add_candidate: "Add Candidate",
-        start_btn: "🚀 OPEN VOTING",
-        tabs_candidates: "Candidates & Photos",
-        tabs_settings: "Rules & Factors",
-        privacy_label: "Lobby Visibility",
-        privacy_public: "Public (Searchable)",
-        privacy_private: "Private (Link Only)",
-        factors_title: "Evaluation Criteria",
-        add_factor: "Add Criteria",
-        factor_name_ph: "E.g. Crunchiness",
-        factor_weight_ph: "Weight (1-10)",
-        candidate_name_ph: "Name (e.g. Pizza A)",
-        candidate_desc_ph: "Description...",
-        upload_photo: "Upload Photo 📷",
-        uploading: "Uploading...",
-        delete: "Delete",
-        chat_title: "Lobby Chat",
-        chat_placeholder: "Roast the pizza...",
-        chat_send: "Send",
-        chat_open: "Open Chat",
-        chat_empty: "No messages. Break the ice!",
-        anon_user: "Agent",
+        start_btn: "START ELECTION 🚀",
+        code_label: "CODE:",
+        share_link: "INVITE",
+        tab_candidates: "1. Candidates",
+        tab_settings: "2. Rules",
+
         invite_title: "Invite Friends",
         scan_qr: "Scan to join",
         copy_link: "Copy Link",
         link_copied: "Link copied!",
-        share_btn: "Invite / QR"
+        share_btn: "Invite / QR",
+
+        chat_title: "Lobby Chat",
+        chat_placeholder: "Roast the pizza...",
+        chat_empty: "No messages. Break the ice!",
+        anon_user: "Agent",
+
+        guest_title: "Work in Progress",
+        guest_desc: "The Host is configuring candidates and voting rules.",
+        status_label: "STATUS",
+        status_waiting: "Waiting for start...",
+    },
+    setup: {
+        add_placeholder: "Candidate Name (e.g. Option A)",
+        upload_photo: "Upload Photo",
+        
+        section_metrics: "Voting Metrics",
+        scale_label: "Max Scale",
+        scale_5: "⭐⭐⭐⭐⭐ (5 Points)",
+        scale_10: "🏆 10 Points (Standard)",
+        scale_100: "💯 100 Points (Percentile)",
+        
+        section_privacy: "Lobby Privacy",
+        privacy_public: "Public",
+        privacy_private: "Private",
+        
+        section_factors: "Evaluation Criteria",
+        factor_placeholder: "New Criteria (e.g. Aesthetics)",
+        factor_weight_ph: "Weight",
+        min_factor_error: "You must have at least one voting criteria."
     },
     results: {
         winner_title: "THE WINNER IS...",

@@ -61,7 +61,7 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && add()}
                 className="flex-1 bg-gray-800 border border-gray-700 rounded-xl p-4 text-base outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Nome Candidato (es. Opzione A)"
+                placeholder={t.setup.add_placeholder}
             />
             <button onClick={add} className="bg-indigo-600 px-6 rounded-xl font-bold hover:bg-indigo-500 shadow-lg">
                 ↵
