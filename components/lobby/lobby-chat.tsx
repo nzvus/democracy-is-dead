@@ -22,25 +22,40 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
+  const [myNickname, setMyNickname] = useState('') // NICK REALE
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Fetch messaggi e nickname
   useEffect(() => {
-    const fetchHistory = async () => {
-      const { data } = await supabase
-        .from('lobby_messages')
-        .select('*')
-        .eq('lobby_id', lobbyId)
-        .order('created_at', { ascending: true })
-      
-      if (data) setMessages(data)
-      scrollToBottom()
-    }
-    fetchHistory()
+    const init = async () => {
+        // 1. Fetch Nickname
+        const { data: userData } = await supabase
+            .from('lobby_participants')
+            .select('nickname')
+            .eq('lobby_id', lobbyId)
+            .eq('user_id', userId)
+            .single()
+        
+        if (userData) setMyNickname(userData.nickname)
 
+        // 2. Fetch Messaggi
+        const { data } = await supabase
+            .from('lobby_messages')
+            .select('*')
+            .eq('lobby_id', lobbyId)
+            .order('created_at', { ascending: true })
+        
+        if (data) setMessages(data)
+        scrollToBottom()
+    }
+    init()
+
+    // 3. Subscription
     const channel = supabase
       .channel('chat_room')
       .on('postgres_changes', 
@@ -64,12 +79,13 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     e.preventDefault()
     if (!newMessage.trim()) return
 
-    const shortNick = `${t.lobby.anon_user} ${userId.substring(0, 4).toUpperCase()}`
+    // Fallback se il nickname non è ancora caricato
+    const senderName = myNickname || `Anon ${userId.substring(0, 4)}`
 
     const { error } = await supabase.from('lobby_messages').insert({
       lobby_id: lobbyId,
       user_id: userId,
-      nickname: shortNick, 
+      nickname: senderName, 
       content: newMessage
     })
 
@@ -83,11 +99,12 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     setTimeout(scrollToBottom, 200)
   }
 
+  // Render uguale a prima, ma logica sendMessage aggiornata
   return (
     <>
       <button
         onClick={toggleChat}
-        className="fixed bottom-24 right-4 z-50 p-4 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl transition-all hover:scale-110 group"
+        className="fixed bottom-28 right-4 z-40 p-4 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl transition-all hover:scale-110 group"
       >
         <span className="text-2xl">💬</span>
         {unreadCount > 0 && (
@@ -97,7 +114,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         )}
       </button>
 
-      {/* PANNELLO CHAT (Slide-in) */}
+      {/* PANNELLO CHAT */}
       <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Header */}
@@ -105,13 +122,13 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             <h2 className="font-bold text-lg flex items-center gap-2">
                 💬 {t.lobby.chat_title}
                 <span className="text-xs font-normal text-gray-500 bg-gray-800 px-2 py-1 rounded-full border border-gray-700">
-                    Online
+                    {myNickname}
                 </span>
             </h2>
             <button onClick={toggleChat} className="p-2 hover:bg-gray-800 rounded-full text-gray-400">✖️</button>
         </div>
 
-        {/* Area Messaggi */}
+        {/* Messaggi */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
             {messages.length === 0 && (
                 <div className="text-center text-gray-500 mt-10 italic">
@@ -136,6 +153,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             <div ref={messagesEndRef} />
         </div>
 
+        {/* Input */}
         <form onSubmit={sendMessage} className="p-4 border-t border-gray-800 bg-gray-900 pb-8 md:pb-4">
             <div className="flex gap-2">
                 <input

@@ -9,7 +9,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 // --- IMPORT COMPONENTI FASI ---
 import LobbyOnboarding from '@/components/lobby/lobby-onboarding'
 import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
-import VotingWrapper from '@/components/lobby/voting/voting-wrapper' // Il nuovo componente unificato
+import VotingWrapper from '@/components/lobby/voting/voting-wrapper'
 import LobbyResults from '@/components/lobby/lobby-results'
 import LobbyChat from '@/components/lobby/lobby-chat'
 
@@ -23,8 +23,6 @@ export default function LobbyPage() {
   const [isHost, setIsHost] = useState(false)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
-  
-  // Stato per verificare se l'utente ha scelto il nickname
   const [hasJoined, setHasJoined] = useState(false)
 
   useEffect(() => {
@@ -34,7 +32,6 @@ export default function LobbyPage() {
         const { data: { user } } = await supabase.auth.getUser()
         let currentUserId = user?.id
 
-        // Se arriva da link diretto, crea utente anonimo
         if (!currentUserId) {
             const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
             if (anonError) throw anonError
@@ -61,7 +58,7 @@ export default function LobbyPage() {
           setIsHost(true)
         }
 
-        // 4. CONTROLLA SE HA GIÀ FATTO ONBOARDING (NICKNAME)
+        // 4. CONTROLLA ONBOARDING
         const { data: participant } = await supabase
             .from('lobby_participants')
             .select('id')
@@ -83,7 +80,7 @@ export default function LobbyPage() {
 
     initLobby()
 
-    // 5. REALTIME (Ascolta cambi di stato Setup -> Voto -> Fine)
+    // 5. REALTIME
     const channel = supabase
       .channel('lobby_main_channel')
       .on('postgres_changes', 
@@ -95,7 +92,6 @@ export default function LobbyPage() {
     return () => { supabase.removeChannel(channel) }
   }, [params.code, router, supabase])
 
-  // --- RENDER: LOADING ---
   if (loading) {
     return (
         <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-10">
@@ -104,21 +100,18 @@ export default function LobbyPage() {
     )
   }
 
-  // --- RENDER: ONBOARDING (BLOCCANTE) ---
-  // Se non ha ancora scelto il nick, mostra SOLO questo.
+  // ONBOARDING (BLOCCANTE)
   if (!hasJoined && userId && lobby) {
       return <LobbyOnboarding lobby={lobby} userId={userId} onJoin={() => setHasJoined(true)} />
   }
 
-  // --- RENDER: FASI DI GIOCO ---
+  // ROUTING STATI
   let content = null;
 
   if (lobby.status === 'setup') {
-    // FASE 1: CONFIGURAZIONE
     if (isHost) {
         content = <SetupWrapper lobby={lobby} userId={userId!} />;
     } else {
-        // Schermata di attesa per ospiti (Tradotta)
         content = (
             <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 text-center">
                  <div className="max-w-md w-full bg-gray-900/50 border border-gray-800 rounded-3xl p-8 backdrop-blur-sm shadow-2xl">
@@ -137,19 +130,15 @@ export default function LobbyPage() {
         );
     }
   } else if (lobby.status === 'ended') {
-    // FASE 3: RISULTATI
     content = <LobbyResults lobby={lobby} />;
   } else {
-    // FASE 2: VOTO
-    // Qui usiamo il nuovo wrapper unificato (Mobile/Desktop)
-    content = <VotingWrapper lobby={lobby} userId={userId!} />;
+    // PASSAGGIO DI isHost QUI SOTTO
+    content = <VotingWrapper lobby={lobby} userId={userId!} isHost={isHost} />;
   }
 
   return (
     <>
       {content}
-      
-      {/* CHAT: Visibile sempre, ma solo DOPO aver fatto il join (serve il nick) */}
       {userId && hasJoined && <LobbyChat lobbyId={lobby.id} userId={userId} />}
     </>
   )
