@@ -1,85 +1,145 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { useLanguage } from '@/components/providers/language-provider'
-import ShareModal from '@/components/lobby/share-modal'
-import SettingsForm from './settings-form'
-import CandidatesManager from './candidates-manager'
 
-export default function SetupWrapper({ lobby, userId }: { lobby: any, userId: string }) {
-  const { t } = useLanguage()
+// --- IMPORT DEI COMPONENTI ---
+// 1. Nuovo Admin Setup Modulare
+import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
+// 2. Componenti esistenti (Li rifaremo nel prossimo step, ma ora servono)
+import LobbyWaiting from '@/components/lobby/lobby-waiting'
+import LobbyResults from '@/components/lobby/lobby-results'
+import LobbyChat from '@/components/lobby/lobby-chat'
+
+export default function LobbyPage() {
+  const params = useParams()
+  const router = useRouter()
   const supabase = createClient()
-  const [tab, setTab] = useState<'candidates' | 'settings'>('candidates')
-  const [showShare, setShowShare] = useState(false)
+  
+  const [lobby, setLobby] = useState<any>(null)
+  const [isHost, setIsHost] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
 
-  // Update Generico per i settings
-  const updateSettings = async (newSettings: any) => {
-    const { error } = await supabase.from('lobbies').update({ settings: newSettings }).eq('id', lobby.id)
-    if (error) toast.error("Errore salvataggio")
-  }
+  useEffect(() => {
+    const initLobby = async () => {
+      try {
+        // 1. GESTIONE IDENTITÀ (Fix per Link Diretti)
+        const { data: { user } } = await supabase.auth.getUser()
+        let currentUserId = user?.id
 
-  const startElection = async () => {
-    // Controllo minimo candidati
-    const { count } = await supabase.from('candidates').select('*', { count: 'exact', head: true }).eq('lobby_id', lobby.id)
-    if ((count || 0) < 2) return toast.error("Servono almeno 2 candidati!")
-
-    await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobby.id)
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center p-4">
+        // Se l'utente non esiste, creiamolo anonimo al volo
+        if (!currentUserId) {
+            const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
+            if (anonError) throw anonError
+            currentUserId = anonData.user?.id
+        }
         
-        {/* HEADER CENTRATO & COMPATTO */}
-        <header className="w-full max-w-2xl text-center space-y-4 mb-8 pt-8">
-            <div className="inline-flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 rounded-full px-4 py-1 text-xs font-mono text-gray-400">
-                <span>CODE: {lobby.code}</span>
-                <button onClick={() => setShowShare(true)} className="text-indigo-400 hover:underline">SHARE</button>
-            </div>
-            <h1 className="text-3xl font-bold">{t.lobby.setup_title}</h1>
-        </header>
+        setUserId(currentUserId!)
 
-        {/* CONTENITORE PRINCIPALE */}
-        <div className="w-full max-w-2xl bg-black/20 backdrop-blur-sm rounded-3xl border border-gray-800/50 p-1 shadow-2xl overflow-hidden">
-            
-            {/* TAB SWITCHER STILE iOS */}
-            <div className="grid grid-cols-2 p-1 bg-gray-900/80 rounded-t-3xl border-b border-gray-800">
-                <button 
-                    onClick={() => setTab('candidates')}
-                    className={`py-3 text-sm font-bold rounded-2xl transition-all ${tab === 'candidates' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                    1. Candidati
-                </button>
-                <button 
-                    onClick={() => setTab('settings')}
-                    className={`py-3 text-sm font-bold rounded-2xl transition-all ${tab === 'settings' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                    2. Regole
-                </button>
-            </div>
+        // 2. RECUPERO DATI LOBBY
+        const { data: lobbyData, error } = await supabase
+          .from('lobbies')
+          .select('*')
+          .eq('code', params.code)
+          .single()
 
-            {/* AREA CONTENUTO */}
-            <div className="p-4 md:p-8 min-h-[400px]">
-                {tab === 'candidates' ? (
-                    <CandidatesManager lobby={lobby} />
-                ) : (
-                    <SettingsForm lobby={lobby} updateSettings={updateSettings} />
-                )}
-            </div>
+        if (error || !lobbyData) {
+          toast.error("Lobby non trovata o scaduta!")
+          router.push('/') // Rimanda alla home
+          return
+        }
 
-            {/* FOOTER AZIONE */}
-            <div className="p-4 bg-gray-900/50 border-t border-gray-800">
-                <button 
-                    onClick={startElection}
-                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/20 transition-all active:scale-[0.98]"
-                >
-                    {t.lobby.start_btn}
-                </button>
-            </div>
+        setLobby(lobbyData)
+        
+        // 3. SEI L'ADMIN?
+        if (currentUserId && lobbyData.host_id === currentUserId) {
+          setIsHost(true)
+        }
+        
+        setLoading(false)
+
+      } catch (err: any) {
+        console.error("Lobby Init Error:", err)
+        toast.error("Errore di connessione al server.")
+        router.push('/')
+      }
+    }
+
+    initLobby()
+
+    // 4. REALTIME: Ascolta cambiamenti di stato (Setup -> Voting -> Ended)
+    const channel = supabase
+      .channel('lobby_main_channel')
+      .on('postgres_changes', 
+          { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `code=eq.${params.code}` }, 
+          (payload) => {
+             // Aggiorna lo stato locale istantaneamente
+             setLobby(payload.new)
+          }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [params.code, router, supabase])
+
+  // --- RENDER: LOADING ---
+  if (loading) {
+    return (
+        <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-10">
+            <div className="animate-spin text-4xl mb-4 text-indigo-500">⏳</div>
+            <p className="animate-pulse text-sm font-mono text-gray-400">Syncing protocol...</p>
         </div>
+    )
+  }
 
-        {showShare && <ShareModal code={lobby.code} onClose={() => setShowShare(false)} />}
-    </div>
+  // --- RENDER: LOGICA DI STATO ---
+  let content = null;
+
+  if (lobby.status === 'setup') {
+    // FASE 1: SETUP
+    if (isHost) {
+        // L'Admin vede il nuovo pannello modulare
+        content = <SetupWrapper lobby={lobby} userId={userId!} />;
+    } else {
+        // L'Ospite vede una "Waiting Room" curata
+        content = (
+            <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 text-center">
+                 <div className="max-w-md w-full bg-gray-900/50 border border-gray-800 rounded-3xl p-8 backdrop-blur-sm shadow-2xl">
+                     <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-3xl mb-6 mx-auto animate-pulse border border-gray-700">
+                        ⚙️
+                     </div>
+                     <h1 className="text-2xl font-bold mb-2">Lavori in Corso</h1>
+                     <p className="text-gray-400 text-sm mb-6">
+                        L'Host sta configurando i candidati e le regole della votazione.
+                     </p>
+                     
+                     <div className="bg-black/20 rounded-xl p-4 border border-gray-800/50">
+                        <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">STATUS</p>
+                        <p className="text-indigo-400 font-mono text-sm">In attesa dell'avvio...</p>
+                     </div>
+                 </div>
+            </div>
+        );
+    }
+  } else if (lobby.status === 'ended') {
+    // FASE 3: RISULTATI
+    content = <LobbyResults lobby={lobby} />;
+  } else {
+    // FASE 2: VOTAZIONE (Voting)
+    // Nota: Presto rifaremo anche questo file per usare la Grid View
+    content = <LobbyWaiting lobby={lobby} isHost={isHost} />;
+  }
+
+  // --- RENDER: LAYOUT FINALE ---
+  return (
+    <>
+      {content}
+      
+      {/* La chat è un overlay globale, visibile in tutte le fasi se l'utente ha un ID */}
+      {userId && <LobbyChat lobbyId={lobby.id} userId={userId} />}
+    </>
   )
 }
