@@ -19,6 +19,13 @@ export const dictionaries = {
       error_code_short: "Codice troppo corto",
       error_lobby_not_found: "Lobby non trovata o chiusa."
     },
+    onboarding: {
+        title: "Identificati",
+        subtitle: "Come ti chiameranno gli altri?",
+        nick_placeholder: "Il tuo Nickname (es. 'Il Boss')",
+        join_btn: "Entra nella Lobby",
+        error_nick: "Inserisci un nickname valido"
+    },
     lobby: {
         // Testi generali Lobby
         waiting_title: "Scheda Elettorale",
@@ -82,6 +89,7 @@ export const dictionaries = {
         analysis_title: "⚔️ Analisi Fattoriale",
         ranking_title: "Classifica Completa"
     }
+    
   },
   en: {
     home: {
@@ -98,6 +106,13 @@ export const dictionaries = {
       toast_error: "Critical error: ",
       error_code_short: "Code too short",
       error_lobby_not_found: "Lobby not found or closed."
+    },
+    onboarding: {
+        title: "Identify Yourself",
+        subtitle: "How should others call you?",
+        nick_placeholder: "Your Nickname (e.g. 'The Boss')",
+        join_btn: "Join Lobby",
+        error_nick: "Please enter a valid nickname"
     },
     lobby: {
         waiting_title: "Ballot Paper",

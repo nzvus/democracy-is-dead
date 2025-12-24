@@ -13,11 +13,9 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState('')
   const supabase = createClient()
 
-  // Funzione helper per garantire l'auth
   const ensureAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) return user.id
-
     const { data, error } = await supabase.auth.signInAnonymously()
     if (error) throw error
     return data.user?.id
@@ -29,9 +27,6 @@ export default function Home() {
 
     try {
       const userId = await ensureAuth()
-      // Generiamo un codice a 5 caratteri alfanumerici (più sicuro di 4 cifre)
-      // Nota: per ora usiamo random numerico semplice per coerenza col DB attuale, 
-      // ma idealmente passeremo a stringhe alfanumeriche.
       const code = Math.floor(1000 + Math.random() * 9000).toString()
 
       const { data, error } = await supabase
@@ -42,7 +37,7 @@ export default function Home() {
             status: 'setup',
             settings: { 
                 privacy: 'private', 
-                voting_scale: { max: 10 }, // Nuovo standard
+                voting_scale: { max: 10 },
                 factors: [{ id: "general", name: "General Vote", weight: 1.0 }]
             } 
           }])
@@ -65,23 +60,22 @@ export default function Home() {
 
   const joinLobby = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!joinCode || joinCode.length < 4) return toast.error("Codice troppo corto")
+    if (!joinCode || joinCode.length < 4) return toast.error(t.home.error_code_short)
     
     setLoading(true)
     try {
         await ensureAuth()
-        
         const { data, error } = await supabase
             .from('lobbies')
             .select('code')
             .eq('code', joinCode)
             .single()
             
-        if (error || !data) throw new Error("Lobby non trovata")
+        if (error || !data) throw new Error("Not found")
         
         router.push(`/lobby/${joinCode}`)
     } catch (error) {
-        toast.error("Lobby inesistente o chiusa.")
+        toast.error(t.home.error_lobby_not_found)
     } finally {
         setLoading(false)
     }
@@ -89,13 +83,10 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-950 text-white relative overflow-hidden">
-      
-      {/* Sfondo Decorativo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/10 via-gray-950 to-gray-950 z-0 pointer-events-none"></div>
 
       <div className="z-10 w-full max-w-md md:max-w-2xl text-center space-y-10 md:space-y-16">
         
-        {/* HERO SECTION */}
         <div className="space-y-4">
             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 whitespace-pre-line leading-tight">
             {t.home.title}
@@ -105,10 +96,7 @@ export default function Home() {
             </p>
         </div>
         
-        {/* ACTIONS CONTAINER */}
         <div className="flex flex-col items-center gap-6 w-full px-4">
-            
-            {/* BOTTONE CREA (Principale) */}
             <button
                 onClick={createLobby}
                 disabled={loading}
@@ -117,19 +105,17 @@ export default function Home() {
                 {loading ? t.home.cta_loading : t.home.cta_button}
             </button>
 
-            {/* DIVIDER */}
             <div className="flex items-center w-full gap-4 opacity-50">
                 <div className="h-px bg-gray-700 flex-1"></div>
-                <span className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">OPPURE</span>
+                <span className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">{t.home.or_divider}</span>
                 <div className="h-px bg-gray-700 flex-1"></div>
             </div>
 
-            {/* FORM ENTRA (Secondario) */}
             <form onSubmit={joinLobby} className="w-full flex flex-col md:flex-row gap-3">
                 <input 
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
-                    placeholder="Codice (es. 1234)"
+                    placeholder={t.home.join_placeholder}
                     className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-4 text-center font-mono text-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-700"
                     maxLength={5}
                 />
@@ -138,7 +124,7 @@ export default function Home() {
                     disabled={loading || joinCode.length < 4}
                     className="bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 text-white font-bold px-8 py-4 rounded-xl transition-all active:scale-[0.98]"
                 >
-                    Entra ➤
+                    {t.home.join_btn}
                 </button>
             </form>
 
