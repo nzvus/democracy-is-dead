@@ -5,6 +5,7 @@ import { createClient } from '@/lib/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Candidate, Factor } from '@/types'
+import { UI } from '@/lib/constants'
 
 export default function CandidatesManager({ lobby }: { lobby: any }) {
   const { t } = useLanguage()
@@ -14,11 +15,12 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   
-  // Input form
+  // Input Form States
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
 
+  // Filtriamo i fattori statici (quelli che richiedono dati dall'admin)
   const staticFactors = (lobby.settings.factors || []).filter((f: Factor) => f.type === 'static')
 
   useEffect(() => {
@@ -34,36 +36,35 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
     if (data) setCandidates(data)
   }
 
-  // UPLOAD IMMAGINE
+  // Upload Immagine Candidato (Bucket: 'candidates')
   const handleImageUpload = async (file: File) => {
     try {
         setUploading(true)
         const fileExt = file.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-        const filePath = `${lobby.id}/${fileName}`
+        const fileName = `${lobby.id}/${Math.random().toString(36).substring(2)}.${fileExt}`
 
+        // Assicurati di creare il bucket 'candidates' su Supabase
         const { error: uploadError } = await supabase.storage
             .from('candidates')
-            .upload(filePath, file)
+            .upload(fileName, file)
 
         if (uploadError) throw uploadError
 
         const { data: { publicUrl } } = supabase.storage
             .from('candidates')
-            .getPublicUrl(filePath)
+            .getPublicUrl(fileName)
 
         return publicUrl
     } catch (error) {
-        toast.error("Errore caricamento immagine")
+        toast.error(t.common.error)
         return null
     } finally {
         setUploading(false)
     }
   }
 
-  // AGGIUNTA CANDIDATO
   const addCandidate = async () => {
-    if (!newName.trim()) return toast.error(t.common.error)
+    if (!newName.trim()) return
 
     setLoading(true)
     let finalImageUrl = null
@@ -72,7 +73,6 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
         finalImageUrl = await handleImageUpload(imageFile)
     }
 
-    // Assicuriamoci che static_values sia un oggetto valido
     const { error } = await supabase.from('candidates').insert({
       lobby_id: lobby.id,
       name: newName,
@@ -82,8 +82,7 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
     })
 
     if (error) {
-      console.error(error)
-      toast.error("Database Error: " + error.message)
+      toast.error("Error: " + error.message)
     } else {
       setNewName('')
       setNewDesc('')
@@ -100,7 +99,9 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   }
 
   const updateCandidate = async (id: string, field: string, value: any) => {
+    // Update Ottimistico
     setCandidates(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c))
+    // Update Reale
     await supabase.from('candidates').update({ [field]: value }).eq('id', id)
   }
 
@@ -115,10 +116,10 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in">
+    <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
       
       {/* FORM AGGIUNTA */}
-      <div className="bg-gray-900/50 p-6 rounded-3xl border border-gray-800 space-y-4 max-w-xl mx-auto">
+      <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4`}>
          <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">
             {t.setup.add_candidate_title}
          </h3>
@@ -128,23 +129,23 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder={t.setup.candidate_name_ph}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-base outline-none focus:border-indigo-500"
+                className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-4 text-base outline-none focus:border-${UI.COLORS.PRIMARY}-500`}
             />
             
-            {/* FILE INPUT REALE */}
+            {/* FILE INPUT CUSTOM */}
             <div className="relative group">
                 <input 
                     type="file"
                     accept="image/*"
                     onChange={(e) => e.target.files?.[0] && setImageFile(e.target.files[0])}
                     className="hidden"
-                    id="file-upload"
+                    id="cand-file-upload"
                 />
                 <label 
-                    htmlFor="file-upload"
-                    className={`block w-full text-center border-2 border-dashed border-gray-700 rounded-xl p-4 cursor-pointer hover:border-indigo-500 transition-colors ${imageFile ? 'bg-indigo-900/20 border-indigo-500 text-indigo-300' : 'text-gray-500'}`}
+                    htmlFor="cand-file-upload"
+                    className={`block w-full text-center border-2 border-dashed border-gray-700 ${UI.LAYOUT.ROUNDED_MD} p-4 cursor-pointer hover:border-${UI.COLORS.PRIMARY}-500 transition-colors ${imageFile ? `bg-${UI.COLORS.PRIMARY}-900/20 border-${UI.COLORS.PRIMARY}-500 text-${UI.COLORS.PRIMARY}-300` : 'text-gray-500'}`}
                 >
-                    {uploading ? 'Caricamento...' : (imageFile ? `📸 ${imageFile.name}` : t.setup.upload_photo)}
+                    {uploading ? '...' : (imageFile ? `📸 ${imageFile.name}` : t.setup.upload_photo)}
                 </label>
             </div>
 
@@ -152,77 +153,99 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
                 placeholder={t.setup.candidate_desc_ph}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm outline-none focus:border-indigo-500 min-h-[80px]"
+                className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-4 text-sm outline-none focus:border-${UI.COLORS.PRIMARY}-500 min-h-[80px] resize-none`}
             />
          </div>
 
          <button 
             onClick={addCandidate}
             disabled={loading || !newName.trim()}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg"
+            className={`w-full bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white font-bold py-4 ${UI.LAYOUT.ROUNDED_MD} transition-all shadow-lg`}
          >
             {loading ? '...' : '+ ' + t.common.save}
          </button>
       </div>
 
-      {/* LISTA */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {candidates.map((c) => (
-            <div key={c.id} className="bg-gray-800 rounded-2xl p-4 border border-gray-700 relative group flex flex-col gap-4">
-                
-                <button 
-                    onClick={() => removeCandidate(c.id)}
-                    className="absolute top-2 right-2 z-10 w-8 h-8 bg-black/50 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-all"
-                >
-                    ×
-                </button>
+      {/* LISTA CANDIDATI */}
+      {candidates.length > 0 && (
+          <div className="space-y-4 animate-in slide-in-from-bottom-4">
+            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center mt-8 mb-4">
+                {t.setup.list_candidates} ({candidates.length})
+            </h3>
 
-                <div className="flex gap-4 items-start">
-                    <div className="w-20 h-20 bg-gray-700 rounded-xl overflow-hidden shrink-0">
-                        {c.image_url ? (
-                            <img src={c.image_url} alt={c.name} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl">👤</div>
+            <div className="grid gap-4">
+                {candidates.map((c) => (
+                    <div key={c.id} className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.ROUNDED_MD} p-4 relative group flex flex-col gap-4`}>
+                        
+                        {/* Tasto Rimuovi */}
+                        <button 
+                            onClick={() => removeCandidate(c.id)}
+                            className="absolute top-2 right-2 z-10 w-8 h-8 bg-black/50 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
+                        >
+                            ×
+                        </button>
+
+                        <div className="flex gap-4 items-start">
+                            {/* Immagine */}
+                            <div className="w-20 h-20 bg-gray-800 rounded-xl overflow-hidden shrink-0 border border-gray-700">
+                                {c.image_url ? (
+                                    <img src={c.image_url} alt={c.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-3xl opacity-50">👤</div>
+                                )}
+                            </div>
+                            
+                            {/* Info Editabili */}
+                            <div className="flex-1 space-y-2">
+                                <input 
+                                    value={c.name}
+                                    onChange={(e) => updateCandidate(c.id, 'name', e.target.value)}
+                                    className="bg-transparent font-bold text-lg w-full outline-none border-b border-transparent focus:border-indigo-500 p-0 transition-colors"
+                                />
+                                <textarea 
+                                    value={c.description || ''}
+                                    onChange={(e) => updateCandidate(c.id, 'description', e.target.value)}
+                                    className="bg-transparent text-gray-400 text-xs w-full outline-none resize-none h-auto"
+                                    placeholder={t.setup.candidate_desc_ph}
+                                    rows={2}
+                                />
+                            </div>
+                        </div>
+
+                        {/* SEZIONE DATI OGGETTIVI (Visibile solo se configurati) */}
+                        {staticFactors.length > 0 && (
+                            <div className="bg-gray-900/80 p-3 rounded-xl border border-gray-700/50 mt-2">
+                                <h4 className="text-[10px] uppercase font-bold text-gray-500 mb-2 tracking-wider">{t.setup.static_data_label}</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {staticFactors.map((f: Factor) => (
+                                        <div key={f.id} className="relative">
+                                            <label className="text-[10px] text-gray-400 block mb-1 truncate font-bold">{f.name}</label>
+                                            <div className="flex items-center gap-2">
+                                                <input 
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={c.static_values?.[f.id] ?? ''}
+                                                    onChange={(e) => updateStaticValue(c.id, f.id, Number(e.target.value))}
+                                                    className="w-full bg-black/40 border border-gray-700 rounded px-2 py-1.5 text-sm font-mono outline-none focus:border-indigo-500 text-white"
+                                                    placeholder="0"
+                                                />
+                                                {/* Indicatore visivo Trend */}
+                                                {f.trend === 'lower_better' ? (
+                                                    <span className="text-[10px] text-amber-500" title={t.setup.trend_low}>↘</span>
+                                                ) : (
+                                                    <span className="text-[10px] text-green-500" title={t.setup.trend_high}>↗</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         )}
                     </div>
-                    <div className="flex-1 space-y-2">
-                        <input 
-                            value={c.name}
-                            onChange={(e) => updateCandidate(c.id, 'name', e.target.value)}
-                            className="bg-transparent font-bold text-lg w-full outline-none border-b border-transparent focus:border-indigo-500 p-0"
-                        />
-                        <textarea 
-                            value={c.description || ''}
-                            onChange={(e) => updateCandidate(c.id, 'description', e.target.value)}
-                            className="bg-transparent text-gray-400 text-xs w-full outline-none resize-none h-12"
-                            placeholder={t.setup.candidate_desc_ph}
-                        />
-                    </div>
-                </div>
-
-                {staticFactors.length > 0 && (
-                    <div className="bg-gray-900/50 p-3 rounded-xl border border-gray-700/50">
-                        <h4 className="text-[10px] uppercase font-bold text-gray-500 mb-2">{t.setup.static_data_label}</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                            {staticFactors.map((f: Factor) => (
-                                <div key={f.id}>
-                                    <label className="text-[10px] text-indigo-300 block mb-0.5 truncate">{f.name}</label>
-                                    <input 
-                                        type="number"
-                                        step="0.01"
-                                        value={c.static_values?.[f.id] ?? ''}
-                                        onChange={(e) => updateStaticValue(c.id, f.id, Number(e.target.value))}
-                                        className="w-full bg-gray-800 rounded px-2 py-1 text-xs font-mono outline-none focus:ring-1 ring-indigo-500"
-                                        placeholder="0"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                ))}
             </div>
-        ))}
-      </div>
+          </div>
+      )}
     </div>
   )
 }

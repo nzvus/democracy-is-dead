@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/client'
 import { useLanguage } from '@/components/providers/language-provider'
-import Avatar from '@/components/ui/avatar'
+import Avatar from '@/components/ui/avatar' // <--- Componente Avatar aggiornato
 import { toast } from 'sonner'
+import { UI } from '@/lib/constants'
 
 type Message = {
   id: string
@@ -22,7 +23,12 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
-  const [myNickname, setMyNickname] = useState('') // NICK REALE
+  
+  // Dati utente corrente
+  const [myNickname, setMyNickname] = useState('')
+  
+  // Mappa avatar degli altri partecipanti (userId -> avatarUrl)
+  const [avatarsMap, setAvatarsMap] = useState<Record<string, string | null>>({})
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -30,20 +36,30 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Fetch messaggi e nickname
   useEffect(() => {
     const init = async () => {
-        // 1. Fetch Nickname
+        // 1. Fetch Nickname corrente
         const { data: userData } = await supabase
             .from('lobby_participants')
             .select('nickname')
             .eq('lobby_id', lobbyId)
             .eq('user_id', userId)
             .single()
-        
         if (userData) setMyNickname(userData.nickname)
 
-        // 2. Fetch Messaggi
+        // 2. Fetch Mappa Avatar (per mostrare le foto degli altri)
+        const { data: participants } = await supabase
+            .from('lobby_participants')
+            .select('user_id, avatar_url')
+            .eq('lobby_id', lobbyId)
+        
+        if (participants) {
+            const map: Record<string, string | null> = {}
+            participants.forEach(p => { map[p.user_id] = p.avatar_url })
+            setAvatarsMap(map)
+        }
+
+        // 3. Fetch Messaggi storici
         const { data } = await supabase
             .from('lobby_messages')
             .select('*')
@@ -55,9 +71,8 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     }
     init()
 
-    // 3. Subscription
-    const channel = supabase
-      .channel('chat_room')
+    // 4. Subscription Messaggi
+    const channel = supabase.channel('chat_room')
       .on('postgres_changes', 
           { event: 'INSERT', schema: 'public', table: 'lobby_messages', filter: `lobby_id=eq.${lobbyId}` }, 
           (payload) => {
@@ -71,16 +86,27 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
           }
       )
       .subscribe()
+    
+    // 5. Subscription Nuovi Avatar (se qualcuno entra o cambia foto)
+    const pChannel = supabase.channel('chat_avatars')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lobby_participants', filter: `lobby_id=eq.${lobbyId}` },
+        (payload) => {
+             const newP = payload.new
+             setAvatarsMap(prev => ({ ...prev, [newP.user_id]: newP.avatar_url }))
+        })
+        .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { 
+        supabase.removeChannel(channel)
+        supabase.removeChannel(pChannel)
+    }
   }, [lobbyId, isOpen, userId, supabase])
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim()) return
 
-    // Fallback se il nickname non è ancora caricato
-    const senderName = myNickname || `Anon ${userId.substring(0, 4)}`
+    const senderName = myNickname || t.lobby.anon_user
 
     const { error } = await supabase.from('lobby_messages').insert({
       lobby_id: lobbyId,
@@ -89,7 +115,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
       content: newMessage
     })
 
-    if (error) toast.error("Errore invio")
+    if (error) toast.error(t.common.error)
     else setNewMessage('')
   }
 
@@ -99,12 +125,12 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     setTimeout(scrollToBottom, 200)
   }
 
-  // Render uguale a prima, ma logica sendMessage aggiornata
   return (
     <>
+      {/* FAB Button */}
       <button
         onClick={toggleChat}
-        className="fixed bottom-28 right-4 z-40 p-4 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl transition-all hover:scale-110 group"
+        className={`fixed bottom-28 right-4 z-40 p-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 rounded-full shadow-2xl transition-all hover:scale-110 group`}
       >
         <span className="text-2xl">💬</span>
         {unreadCount > 0 && (
@@ -121,9 +147,6 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
             <h2 className="font-bold text-lg flex items-center gap-2">
                 💬 {t.lobby.chat_title}
-                <span className="text-xs font-normal text-gray-500 bg-gray-800 px-2 py-1 rounded-full border border-gray-700">
-                    {myNickname}
-                </span>
             </h2>
             <button onClick={toggleChat} className="p-2 hover:bg-gray-800 rounded-full text-gray-400">✖️</button>
         </div>
@@ -131,21 +154,30 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         {/* Messaggi */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
             {messages.length === 0 && (
-                <div className="text-center text-gray-500 mt-10 italic">
+                <div className="text-center text-gray-500 mt-10 italic text-sm">
                     {t.lobby.chat_empty}
                 </div>
             )}
             
             {messages.map((msg) => {
                 const isMe = msg.user_id === userId
+                // Usa l'avatar dalla mappa o genera un seed
+                const avatarUrl = avatarsMap[msg.user_id]
+                
                 return (
                     <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                        <Avatar seed={msg.user_id} className="w-8 h-8 shrink-0 mt-1" />
-                        <div className={`max-w-[80%] rounded-2xl p-3 text-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700'}`}>
-                            <div className={`text-[10px] font-bold mb-1 opacity-50 ${isMe ? 'text-right' : ''}`}>
-                                {msg.nickname}
-                            </div>
-                            <p className="break-words">{msg.content}</p>
+                        <Avatar 
+                            src={avatarUrl} 
+                            seed={msg.user_id} 
+                            className="w-8 h-8 shrink-0 mt-1" 
+                        />
+                        <div className={`max-w-[80%] rounded-2xl p-3 text-sm ${isMe ? `bg-${UI.COLORS.PRIMARY}-600 text-white rounded-tr-none` : 'bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700'}`}>
+                            {!isMe && (
+                                <div className="text-[10px] font-bold mb-1 opacity-50 text-indigo-300">
+                                    {msg.nickname}
+                                </div>
+                            )}
+                            <p className="break-words leading-relaxed">{msg.content}</p>
                         </div>
                     </div>
                 )
@@ -160,25 +192,21 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder={t.lobby.chat_placeholder}
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className={`flex-1 ${UI.COLORS.BG_INPUT} rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all`}
                 />
                 <button 
                     type="submit"
                     disabled={!newMessage.trim()} 
-                    className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center transition-all"
+                    className={`bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center transition-all shadow-lg`}
                 >
                     ➤
                 </button>
             </div>
         </form>
-
       </div>
 
       {isOpen && (
-        <div 
-            onClick={toggleChat}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-        />
+        <div onClick={toggleChat} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden" />
       )}
     </>
   )

@@ -1,4 +1,3 @@
-// lib/i18n.ts
 export type Language = 'it' | 'en';
 
 export const dictionaries = {
@@ -23,7 +22,9 @@ export const dictionaries = {
         subtitle: "Come ti chiameranno gli altri?",
         nick_placeholder: "Il tuo Nickname (es. 'Il Boss')",
         join_btn: "Entra nella Lobby",
-        error_nick: "Inserisci un nickname valido"
+        error_nick: "Inserisci un nickname valido",
+        upload_avatar: "Carica il tuo Avatar",
+        avatar_placeholder: "👤"
     },
     lobby: {
         waiting_title: "Scheda Elettorale",
@@ -68,7 +69,11 @@ export const dictionaries = {
             saved: "Salvato",
             incomplete: "Scheda incompleta",
             drawer_title: "Vota Candidato",
-            factor_avg: "Media Attuale"
+            factor_avg: "Media Attuale",
+            trend_explanation: "Come votare questo fattore?",
+            trend_info_high: "Valore ALTO è positivo (es. 10 = Buonissimo) ↗",
+            trend_info_low: "Valore BASSO è positivo (es. 10€ = Economico) ↘",
+            static_factor_warning: "⚠️ Dato oggettivo (inserito dall'admin)"
         },
     },
     setup: {
@@ -81,9 +86,10 @@ export const dictionaries = {
         
         section_metrics: "Metrica di Voto",
         scale_label: "Scala Massima",
-        scale_5: "⭐⭐⭐⭐⭐ (5 Punti)",
-        scale_10: "🏆 10 Punti (Standard)",
-        scale_100: "💯 100 Punti (Percentuale)",
+        scale_5: "1-5 (Veloce)",
+        scale_10: "1-10 (Standard)",
+        scale_100: "1-100 (Preciso)",
+        decimals_label: "Decimali",
         
         section_privacy: "Privacy Lobby",
         privacy_public: "Pubblica",
@@ -92,7 +98,13 @@ export const dictionaries = {
         section_factors: "Criteri di Valutazione",
         factor_placeholder: "Nuovo Criterio (es. Estetica)",
         factor_weight_ph: "Peso",
-        min_factor_error: "Devi avere almeno un criterio di voto."
+        weight_label: "Peso influenza",
+        min_factor_error: "Devi avere almeno un criterio di voto.",
+        trend_high: "Alto è meglio ↗",
+        trend_low: "Basso è meglio ↘",
+        factor_type_vote: "👤 Voto",
+        factor_type_static: "⚙️ Dati",
+        list_candidates: "Lista Candidati"
     },
     results: {
         winner_title: "VINCITORE SCHULZE",
@@ -137,7 +149,9 @@ export const dictionaries = {
         subtitle: "How should others call you?",
         nick_placeholder: "Your Nickname (e.g. 'The Boss')",
         join_btn: "Join Lobby",
-        error_nick: "Please enter a valid nickname"
+        error_nick: "Please enter a valid nickname",
+        upload_avatar: "Upload Avatar",
+        avatar_placeholder: "👤"
     },
     lobby: {
         waiting_title: "Ballot Paper",
@@ -182,7 +196,11 @@ export const dictionaries = {
             saved: "Saved",
             incomplete: "Incomplete ballot",
             drawer_title: "Vote Candidate",
-            factor_avg: "Current Avg"
+            factor_avg: "Current Avg",
+            trend_explanation: "How to vote this?",
+            trend_info_high: "HIGH value is positive (e.g. 10 = Best) ↗",
+            trend_info_low: "LOW value is positive (e.g. 10€ = Cheap) ↘",
+            static_factor_warning: "⚠️ Objective Data (set by admin)"
         },
     },
     setup: {
@@ -195,9 +213,10 @@ export const dictionaries = {
         
         section_metrics: "Voting Metrics",
         scale_label: "Max Scale",
-        scale_5: "⭐⭐⭐⭐⭐ (5 Points)",
-        scale_10: "🏆 10 Points (Standard)",
-        scale_100: "💯 100 Points (Percentile)",
+        scale_5: "1-5 (Fast)",
+        scale_10: "1-10 (Standard)",
+        scale_100: "1-100 (Precise)",
+        decimals_label: "Decimals",
         
         section_privacy: "Lobby Privacy",
         privacy_public: "Public",
@@ -206,7 +225,13 @@ export const dictionaries = {
         section_factors: "Evaluation Criteria",
         factor_placeholder: "New Criteria (e.g. Aesthetics)",
         factor_weight_ph: "Weight",
-        min_factor_error: "You must have at least one voting criteria."
+        weight_label: "Influence Weight",
+        min_factor_error: "You must have at least one voting criteria.",
+        trend_high: "Higher is Better ↗",
+        trend_low: "Lower is Better ↘",
+        factor_type_vote: "👤 Vote",
+        factor_type_static: "⚙️ Data",
+        list_candidates: "Candidates List"
     },
     results: {
         winner_title: "SCHULZE WINNER",

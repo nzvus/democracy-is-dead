@@ -2,83 +2,103 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/client'
+import { UI } from '@/lib/constants'
 import { useLanguage } from '@/components/providers/language-provider'
 import { toast } from 'sonner'
 
 export default function LobbyOnboarding({ lobby, userId, onJoin }: { lobby: any, userId: string, onJoin: () => void }) {
-  const { t } = useLanguage()
-  const supabase = createClient()
-  const [nickname, setNickname] = useState('')
-  const [loading, setLoading] = useState(false)
+    const { t } = useLanguage()
+    const supabase = createClient()
+    const [nickname, setNickname] = useState('')
+    const [avatarFile, setAvatarFile] = useState<File | null>(null)
+    const [loading, setLoading] = useState(false)
 
-  // Avatar dinamico basato sul nickname (o random se vuoto)
-  const seed = nickname.trim() || 'random' 
-  const avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`
+    const handleJoin = async () => {
+        if(!nickname.trim()) {
+            toast.error(t.onboarding.error_nick)
+            return
+        }
+        setLoading(true)
 
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!nickname.trim()) return toast.error(t.onboarding.error_nick)
-    
-    setLoading(true)
-    
-    // Salviamo il partecipante nel DB
-    const { error } = await supabase
-        .from('lobby_participants')
-        .upsert({
+        let avatarUrl = null
+        
+        // Upload Avatar Utente (Bucket: 'avatars')
+        if (avatarFile) {
+            const fileExt = avatarFile.name.split('.').pop()
+            const filePath = `${lobby.id}/${userId}_${Date.now()}.${fileExt}`
+            
+            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, avatarFile)
+            
+            if (!uploadError) {
+                const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+                avatarUrl = data.publicUrl
+            } else {
+                console.error("Avatar upload failed:", uploadError)
+                // Non blocchiamo l'ingresso, ma notifichiamo
+                toast.error("Errore upload avatar, useremo default.")
+            }
+        }
+        
+        // Se l'upload fallisce o non c'è file, usa DiceBear
+        if (!avatarUrl) {
+             avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${userId}`
+        }
+
+        const { error } = await supabase.from('lobby_participants').insert({
             lobby_id: lobby.id,
             user_id: userId,
-            nickname: nickname.trim(),
-            avatar_seed: seed,
-            has_voted: false
-        }, { onConflict: 'lobby_id, user_id' })
-
-    if (error) {
-        toast.error("Error joining: " + error.message)
-        setLoading(false)
-    } else {
-        // Callback per dire alla pagina "Ok, è dentro"
-        onJoin()
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md bg-gray-900/50 border border-gray-800 p-8 rounded-3xl backdrop-blur-sm shadow-2xl text-center space-y-8 animate-in fade-in zoom-in duration-300">
+            nickname: nickname,
+            avatar_url: avatarUrl 
+        })
         
-        <div>
-            <h1 className="text-3xl font-bold mb-2">{t.onboarding.title}</h1>
-            <p className="text-gray-400">{t.onboarding.subtitle}</p>
+        if(!error) {
+            onJoin()
+        } else {
+            toast.error(t.common.error)
+        }
+        setLoading(false)
+    }
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
+            <div className={`w-full max-w-sm ${UI.COLORS.BG_CARD} p-8 ${UI.LAYOUT.ROUNDED_LG} text-center space-y-6 animate-in zoom-in-95`}>
+                <div>
+                    <h1 className="text-2xl font-bold mb-2">{t.onboarding.title}</h1>
+                    <p className="text-gray-400 text-sm">{t.onboarding.subtitle}</p>
+                </div>
+                
+                {/* Avatar Upload UI */}
+                <div className="flex justify-center py-4">
+                    <label className="relative cursor-pointer group">
+                        <div className={`w-28 h-28 rounded-full bg-gray-900 border-2 border-dashed border-gray-600 flex items-center justify-center overflow-hidden hover:border-${UI.COLORS.PRIMARY}-500 transition-all group-hover:scale-105`}>
+                            {avatarFile ? (
+                                <img src={URL.createObjectURL(avatarFile)} className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-4xl opacity-50">{t.onboarding.avatar_placeholder}</span>
+                            )}
+                        </div>
+                        <div className={`absolute bottom-0 right-0 bg-${UI.COLORS.PRIMARY}-600 rounded-full p-2 shadow-lg border-4 border-gray-900`}>
+                            📸
+                        </div>
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
+                    </label>
+                </div>
+
+                <input 
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder={t.onboarding.nick_placeholder}
+                    className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-4 text-center font-bold text-lg outline-none focus:border-${UI.COLORS.PRIMARY}-500 transition-colors`}
+                />
+                
+                <button 
+                    onClick={handleJoin}
+                    disabled={loading || !nickname}
+                    className={`w-full py-4 bg-${UI.COLORS.PRIMARY}-600 text-white ${UI.LAYOUT.ROUNDED_MD} font-bold hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 transition-all shadow-lg active:scale-[0.98]`}
+                >
+                    {loading ? "..." : t.onboarding.join_btn}
+                </button>
+            </div>
         </div>
-
-        {/* Avatar Preview */}
-        <div className="w-32 h-32 mx-auto bg-gray-800 rounded-full overflow-hidden border-4 border-gray-700 shadow-xl relative">
-            <img 
-                src={avatarUrl} 
-                alt="Avatar" 
-                className="w-full h-full object-cover" 
-            />
-        </div>
-
-        <form onSubmit={handleJoin} className="space-y-4">
-            <input 
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder={t.onboarding.nick_placeholder}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-center text-lg font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                maxLength={15}
-                autoFocus
-            />
-            
-            <button 
-                type="submit"
-                disabled={loading || !nickname.trim()}
-                className="w-full py-4 bg-white text-black font-bold text-lg rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-                {loading ? '...' : t.onboarding.join_btn}
-            </button>
-        </form>
-
-      </div>
-    </div>
-  )
+    )
 }
