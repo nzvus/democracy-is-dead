@@ -1,10 +1,9 @@
 // utils/voting-engine.ts
 
-// Tipi di dati
 type Vote = {
     voter_id: string;
     candidate_id: string;
-    scores: Record<string, number>; // es. { "gusto": 8, "prezzo": 5 }
+    scores: Record<string, number>;
 };
 
 type Candidate = {
@@ -17,100 +16,51 @@ type Factor = {
     weight: number;
 };
 
-// --- 1. NORMALIZZAZIONE (Z-SCORE) ---
-// Trasforma i voti grezzi in deviazioni dalla media personale dell'utente [cite: 447]
-function normalizeVotes(votes: Vote[], factors: Factor[]) {
-    // Raggruppa voti per utente
-    const userVotes: Record<string, number[]> = {};
-    
-    votes.forEach(v => {
-        // Calcola il voto "pesato" singolo per questo candidato
-        let totalWeightedScore = 0;
-        let totalWeight = 0;
-        
-        factors.forEach(f => {
-            const val = v.scores[f.id] || 0;
-            totalWeightedScore += val * f.weight;
-            totalWeight += f.weight;
-        });
-        
-        const finalScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-        
-        if (!userVotes[v.voter_id]) userVotes[v.voter_id] = [];
-        userVotes[v.voter_id].push(finalScore);
-    });
+type Participant = {
+    user_id: string;
+    nickname: string;
+    avatar_seed: string;
+};
 
-    // Calcola Media e Deviazione Standard per ogni utente
-    const userStats: Record<string, { mean: number; stdDev: number }> = {};
-    
-    Object.keys(userVotes).forEach(userId => {
-        const scores = userVotes[userId];
-        const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-        const variance = scores.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / scores.length;
-        const stdDev = Math.sqrt(variance) || 1; // Evita divisione per zero
-        userStats[userId] = { mean, stdDev };
-    });
-
-    return userStats;
-}
-
-// --- 2. METODO SCHULZE (Beatpath) ---
-// Trova il vincitore di Condorcet risolvendo i cicli [cite: 347, 353]
+// --- 1. METODO SCHULZE (CONDORCET) ---
 export function calculateSchulze(candidates: Candidate[], votes: Vote[], factors: Factor[]) {
     const n = candidates.length;
     const candidateIds = candidates.map(c => c.id);
-    const d: number[][] = Array(n).fill(0).map(() => Array(n).fill(0)); // Matrice scontri diretti
-    const p: number[][] = Array(n).fill(0).map(() => Array(n).fill(0)); // Matrice percorsi più forti
+    const d: number[][] = Array(n).fill(0).map(() => Array(n).fill(0));
+    const p: number[][] = Array(n).fill(0).map(() => Array(n).fill(0));
 
-    // 1. Calcoliamo la matrice delle preferenze a coppie (d[i][j])
-    // Per ogni coppia di candidati A e B, contiamo quanti preferiscono A > B
-    // Usiamo la somma pesata dei fattori per determinare la preferenza
-    
+    // Mappa preferenze pesate
     const voterPreferences: Record<string, Record<string, number>> = {};
-
-    // Pre-calcoliamo i punteggi totali per ogni voto per velocità
     votes.forEach(v => {
         let score = 0;
         factors.forEach(f => score += (v.scores[f.id] || 0) * f.weight);
-        
         if (!voterPreferences[v.voter_id]) voterPreferences[v.voter_id] = {};
         voterPreferences[v.voter_id][v.candidate_id] = score;
     });
 
-    // Confronto testa a testa
+    // Matrice Scontri Diretti
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
             if (i === j) continue;
-            
             let count = 0;
             const candA = candidateIds[i];
             const candB = candidateIds[j];
-
-            // Contiamo gli elettori che preferiscono A a B
             Object.keys(voterPreferences).forEach(voterId => {
                 const scoreA = voterPreferences[voterId][candA] || 0;
                 const scoreB = voterPreferences[voterId][candB] || 0;
                 if (scoreA > scoreB) count++;
             });
-
             d[i][j] = count;
         }
     }
 
-    // 2. Inizializzazione percorsi (Floyd-Warshall) 
+    // Floyd-Warshall (Beatpaths)
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
-            if (i !== j) {
-                if (d[i][j] > d[j][i]) {
-                    p[i][j] = d[i][j];
-                } else {
-                    p[i][j] = 0;
-                }
-            }
+            if (i !== j) p[i][j] = d[i][j] > d[j][i] ? d[i][j] : 0;
         }
     }
 
-    // 3. Calcolo della forza dei percorsi (The Beatpath)
     for (let k = 0; k < n; k++) {
         for (let i = 0; i < n; i++) {
             for (let j = 0; j < n; j++) {
@@ -121,64 +71,78 @@ export function calculateSchulze(candidates: Candidate[], votes: Vote[], factors
         }
     }
 
-    // 4. Determina il vincitore
-    // Un candidato vince se p[i][j] >= p[j][i] per ogni altro j
+    // Calcolo Vittorie Schulze
     const wins: number[] = Array(n).fill(0);
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
-            if (i !== j) {
-                if (p[i][j] >= p[j][i]) {
-                    wins[i]++;
-                }
-            }
+            if (i !== j && p[i][j] >= p[j][i]) wins[i]++;
         }
     }
 
-    // Restituiamo i risultati ordinati
     return candidates.map((c, index) => ({
         ...c,
-        schulzeWins: wins[index], // Quanti avversari batte nel grafo Schulze
-        rawScore: 0 // Placeholder per la media classica
+        schulzeWins: wins[index],
+        rank: 0
     })).sort((a, b) => b.schulzeWins - a.schulzeWins);
 }
 
-// --- 3. METODO BORDA ---
-// Assegna N punti al primo, N-1 al secondo... [cite: 357]
-export function calculateBorda(candidates: Candidate[], votes: Vote[], factors: Factor[]) {
-    const bordaScores: Record<string, number> = {};
-    candidates.forEach(c => bordaScores[c.id] = 0);
+// --- 2. CALCOLO MEDIA CLASSICA (Per confronto) ---
+export function calculateAverage(candidates: Candidate[], votes: Vote[], factors: Factor[]) {
+    return candidates.map(c => {
+        const cVotes = votes.filter(v => v.candidate_id === c.id);
+        let totalWeighted = 0;
+        let count = 0;
 
-    const voterPrefs = getVoterPreferences(votes, factors);
-
-    Object.keys(voterPrefs).forEach(voterId => {
-        // Ordina i candidati per questo utente
-        const rankings = Object.entries(voterPrefs[voterId])
-            .sort(([, scoreA], [, scoreB]) => scoreB - scoreA) // Dal più alto al più basso
-            .map(([id]) => id);
-
-        // Assegna punti: (N-1) al primo, 0 all'ultimo
-        rankings.forEach((candId, index) => {
-            const points = candidates.length - 1 - index;
-            if (bordaScores[candId] !== undefined) {
-                bordaScores[candId] += points;
-            }
+        cVotes.forEach(v => {
+            factors.forEach(f => {
+                totalWeighted += (v.scores[f.id] || 0); // Somma grezza per semplicità display
+            });
+            count++;
         });
-    });
-
-    return candidates.map(c => ({
-        ...c,
-        bordaScore: bordaScores[c.id] || 0
-    })).sort((a, b) => b.bordaScore - a.bordaScore);
+        
+        // Media totale (somma fattori / n votanti)
+        const avg = count > 0 ? totalWeighted / count : 0;
+        return { ...c, avgScore: avg };
+    }).sort((a, b) => b.avgScore - a.avgScore);
 }
 
-// Helper: Calcola i punteggi grezzi per utente
-function getVoterPreferences(votes: Vote[], factors: Factor[]) {
-    const prefs: Record<string, Record<string, number>> = {};
-    votes.forEach(v => {
-        let score = 0;
-        factors.forEach(f => score += (v.scores[f.id] || 0) * f.weight);
-        if (!prefs[v.voter_id]) prefs[v.voter_id] = {};
-        prefs[v.voter_id][v.candidate_id] = score;
+// --- 3. GAMIFICATION: SOCIAL AWARDS 🏆 ---
+export function calculateSocialAwards(participants: Participant[], votes: Vote[], factors: Factor[]) {
+    if (participants.length < 2 || votes.length === 0) return [];
+
+    // Calcola la media voti data da ogni utente
+    const userStats: Record<string, { totalGiven: number, count: number, nick: string, avatar: string }> = {};
+
+    participants.forEach(p => {
+        userStats[p.user_id] = { totalGiven: 0, count: 0, nick: p.nickname, avatar: p.avatar_seed };
     });
-    return prefs;
+
+    votes.forEach(v => {
+        if (!userStats[v.voter_id]) return;
+        let voteSum = 0;
+        factors.forEach(f => voteSum += (v.scores[f.id] || 0));
+        userStats[v.voter_id].totalGiven += voteSum;
+        userStats[v.voter_id].count += 1; // Un candidato votato
+    });
+
+    const results = Object.values(userStats)
+        .filter(u => u.count > 0)
+        .map(u => ({ ...u, avg: u.totalGiven / u.count }))
+        .sort((a, b) => b.avg - a.avg); // Dal più alto al più basso
+
+    if (results.length === 0) return [];
+
+    return [
+        {
+            title: "L'Entusiasta 😍",
+            desc: "Ha dato i voti più alti in media.",
+            winner: results[0] // Il primo (avg più alta)
+        },
+        {
+            title: "Il Critico 😤",
+            desc: "Ha dato i voti più bassi. Incontentabile.",
+            winner: results[results.length - 1] // L'ultimo (avg più bassa)
+        }
+        // Si potrebbero aggiungere "Il Mainstream" (voti più vicini alla media globale) ecc.
+    ];
 }

@@ -13,9 +13,11 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState('')
   const supabase = createClient()
 
+  // Helper per garantire l'autenticazione anonima
   const ensureAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) return user.id
+
     const { data, error } = await supabase.auth.signInAnonymously()
     if (error) throw error
     return data.user?.id
@@ -27,6 +29,7 @@ export default function Home() {
 
     try {
       const userId = await ensureAuth()
+      // Generiamo un codice numerico casuale (es. 4589)
       const code = Math.floor(1000 + Math.random() * 9000).toString()
 
       const { data, error } = await supabase
@@ -37,7 +40,7 @@ export default function Home() {
             status: 'setup',
             settings: { 
                 privacy: 'private', 
-                voting_scale: { max: 10 },
+                voting_scale: { max: 10 }, 
                 factors: [{ id: "general", name: "General Vote", weight: 1.0 }]
             } 
           }])
@@ -65,6 +68,7 @@ export default function Home() {
     setLoading(true)
     try {
         await ensureAuth()
+        
         const { data, error } = await supabase
             .from('lobbies')
             .select('code')
@@ -83,10 +87,13 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-950 text-white relative overflow-hidden">
+      
+      {/* Sfondo Decorativo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/10 via-gray-950 to-gray-950 z-0 pointer-events-none"></div>
 
       <div className="z-10 w-full max-w-md md:max-w-2xl text-center space-y-10 md:space-y-16">
         
+        {/* TITOLO */}
         <div className="space-y-4">
             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 whitespace-pre-line leading-tight">
             {t.home.title}
@@ -96,7 +103,10 @@ export default function Home() {
             </p>
         </div>
         
+        {/* AZIONI */}
         <div className="flex flex-col items-center gap-6 w-full px-4">
+            
+            {/* Bottone Crea */}
             <button
                 onClick={createLobby}
                 disabled={loading}
@@ -105,12 +115,14 @@ export default function Home() {
                 {loading ? t.home.cta_loading : t.home.cta_button}
             </button>
 
+            {/* Divisore */}
             <div className="flex items-center w-full gap-4 opacity-50">
                 <div className="h-px bg-gray-700 flex-1"></div>
                 <span className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">{t.home.or_divider}</span>
                 <div className="h-px bg-gray-700 flex-1"></div>
             </div>
 
+            {/* Form Entra */}
             <form onSubmit={joinLobby} className="w-full flex flex-col md:flex-row gap-3">
                 <input 
                     value={joinCode}

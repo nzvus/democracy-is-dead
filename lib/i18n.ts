@@ -62,6 +62,18 @@ export const dictionaries = {
         guest_desc: "L'Host sta configurando i candidati e le regole della votazione.",
         status_label: "STATUS",
         status_waiting: "In attesa dell'avvio...",
+        voting: {
+        title: "Cabina Elettorale",
+        subtitle: "Confronta i candidati e assegna i punteggi.",
+        desktop_guide: "Vista Matrice Attiva",
+        mobile_guide: "Tocca un candidato per votare",
+        submit_btn: "INVIA SCHEDA 🗳️",
+        submitted_msg: "Voti registrati. In attesa degli altri...",
+        saved: "Salvato",
+        incomplete: "Scheda incompleta",
+        drawer_title: "Vota Candidato",
+        factor_avg: "Media Attuale"
+    },
     },
     setup: {
         // Sezione Candidati
@@ -84,10 +96,18 @@ export const dictionaries = {
         factor_weight_ph: "Peso",
         min_factor_error: "Devi avere almeno un criterio di voto."
     },
-    results: {
-        winner_title: "IL VINCITORE È...",
-        analysis_title: "⚔️ Analisi Fattoriale",
-        ranking_title: "Classifica Completa"
+results: {
+        winner_title: "VINCITORE SCHULZE",
+        winner_subtitle: "Eletto matematicamente (Metodo Condorcet)",
+        avg_title: "Vincitore Popolare",
+        avg_subtitle: "Media voti classica",
+        awards_title: "Premi Sociali 🏆",
+        ranking_title: "Dettaglio Classifica",
+        col_cand: "Candidato",
+        col_win: "Vittorie 1vs1",
+        col_avg: "Media Punti",
+        paradox: "⚠️ PARADOSSO RILEVATO: La matematica (Schulze) e la media popolare non sono d'accordo!",
+        paradox_desc: "Il vincitore Schulze batte tutti negli scontri diretti, anche se ha una media inferiore."
     }
     
   },
@@ -145,6 +165,18 @@ export const dictionaries = {
         guest_desc: "The Host is configuring candidates and voting rules.",
         status_label: "STATUS",
         status_waiting: "Waiting for start...",
+        voting: {
+        title: "Voting Booth",
+        subtitle: "Compare candidates and assign scores.",
+        desktop_guide: "Matrix View Active",
+        mobile_guide: "Tap a candidate to vote",
+        submit_btn: "CAST BALLOT 🗳️",
+        submitted_msg: "Votes recorded. Waiting for others...",
+        saved: "Saved",
+        incomplete: "Incomplete ballot",
+        drawer_title: "Vote Candidate",
+        factor_avg: "Current Avg"
+    },
     },
     setup: {
         add_placeholder: "Candidate Name (e.g. Option A)",
@@ -165,10 +197,18 @@ export const dictionaries = {
         factor_weight_ph: "Weight",
         min_factor_error: "You must have at least one voting criteria."
     },
-    results: {
-        winner_title: "THE WINNER IS...",
-        analysis_title: "⚔️ Factorial Analysis",
-        ranking_title: "Full Ranking"
+results: {
+        winner_title: "SCHULZE WINNER",
+        winner_subtitle: "Mathematically elected (Condorcet Method)",
+        avg_title: "Popular Winner",
+        avg_subtitle: "Classic average score",
+        awards_title: "Social Awards 🏆",
+        ranking_title: "Ranking Details",
+        col_cand: "Candidate",
+        col_win: "1vs1 Wins",
+        col_avg: "Avg Score",
+        paradox: "⚠️ PARADOX DETECTED: Math (Schulze) and Popular Average disagree!",
+        paradox_desc: "The Schulze winner beats everyone in head-to-head battles, despite lower average."
     }
   }
 };
