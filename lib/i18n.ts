@@ -45,7 +45,12 @@ export const dictionaries = {
         chat_send: "Invia",
         chat_open: "Apri Chat",
         chat_empty: "Nessun messaggio. Rompi il ghiaccio!",
-        anon_user: "Agente"
+        anon_user: "Agente",
+        invite_title: "Invita Amici",
+        scan_qr: "Scansiona per entrare",
+        copy_link: "Copia Link",
+        link_copied: "Link copiato!",
+        share_btn: "Invita / QR"
     },
     results: {
         winner_title: "IL VINCITORE È...",
@@ -95,7 +100,12 @@ export const dictionaries = {
         chat_send: "Send",
         chat_open: "Open Chat",
         chat_empty: "No messages. Break the ice!",
-        anon_user: "Agent"
+        anon_user: "Agent",
+        invite_title: "Invite Friends",
+        scan_qr: "Scan to join",
+        copy_link: "Copy Link",
+        link_copied: "Link copied!",
+        share_btn: "Invite / QR"
     },
     results: {
         winner_title: "THE WINNER IS...",

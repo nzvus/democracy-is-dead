@@ -116,7 +116,6 @@ export default function Home() {
 
             <div className="flex items-center w-full gap-4">
                 <div className="h-px bg-gray-800 flex-1"></div>
-                <span className="text-gray-500 text-xs font-bold uppercase">OPPURE</span>
                 <div className="h-px bg-gray-800 flex-1"></div>
             </div>
 

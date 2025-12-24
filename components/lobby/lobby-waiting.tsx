@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
+import ShareModal from '@/components/lobby/share-modal' // <--- IMPORT
 
+// Definiamo i tipi per Typescript
 type Candidate = {
   id: string
   name: string
@@ -19,14 +21,16 @@ type Factor = {
 }
 
 export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: boolean }) {
-  const { t } = useLanguage() 
+  const { t } = useLanguage()
   const supabase = createClient()
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
-  const [votes, setVotes] = useState<Record<string, any>>({})
+  const [votes, setVotes] = useState<Record<string, any>>({}) 
   const [hasVoted, setHasVoted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showShare, setShowShare] = useState(false) // <--- STATO MODALE
 
+  // 1. Carica i Candidati
   useEffect(() => {
     const fetchData = async () => {
       const { data } = await supabase
@@ -39,6 +43,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
     fetchData()
   }, [lobby.id, supabase])
 
+  // 2. Gestione del cambiamento voto (Input slider)
   const handleVoteChange = (candidateId: string, factorId: string, value: number) => {
     setVotes(prev => ({
       ...prev,
@@ -49,6 +54,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
     }))
   }
 
+  // 3. Invio Voti al Database
   const submitVotes = async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -58,6 +64,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         return
     }
 
+    // Prepariamo l'array di voti da inviare
     const votesPayload = candidates.map(candidate => {
       const candidateVotes = votes[candidate.id] || {}
       
@@ -89,15 +96,26 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
     setLoading(false)
   }
 
- 
+  // --- RENDER ---
+  
   if (lobby.status === 'ended') return null
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-4 md:p-6 pb-64">
-      <header className="max-w-3xl mx-auto mb-8 text-center space-y-2">
+      <header className="max-w-3xl mx-auto mb-8 text-center space-y-2 relative">
         <div className="inline-block bg-indigo-900/30 px-4 py-1 rounded-full text-indigo-300 text-sm font-bold border border-indigo-500/30">
             LOBBY: {lobby.code}
         </div>
+        
+        {/* Bottone Share Piccolo (Posizionato in alto a destra rispetto al titolo) */}
+        <button 
+            onClick={() => setShowShare(true)}
+            className="absolute top-0 right-0 md:right-[-50px] p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-all text-xl"
+            title={t.lobby.share_btn}
+        >
+            📲
+        </button>
+
         <h1 className="text-3xl md:text-4xl font-bold">{t.lobby.waiting_title}</h1>
         <p className="text-gray-400 text-sm md:text-base whitespace-pre-line">
             {t.lobby.waiting_subtitle}
@@ -108,6 +126,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         {candidates.map((candidate) => (
           <div key={candidate.id} className="bg-gray-900 rounded-2xl p-5 md:p-6 border border-gray-800 shadow-xl">
             
+            {/* SEZIONE CANDIDATO */}
             <div className="flex items-start gap-4 mb-6">
                 <div className="w-16 h-16 shrink-0 bg-gray-800 rounded-full flex items-center justify-center text-2xl overflow-hidden border border-gray-700">
                     {candidate.image_url ? (
@@ -125,6 +144,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
                 </div>
             </div>
 
+            {/* SLIDER DEI FATTORI */}
             <div className="space-y-6 border-t border-gray-800 pt-6">
                 {(lobby.settings.factors || []).map((factor: Factor) => (
                     <div key={factor.id}>
@@ -156,6 +176,7 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
         ))}
       </div>
 
+      {/* FOOTER FISSO */}
       <div className="fixed bottom-0 left-0 w-full bg-gray-950/90 backdrop-blur-lg border-t border-gray-800 p-4 z-50">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-3">
             <button
@@ -180,6 +201,9 @@ export default function LobbyWaiting({ lobby, isHost }: { lobby: any, isHost: bo
             )}
         </div>
       </div>
+
+      {/* MODALE DI CONDIVISIONE */}
+      {showShare && <ShareModal code={lobby.code} onClose={() => setShowShare(false)} />}
     </div>
   )
 }

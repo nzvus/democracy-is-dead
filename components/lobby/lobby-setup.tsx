@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
+import ShareModal from '@/components/lobby/share-modal' // <--- IMPORT
 
 type Factor = { id: string; name: string; weight: number }
 type Candidate = { id: string; name: string; description: string; image_url: string | null }
@@ -14,17 +15,21 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
   
   const [activeTab, setActiveTab] = useState<'candidates' | 'settings'>('candidates')
   const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [showShare, setShowShare] = useState(false) // <--- STATO MODALE
   
+  // Stati per Candidato
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [uploading, setUploading] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
 
+  // Stati per Settings
   const [privacy, setPrivacy] = useState(lobby.settings.privacy || 'private')
   const [factors, setFactors] = useState<Factor[]>(lobby.settings.factors || [])
   const [newFactorName, setNewFactorName] = useState('')
   const [newFactorWeight, setNewFactorWeight] = useState(1)
 
+  // 1. Carica Candidati
   useEffect(() => {
     const fetchCandidates = async () => {
       const { data } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id)
@@ -33,6 +38,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
     fetchCandidates()
   }, [lobby.id, supabase])
 
+  // --- LOGICA IMMAGINI ---
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return
     setUploading(true)
@@ -58,6 +64,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
     }
   }
 
+  // --- LOGICA CANDIDATI ---
   const addCandidate = async () => {
     if (!newName.trim()) return
     const { data, error } = await supabase
@@ -79,6 +86,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
     }
   }
 
+  // --- LOGICA FATTORI E SETTINGS ---
   const addFactor = async () => {
     if (!newFactorName.trim()) return
     const newFactor = { 
@@ -88,6 +96,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
     }
     const updatedFactors = [...factors, newFactor]
     
+    // Aggiorniamo il DB
     await updateSettingsInDB(updatedFactors, privacy)
     
     setFactors(updatedFactors)
@@ -123,11 +132,19 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
     <div className="min-h-screen bg-gray-950 text-white p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         
+        {/* HEADER */}
         <header className="flex flex-col md:flex-row justify-between items-center border-b border-gray-800 pb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
               {t.lobby.setup_title}: {lobby.code}
             </h1>
+            {/* BOTTONE SHARE */}
+            <button 
+                onClick={() => setShowShare(true)}
+                className="mt-2 text-sm text-indigo-400 hover:text-indigo-300 font-bold underline decoration-dotted flex items-center gap-1"
+            >
+                📲 {t.lobby.share_btn}
+            </button>
           </div>
           <button
                 onClick={startElection}
@@ -137,6 +154,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
             </button>
         </header>
 
+        {/* TABS */}
         <div className="flex gap-4 border-b border-gray-800">
             <button 
                 onClick={() => setActiveTab('candidates')}
@@ -152,11 +170,14 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
             </button>
         </div>
 
+        {/* CONTENUTO TAB: CANDIDATI */}
         {activeTab === 'candidates' && (
             <div className="grid md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Form Aggiunta */}
                 <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-4 h-fit">
                     <h2 className="font-bold text-lg">{t.lobby.add_candidate}</h2>
                     
+                    {/* Upload Immagine */}
                     <div className="flex items-center gap-4">
                         <div className="w-20 h-20 bg-gray-800 rounded-lg overflow-hidden border border-gray-700 flex items-center justify-center">
                             {imageUrl ? (
@@ -188,6 +209,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
                     </button>
                 </div>
 
+                {/* Lista */}
                 <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
                     {candidates.map((c) => (
                         <div key={c.id} className="flex gap-4 p-4 bg-gray-800 rounded-xl border border-gray-700 items-center">
@@ -213,8 +235,10 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
             </div>
         )}
 
+        {/* CONTENUTO TAB: IMPOSTAZIONI */}
         {activeTab === 'settings' && (
             <div className="grid md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Gestione Fattori */}
                 <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-6">
                     <div>
                         <h2 className="font-bold text-lg mb-4">{t.lobby.factors_title}</h2>
@@ -251,6 +275,7 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
                     </div>
                 </div>
 
+                {/* Gestione Privacy e Altro */}
                 <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-6 h-fit">
                     <h2 className="font-bold text-lg">{t.lobby.privacy_label}</h2>
                     <div className="space-y-3">
@@ -273,6 +298,8 @@ export default function LobbySetup({ lobby, userId }: { lobby: any, userId: stri
             </div>
         )}
 
+        {/* MODALE DI CONDIVISIONE */}
+        {showShare && <ShareModal code={lobby.code} onClose={() => setShowShare(false)} />}
       </div>
     </div>
   )
