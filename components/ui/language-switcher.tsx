@@ -1,45 +1,22 @@
 'use client'
 
-import { useLanguage } from '@/components/providers/language-provider';
+import { useLanguage } from '@/components/providers/language-provider'
 
 export default function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage } = useLanguage()
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'it' ? 'en' : 'it')
+  }
 
   return (
-    <div className="absolute top-6 right-6 z-50 flex gap-3 bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl">
-      
-      <button
-        onClick={() => setLanguage('it')}
-        className={`relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 border-2 ${
-          language === 'it' 
-            ? 'border-indigo-500 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.5)] grayscale-0' 
-            : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 grayscale'
-        }`}
-        title="Italiano"
-      >
-        <img 
-            src="https://flagcdn.com/w80/it.png" 
-            alt="Italiano" 
-            className="w-full h-full object-cover"
-        />
-      </button>
-
-      <button
-        onClick={() => setLanguage('en')}
-        className={`relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 border-2 ${
-          language === 'en' 
-            ? 'border-indigo-500 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.5)] grayscale-0' 
-            : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 grayscale'
-        }`}
-        title="English"
-      >
-        <img 
-            src="https://flagcdn.com/w80/gb.png" 
-            alt="English" 
-            className="w-full h-full object-cover"
-        />
-      </button>
-
-    </div>
-  );
+    <button 
+      onClick={toggleLanguage}
+      className="fixed top-4 right-4 z-50 bg-gray-900/80 backdrop-blur border border-gray-700 rounded-full px-3 py-1.5 text-sm font-bold text-white hover:bg-gray-800 transition-all shadow-lg flex items-center gap-2"
+      title={language === 'it' ? "Switch to English" : "Passa all'Italiano"}
+    >
+      <span>{language === 'it' ? '🇮🇹' : '🇬🇧'}</span>
+      <span className="opacity-70 text-xs font-mono uppercase">{language}</span>
+    </button>
+  )
 }
