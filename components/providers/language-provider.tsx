@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { dictionaries, Language } from '@/lib/i18n' // Assicurati di importare 'dictionaries'
+import { dictionaries, Language } from '@/lib/i18n'
 
 // Deriviamo il tipo del dizionario basandoci sulla struttura italiana
 type Dictionary = typeof dictionaries.it
@@ -31,10 +31,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('did_lang', lang)
   }
 
-  // Fallback sicuro se dictionaries[language] dovesse mancare (non dovrebbe succedere)
+  // Fallback sicuro se dictionaries[language] dovesse mancare
   const t = dictionaries[language] || dictionaries.it
 
-  // Evita mismatch di idratazione rendering solo quando montato
   if (!mounted) {
     return <>{children}</> 
   }
