@@ -1,15 +1,16 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-let client: ReturnType<typeof createBrowserClient> | undefined
-
 export function createClient() {
-  if (client) return client
+  // Controlla che le variabili esistano
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Mancano le variabili d'ambiente di Supabase!")
+  }
 
-  if (!url || !key) throw new Error("Missing Supabase env vars")
-
-  client = createBrowserClient(url, key)
-  return client
+  return createBrowserClient(
+    supabaseUrl,
+    supabaseKey
+  )
 }
