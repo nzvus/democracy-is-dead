@@ -1,136 +1,85 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { useLanguage } from '@/components/providers/language-provider'
+import ShareModal from '@/components/lobby/share-modal'
+import SettingsForm from './settings-form'
+import CandidatesManager from './candidates-manager'
 
-// Import dei componenti creati
-import LobbySetup from '@/components/lobby/lobby-setup'
-import LobbyWaiting from '@/components/lobby/lobby-waiting'
-import LobbyResults from '@/components/lobby/lobby-results'
-import LobbyChat from '@/components/lobby/lobby-chat'
-
-export default function LobbyPage() {
-  const params = useParams()
-  const router = useRouter()
+export default function SetupWrapper({ lobby, userId }: { lobby: any, userId: string }) {
+  const { t } = useLanguage()
   const supabase = createClient()
-  
-  const [lobby, setLobby] = useState<any>(null)
-  const [isHost, setIsHost] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
+  const [tab, setTab] = useState<'candidates' | 'settings'>('candidates')
+  const [showShare, setShowShare] = useState(false)
 
-  useEffect(() => {
-    const initLobby = async () => {
-      try {
-        // 1. AUTENTICAZIONE AUTOMATICA (Fix Link Diretto)
-        // Se arrivo da un link, potrei non avere una sessione. La creiamo al volo.
-        const { data: { user } } = await supabase.auth.getUser()
-        let currentUserId = user?.id
-
-        if (!currentUserId) {
-            const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
-            if (anonError) throw anonError
-            currentUserId = anonData.user?.id
-        }
-        
-        // Salviamo l'ID (servirà per la Chat e per capire se sono Host)
-        setUserId(currentUserId!)
-
-        // 2. SCARICA DATI LOBBY
-        const { data: lobbyData, error } = await supabase
-          .from('lobbies')
-          .select('*')
-          .eq('code', params.code)
-          .single()
-
-        if (error || !lobbyData) {
-          toast.error("Lobby non trovata o scaduta!")
-          router.push('/') // Torna alla home
-          return
-        }
-
-        setLobby(lobbyData)
-        
-        // 3. SEI L'ADMIN?
-        if (currentUserId && lobbyData.host_id === currentUserId) {
-          setIsHost(true)
-        }
-        
-        setLoading(false)
-
-      } catch (err: any) {
-        console.error("Errore init:", err)
-        toast.error("Errore di connessione")
-        router.push('/')
-      }
-    }
-
-    initLobby()
-
-    // 4. REALTIME: Ascolta i cambiamenti di stato (es. Setup -> Voting)
-    const channel = supabase
-      .channel('lobby_status_updates')
-      .on('postgres_changes', 
-          { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `code=eq.${params.code}` }, 
-          (payload) => {
-             // Aggiorna lo stato locale con i nuovi dati dal server
-             setLobby(payload.new)
-          }
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [params.code, router, supabase])
-
-  // --- RENDER ---
-
-  if (loading) {
-    return (
-        <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-10">
-            <div className="animate-spin text-4xl mb-4">⏳</div>
-            <p className="animate-pulse">Connessione al protocollo sicuro...</p>
-        </div>
-    )
+  // Update Generico per i settings
+  const updateSettings = async (newSettings: any) => {
+    const { error } = await supabase.from('lobbies').update({ settings: newSettings }).eq('id', lobby.id)
+    if (error) toast.error("Errore salvataggio")
   }
 
-  // DEFINIAMO IL CONTENUTO PRINCIPALE IN BASE ALLO STATO
-  let content = null;
+  const startElection = async () => {
+    // Controllo minimo candidati
+    const { count } = await supabase.from('candidates').select('*', { count: 'exact', head: true }).eq('lobby_id', lobby.id)
+    if ((count || 0) < 2) return toast.error("Servono almeno 2 candidati!")
 
-  if (lobby.status === 'setup') {
-    // FASE 1: CONFIGURAZIONE
-    if (isHost) {
-        // L'Admin vede il pannello di controllo
-        content = <LobbySetup lobby={lobby} userId={userId!} />;
-    } else {
-        // L'Ospite vede una sala d'attesa
-        content = (
-            <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4 text-center">
-                 <div className="animate-bounce text-6xl mb-6">🚧</div>
-                 <h1 className="text-3xl font-bold mb-4">Lavori in Corso</h1>
-                 <p className="text-gray-400 max-w-md mx-auto">
-                    L'Host sta configurando i candidati e i criteri di voto.
-                    Mettiti comodo, la pagina si aggiornerà automaticamente appena si parte.
-                 </p>
-            </div>
-        );
-    }
-  } else if (lobby.status === 'ended') {
-    // FASE 3: RISULTATI
-    content = <LobbyResults lobby={lobby} />;
-  } else {
-    // FASE 2: VOTO (Status 'voting' o fallback)
-    content = <LobbyWaiting lobby={lobby} isHost={isHost} />;
+    await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobby.id)
   }
 
-  // RITORNIAMO IL LAYOUT COMPLETO (Contenuto + Chat sovrapposta)
   return (
-    <>
-      {content}
-      
-      {/* La chat è sempre presente, ma solo se abbiamo un utente valido */}
-      {userId && <LobbyChat lobbyId={lobby.id} userId={userId} />}
-    </>
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center p-4">
+        
+        {/* HEADER CENTRATO & COMPATTO */}
+        <header className="w-full max-w-2xl text-center space-y-4 mb-8 pt-8">
+            <div className="inline-flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 rounded-full px-4 py-1 text-xs font-mono text-gray-400">
+                <span>CODE: {lobby.code}</span>
+                <button onClick={() => setShowShare(true)} className="text-indigo-400 hover:underline">SHARE</button>
+            </div>
+            <h1 className="text-3xl font-bold">{t.lobby.setup_title}</h1>
+        </header>
+
+        {/* CONTENITORE PRINCIPALE */}
+        <div className="w-full max-w-2xl bg-black/20 backdrop-blur-sm rounded-3xl border border-gray-800/50 p-1 shadow-2xl overflow-hidden">
+            
+            {/* TAB SWITCHER STILE iOS */}
+            <div className="grid grid-cols-2 p-1 bg-gray-900/80 rounded-t-3xl border-b border-gray-800">
+                <button 
+                    onClick={() => setTab('candidates')}
+                    className={`py-3 text-sm font-bold rounded-2xl transition-all ${tab === 'candidates' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    1. Candidati
+                </button>
+                <button 
+                    onClick={() => setTab('settings')}
+                    className={`py-3 text-sm font-bold rounded-2xl transition-all ${tab === 'settings' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    2. Regole
+                </button>
+            </div>
+
+            {/* AREA CONTENUTO */}
+            <div className="p-4 md:p-8 min-h-[400px]">
+                {tab === 'candidates' ? (
+                    <CandidatesManager lobby={lobby} />
+                ) : (
+                    <SettingsForm lobby={lobby} updateSettings={updateSettings} />
+                )}
+            </div>
+
+            {/* FOOTER AZIONE */}
+            <div className="p-4 bg-gray-900/50 border-t border-gray-800">
+                <button 
+                    onClick={startElection}
+                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/20 transition-all active:scale-[0.98]"
+                >
+                    {t.lobby.start_btn}
+                </button>
+            </div>
+        </div>
+
+        {showShare && <ShareModal code={lobby.code} onClose={() => setShowShare(false)} />}
+    </div>
   )
 }
