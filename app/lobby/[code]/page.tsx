@@ -59,13 +59,14 @@ export default function LobbyPage() {
           setIsHost(true)
         }
 
-        // 4. Controllo Onboarding (Partecipante esiste?)
+// 4. Controllo Onboarding (Partecipante esiste?)
+        // PRIMA ERA: .single() -> Questo causava errore 406 se non esistevi
         const { data: participant } = await supabase
             .from('lobby_participants')
             .select('id')
             .eq('lobby_id', lobbyData.id)
             .eq('user_id', currentUserId)
-            .single()
+            .maybeSingle() // <--- USA QUESTO (maybeSingle invece di single)
         
         if (participant) {
             setHasJoined(true)
