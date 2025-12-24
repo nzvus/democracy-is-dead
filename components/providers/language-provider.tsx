@@ -1,11 +1,10 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { dictionary } from '@/lib/i18n'
+import { dictionaries, Language } from '@/lib/i18n' // Assicurati di importare 'dictionaries'
 
-// Tipi derivati dal dizionario
-export type Language = 'it' | 'en'
-type Dictionary = typeof dictionary.it
+// Deriviamo il tipo del dizionario basandoci sulla struttura italiana
+type Dictionary = typeof dictionaries.it
 
 interface LanguageContextType {
   language: Language
@@ -16,11 +15,11 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Default: Italiano
   const [language, setLanguageState] = useState<Language>('it')
-  
-  // Carica preferenza salvata all'avvio
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    setMounted(true)
     const saved = localStorage.getItem('did_lang') as Language
     if (saved && (saved === 'it' || saved === 'en')) {
       setLanguageState(saved)
@@ -32,7 +31,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('did_lang', lang)
   }
 
-  const t = dictionary[language]
+  // Fallback sicuro se dictionaries[language] dovesse mancare (non dovrebbe succedere)
+  const t = dictionaries[language] || dictionaries.it
+
+  // Evita mismatch di idratazione rendering solo quando montato
+  if (!mounted) {
+    return <>{children}</> 
+  }
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
@@ -41,7 +46,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Hook personalizzato per usare la lingua nei componenti
 export function useLanguage() {
   const context = useContext(LanguageContext)
   if (context === undefined) {

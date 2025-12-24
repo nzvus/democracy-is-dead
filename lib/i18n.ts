@@ -1,4 +1,6 @@
-export const dictionary = {
+export type Language = 'it' | 'en';
+
+export const dictionaries = {
   it: {
     home: {
       title: "Democracy is Dead",
