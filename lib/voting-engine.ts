@@ -22,13 +22,14 @@ export function calculateMultiSystemResults(
     
     // Raccogliamo tutti i punteggi normalizzati per questo candidato
     let allNormalizedScores: number[] = []
-    let factorScores: Record<string, number> = {} // Per il radar chart
+    let factorScores: Record<string, number> = {} 
 
     factors.forEach(f => {
         const fVotes = cVotes.map(v => v.scores[f.id] || 0)
+        
         // Gestione static values (se presenti)
         const staticVal = c.static_values?.[f.id]
-        if (staticVal !== undefined) fVotes.push(staticVal) // Aggiungiamo valore statico come se fosse un voto "della casa" o lo trattiamo a parte. Qui semplifico.
+        if (staticVal !== undefined) fVotes.push(staticVal) 
 
         // Normalizzazione (se LowerBetter invertiamo)
         const fScoresNorm = fVotes.map(val => f.trend === 'lower_better' ? maxScale - val : val)
@@ -44,8 +45,8 @@ export function calculateMultiSystemResults(
     return {
         ...c,
         allScores: allNormalizedScores,
-        factorScores, // Serve per il Radar
-        finalScore: 0, // Placeholder
+        debugDetails: factorScores, // <--- FIX: Rinominiamo/Aliasiamo per compatibilità con i grafici
+        finalScore: 0, 
     }
   })
 
@@ -62,24 +63,19 @@ export function calculateMultiSystemResults(
   })).sort((a, b) => b.finalScore - a.finalScore)
 
   // --- CALCOLO SISTEMA 3: BORDA COUNT ---
-  // Per ogni fattore, facciamo una classifica parziale e diamo punti.
-  // Semplificazione: Facciamo Borda sui voti grezzi totali per utente.
-  // Punteggio Borda = Somma (N - Rank) dove N è numero candidati.
-  
-  // Mappa per accumulare punti Borda
   const bordaPoints: Record<string, number> = {}
   candidates.forEach(c => bordaPoints[c.id] = 0)
 
-  // Simuliamo: Per ogni "scheda" (partecipante), chi è il 1°, 2°, 3°?
-  // (Qui servirebbe la lista partecipanti, assumiamo che 'votes' contenga tutto)
+  // Simuliamo le schede elettorali per ogni votante
   const voterIds = Array.from(new Set(votes.map(v => v.voter_id)))
   
   voterIds.forEach(vid => {
       // Classifica personale dell'utente
       const userRankings = candidates.map(c => {
           const v = votes.find(vote => vote.voter_id === vid && vote.candidate_id === c.id)
-          // Calcola score totale utente per questo candidato
           if (!v) return { id: c.id, score: 0 }
+          
+          // Calcola score grezzo pesato per l'ordinamento personale
           let s = 0;
           factors.forEach(f => {
               let val = v.scores[f.id] || 0
@@ -87,9 +83,9 @@ export function calculateMultiSystemResults(
               s += val * f.weight
           })
           return { id: c.id, score: s }
-      }).sort((a,b) => b.score - a.score) // Ordina dal migliore al peggiore
+      }).sort((a,b) => b.score - a.score) 
 
-      // Assegna punti: 1° = N punti, Ultimo = 1 punto
+      // Assegna punti Borda: 1° = N punti, Ultimo = 1 punto
       userRankings.forEach((item, index) => {
           const points = candidates.length - index
           bordaPoints[item.id] += points

@@ -11,25 +11,22 @@ interface ResultsChartProps {
   factors: Factor[]
 }
 
-// Colori brillanti per i candidati (ciclici)
 const COLORS = ['#eab308', '#3b82f6', '#ec4899', '#22c55e', '#f97316', '#a855f7']
 
 export default function ResultsChart({ results, factors }: ResultsChartProps) {
   
-  // Trasformiamo i dati per il grafico Radar
-  // Formato necessario: [ { factor: "Gusto", Pizza: 8, Sushi: 9 }, { factor: "Prezzo", Pizza: 10, Sushi: 4 } ]
+  if (!results || results.length === 0) return <div className="text-center p-10 text-gray-500">Dati insufficienti per il grafico</div>
+
   const data = factors.map(f => {
       const point: any = { factor: f.name }
       results.forEach(r => {
-          // Usiamo il valore normalizzato (0-10) che l'engine ha già calcolato in 'debugDetails'
-          // Se non c'è, usiamo 0
-          point[r.name] = r.debugDetails[f.name] || 0
+          // FIX SICUREZZA: Controlla se debugDetails esiste prima di leggere
+          const details = r.debugDetails || {} 
+          point[r.name] = details[f.name] || 0
       })
       return point
   })
 
-  // Prendiamo solo i primi 3-4 candidati per non fare un pasticcio grafico, 
-  // oppure tutti se sono pochi.
   const activeCandidates = results.slice(0, 5)
 
   return (
@@ -51,7 +48,7 @@ export default function ResultsChart({ results, factors }: ResultsChartProps) {
                             stroke={COLORS[i % COLORS.length]}
                             strokeWidth={3}
                             fill={COLORS[i % COLORS.length]}
-                            fillOpacity={0.3} // Trasparenza per vedere le sovrapposizioni
+                            fillOpacity={0.3}
                         />
                     ))}
                     
