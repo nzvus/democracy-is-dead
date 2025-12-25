@@ -7,15 +7,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Factor, Candidate, Participant } from '@/types'
 import ShareLobby from '@/components/lobby/share-lobby'
-
-// Helper colori barre
-const getScoreColor = (score: number, max: number, isLowerBetter: boolean) => {
-  let normalized = score / max
-  if (isLowerBetter) normalized = 1 - normalized
-  if (normalized < 0.3) return 'bg-red-500'
-  if (normalized < 0.7) return 'bg-yellow-500'
-  return 'bg-green-500'
-}
+import VotingFactorSection from './voting-factor-section'
 
 export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, userId: string, isHost: boolean }) {
   const { t } = useLanguage()
@@ -29,10 +21,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
 
   // UI State
   const [activeFactorId, setActiveFactorId] = useState<string | null>(null)
-  const [infoOpen, setInfoOpen] = useState<string | null>(null)
-  
-  // Modal Candidato
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
+  // NOTA: Abbiamo rimosso 'selectedCandidate' e il modale info, ora usiamo il tooltip.
 
   const factors: Factor[] = lobby.settings.factors || []
   const maxScale = lobby.settings.voting_scale?.max || 10
@@ -72,7 +61,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
         .subscribe()
         
     return () => { supabase.removeChannel(channel) }
-  }, [lobby.id, userId])
+  }, [lobby.id, userId, factors])
 
   const handleVote = (candId: string, factId: string, val: number) => {
     const safeVal = Math.min(Math.max(val, 0), maxScale)
@@ -80,7 +69,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
     setHasSubmitted(false) 
   }
 
-  // Host aggiorna valore statico
   const handleStaticUpdate = async (candId: string, factId: string, val: number) => {
       setCandidates(prev => prev.map(c => {
           if (c.id !== candId) return c;
@@ -146,142 +134,24 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
             </div>
         </div>
 
-        {/* LISTA FATTORI */}
+        {/* LISTA FATTORI DI VOTO */}
         <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} space-y-6`}>
-            {factors.map((factor) => {
-                const isActive = activeFactorId === factor.id
-                const isLowerBetter = factor.trend === 'lower_better'
-                const isStatic = factor.type === 'static'
-                const borderColor = isActive ? (isLowerBetter ? 'border-amber-500/50' : `border-${UI.COLORS.PRIMARY}-500/50`) : 'border-gray-800'
-                const bgStyle = isActive ? (isLowerBetter ? 'bg-amber-950/10' : 'bg-indigo-950/10') : 'bg-gray-900/40'
-
-                return (
-                    <div key={factor.id} className={`border ${UI.LAYOUT.ROUNDED_LG} overflow-hidden transition-all duration-300 ${borderColor} ${bgStyle}`}>
-                        {/* HEADER FATTORE */}
-                        <div className="p-5">
-                            <button onClick={() => setActiveFactorId(isActive ? null : factor.id)} className="w-full flex items-center justify-between outline-none">
-                                <div className="flex items-center gap-4 text-left">
-                                    <div className="w-12 h-12 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden shrink-0">
-                                        {factor.image_url ? <img src={factor.image_url} className="w-full h-full object-cover" /> : <span className="text-xl">📊</span>}
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-xl font-black">{factor.name}</span>
-                                            {isLowerBetter ? <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_LOW}`}>↘ LOW</span> : <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_HIGH}`}>↗ HIGH</span>}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 font-mono mt-1">
-                                            <span>x{factor.weight}</span>
-                                            {isStatic && <span className="text-amber-500"> • {t.setup.factor_type_static}</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className={`text-xl transition-transform ${isActive ? 'rotate-180' : ''}`}>▼</div>
-                            </button>
-                            
-                            {/* INFO BOX */}
-                            {isActive && (
-                                <div className="mt-3 pl-[4rem]">
-                                    <button onClick={() => setInfoOpen(infoOpen === factor.id ? null : factor.id)} className="text-[10px] uppercase font-bold tracking-widest text-gray-500 hover:text-white flex items-center gap-1 transition-colors">ℹ️ {t.lobby.voting.trend_explanation}</button>
-                                    {infoOpen === factor.id && (
-                                        <div className="mt-2 p-3 bg-black/40 rounded-xl text-xs text-gray-300 border border-white/5 animate-in fade-in slide-in-from-top-1">
-                                            <p className="mb-1">{isLowerBetter ? t.lobby.voting.trend_info_low : t.lobby.voting.trend_info_high}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* BODY VOTAZIONE */}
-                        {isActive && (
-                            <div className="px-5 pb-8 space-y-8 border-t border-gray-800/50 pt-6 animate-in slide-in-from-top-2">
-                                {candidates.map((candidate) => {
-                                    const score = votes[candidate.id]?.[factor.id] || 0
-                                    const barColor = getScoreColor(score, maxScale, isLowerBetter)
-                                    const staticVal = candidate.static_values?.[factor.id] ?? 0
-
-                                    return (
-                                        <div key={candidate.id} className="group">
-                                            <div className="flex justify-between items-end mb-4">
-                                                {/* CANDIDATE INFO & CLICK */}
-                                                <div 
-                                                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                                                    onClick={() => setSelectedCandidate(candidate)}
-                                                    title={t.lobby.voting.click_details}
-                                                >
-                                                    <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 relative group-hover:ring-2 ring-indigo-500">
-                                                        {candidate.image_url ? <img src={candidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full">👤</span>}
-                                                        <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-[8px] uppercase font-bold text-white backdrop-blur-[1px]">{t.lobby.voting.info_badge}</div>
-                                                    </div>
-                                                    <span className="font-bold text-lg leading-none border-b border-transparent group-hover:border-gray-500 transition-colors">{candidate.name}</span>
-                                                </div>
-                                                
-                                                {!isStatic && (
-                                                    <div className={`w-12 h-10 flex items-center justify-center rounded-lg text-lg font-bold font-mono transition-colors text-white ${barColor}`}>
-                                                        {score}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* INPUTS */}
-                                            {isStatic ? (
-                                                <div className="bg-black/20 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
-                                                    <span className="text-xs text-gray-500 font-bold uppercase">{t.lobby.voting.static_value_label}</span>
-                                                    {isHost ? (
-                                                        <input 
-                                                            type="number" 
-                                                            value={staticVal}
-                                                            onChange={(e) => handleStaticUpdate(candidate.id, factor.id, Number(e.target.value))}
-                                                            className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-right font-mono font-bold focus:border-indigo-500 outline-none transition-all"
-                                                        />
-                                                    ) : (
-                                                        <span className="font-mono font-bold text-lg">{staticVal}</span>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div className="relative">
-                                                    <input 
-                                                        type="range" min="0" max={maxScale} step={step} value={score}
-                                                        onChange={(e) => handleVote(candidate.id, factor.id, Number(e.target.value))}
-                                                        className={`w-full h-10 bg-gray-800 rounded-xl appearance-none cursor-pointer touch-none shadow-inner accent-${isLowerBetter ? 'amber' : 'indigo'}-500`}
-                                                    />
-                                                    <div className="flex justify-between px-1 mt-1 text-[9px] text-gray-600 font-bold uppercase tracking-widest">
-                                                        <span>0</span><span>{maxScale}</span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )
-            })}
+            {factors.map((factor) => (
+                <VotingFactorSection 
+                    key={factor.id}
+                    factor={factor}
+                    isActive={activeFactorId === factor.id}
+                    candidates={candidates}
+                    votes={votes}
+                    maxScale={maxScale}
+                    step={step}
+                    isHost={isHost}
+                    onToggle={() => setActiveFactorId(activeFactorId === factor.id ? null : factor.id)}
+                    onVote={(candId, val) => handleVote(candId, factor.id, val)}
+                    onStaticUpdate={(candId, val) => handleStaticUpdate(candId, factor.id, val)}
+                />
+            ))}
         </div>
-
-        {/* MODAL DETTAGLI CANDIDATO */}
-        {selectedCandidate && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedCandidate(null)}>
-                <div className={`w-full max-w-sm ${UI.COLORS.BG_CARD} p-6 ${UI.LAYOUT.ROUNDED_LG} relative shadow-2xl space-y-4`} onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setSelectedCandidate(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center transition-colors">×</button>
-                    
-                    <div className="w-24 h-24 rounded-2xl bg-gray-800 mx-auto overflow-hidden border-2 border-gray-700 shadow-lg">
-                        {selectedCandidate.image_url ? <img src={selectedCandidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-4xl">👤</span>}
-                    </div>
-                    
-                    <div className="text-center">
-                        <h2 className="text-2xl font-black">{selectedCandidate.name}</h2>
-                        <div className={`h-1 w-10 bg-${UI.COLORS.PRIMARY}-500 mx-auto mt-2 rounded-full`}></div>
-                    </div>
-
-                    <div className="bg-black/20 p-4 rounded-xl border border-gray-800/50 max-h-60 overflow-y-auto custom-scrollbar">
-                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-                            {selectedCandidate.description || <span className="italic text-gray-600">{t.lobby.voting.no_description}</span>}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        )}
 
         {/* FOOTER ACTIONS */}
         <div className={`fixed bottom-0 left-0 w-full p-6 bg-gray-950/95 backdrop-blur-xl border-t border-gray-800 z-50 flex flex-col gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]`}>

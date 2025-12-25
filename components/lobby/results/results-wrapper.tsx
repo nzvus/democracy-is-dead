@@ -9,7 +9,6 @@ import { Factor, Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import { toast } from 'sonner'
 
-// Componenti
 import RankingTable from './ranking-table'
 import ResultsMatrix from './results-matrix'
 import ResultsChart from './results-chart'
@@ -85,6 +84,8 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   if (loading || !allResults) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white"><div className="animate-spin text-4xl">⏳</div></div>
 
   const currentResults = allResults[activeSystem]
+  // Descrizione dinamica del grafico corrente
+  const currentChartDesc = activeChart === 'radar' ? t.results.charts.radar_desc : t.results.charts.compare_desc
 
   return (
     <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-6 flex flex-col items-center overflow-x-hidden`}>
@@ -108,12 +109,10 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                 ))}
             </div>
 
-            {/* INFO BOX SISTEMA CORRENTE */}
-            <div className="w-full max-w-lg bg-indigo-950/30 border border-indigo-500/20 p-4 rounded-xl text-center animate-in fade-in slide-in-from-top-2 duration-300">
+            {/* DIDASCALIA SISTEMA */}
+            <div className="w-full max-w-lg bg-indigo-950/30 border border-indigo-500/20 p-3 rounded-xl text-center">
                 <p className="text-indigo-200 text-xs font-medium leading-relaxed">
-                    <span className="font-bold text-white block mb-1 uppercase tracking-widest text-[10px]">
-                        {t.results.systems[activeSystem].title}
-                    </span>
+                    <strong className="text-white uppercase tracking-wider mr-2">{t.results.systems[activeSystem].title}:</strong>
                     {t.results.systems[activeSystem].desc}
                 </p>
             </div>
@@ -136,15 +135,14 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                  </button>
             </div>
 
-            <div className="p-2 md:p-8 min-h-[450px] flex items-center justify-center relative w-full">
-                {/* INFO BUTTON POSIZIONATO */}
-                <div className="absolute top-2 right-2 z-20">
-                    <InfoButton 
-                        title={activeChart === 'radar' ? t.results.charts.radar : t.results.charts.comparison}
-                        desc={activeChart === 'radar' ? t.results.charts.radar_desc : t.results.charts.compare_desc}
-                    />
-                </div>
-                
+            {/* DIDASCALIA GRAFICO (Sopra al contenuto, integrata) */}
+            <div className="bg-gray-900/30 py-2 px-4 text-center border-b border-gray-800/50">
+                <p className="text-[10px] md:text-xs text-gray-500 italic">
+                    {currentChartDesc}
+                </p>
+            </div>
+
+            <div className="p-2 md:p-8 min-h-[450px] flex items-center justify-center w-full">
                 <div className="w-full h-full">
                     {activeChart === 'radar' ? (
                         <ResultsChart results={currentResults} factors={factors} />
@@ -155,7 +153,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </section>
 
-        {/* 4. CLASSIFICA (Full Bleed su Mobile) */}
+        {/* 4. CLASSIFICA */}
         <section className="w-full space-y-4">
             <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.ranking_title}</h3>
@@ -166,7 +164,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </section>
 
-        {/* 5. MATRICE (Full Bleed su Mobile) */}
+        {/* 5. MATRICE */}
         <section className="w-full space-y-4">
              <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.matrix_title}</h3>
