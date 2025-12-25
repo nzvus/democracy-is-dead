@@ -9,7 +9,6 @@ import { Factor, Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import { toast } from 'sonner'
 
-// Componenti
 import RankingTable from './ranking-table'
 import ResultsMatrix from './results-matrix'
 import ResultsChart from './results-chart'
@@ -31,10 +30,8 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   const [allResults, setAllResults] = useState<Record<VotingSystem, Candidate[]> | null>(null)
   const [activeSystem, setActiveSystem] = useState<VotingSystem>('weighted')
   const [activeChart, setActiveChart] = useState<'radar' | 'compare'>('radar')
-  
   const [loading, setLoading] = useState(true)
   const [reopening, setReopening] = useState(false)
-
   const [rawCandidates, setRawCandidates] = useState<any[]>([])
   const [rawVotes, setRawVotes] = useState<any[]>([])
   const [participants, setParticipants] = useState<any[]>([])
@@ -50,7 +47,6 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             supabase.from('votes').select('*').eq('lobby_id', lobby.id),
             supabase.from('lobby_participants').select('*').eq('lobby_id', lobby.id)
         ])
-
         const candidates = candsRes.data || []
         const votes = votesRes.data || []
         const parts = partsRes.data || []
@@ -60,12 +56,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
         setParticipants(parts)
 
         if (candidates.length > 0) {
-            const calculated = calculateMultiSystemResults(
-                candidates, 
-                votes, 
-                factors, 
-                lobby.settings.voting_scale?.max || 10
-            )
+            const calculated = calculateMultiSystemResults(candidates, votes, factors, lobby.settings.voting_scale?.max || 10)
             setAllResults(calculated)
             const badges = calculateBadges(parts, votes, calculated.weighted)
             setUserBadges(badges)
@@ -93,97 +84,95 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   const currentResults = allResults[activeSystem]
 
   return (
-    <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-8 flex flex-col items-center`}>
+    <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-6 flex flex-col items-center overflow-x-hidden`}>
       
-      {/* Container Centrale con larghezza massima fissa per allineamento */}
       <div className="w-full max-w-5xl space-y-12 flex flex-col">
         
-        {/* 1. HEADER & CONTROLLI SISTEMA */}
-        <header className="flex flex-col items-center gap-6 relative z-30">
+        {/* 1. HEADER & SISTEMI */}
+        <header className="flex flex-col items-center gap-4 relative z-30">
             <ShareLobby code={lobby.code} compact={true} />
             
-            <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full relative z-30">
+            {/* TABS */}
+            <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full no-scrollbar">
                 {(['weighted', 'borda', 'median'] as VotingSystem[]).map((sys) => (
                     <button
                         key={sys}
                         onClick={() => setActiveSystem(sys)}
-                        className={`px-6 py-2 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeSystem === sys ? 'bg-gray-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeSystem === sys ? 'bg-gray-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         {t.results.systems[sys].title}
-                        {activeSystem === sys && (
-                            <div onClick={(e) => e.stopPropagation()}>
-                                <InfoButton 
-                                    title={t.results.systems[sys].title}
-                                    desc={t.results.systems[sys].desc}
-                                    history={t.results.systems[sys].history}
-                                />
-                            </div>
-                        )}
                     </button>
                 ))}
             </div>
+
+            {/* INFO BOX SISTEMA (Risolve il problema del tooltip nascosto) */}
+            <div className="w-full max-w-lg bg-indigo-950/30 border border-indigo-500/20 p-4 rounded-xl text-center animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-indigo-200 text-xs font-medium leading-relaxed">
+                    <span className="font-bold text-white block mb-1 uppercase tracking-widest text-[10px]">
+                        {t.results.systems[activeSystem].title}
+                    </span>
+                    {t.results.systems[activeSystem].desc}
+                </p>
+            </div>
         </header>
 
-        {/* 2. PODIO */}
-        {/* mt-8 per evitare sovrapposizione con la barra sopra */}
-        <section className="mt-8 z-10">
+        {/* 2. PODIO (Margine aumentato per la corona) */}
+        <section className="mt-12 md:mt-16 z-10">
             <Podium top3={currentResults.slice(0, 3)} />
         </section>
 
-        {/* 3. DASHBOARD GRAFICI (Full Width) */}
-        <section className={`${UI.COLORS.BG_CARD} border border-gray-800 ${UI.LAYOUT.ROUNDED_LG} shadow-2xl w-full`}>
+        {/* 3. DASHBOARD GRAFICI */}
+        <section className={`${UI.COLORS.BG_CARD} border border-gray-800 ${UI.LAYOUT.ROUNDED_LG} shadow-2xl w-full overflow-hidden`}>
             <div className="flex border-b border-gray-800 bg-gray-900/50">
-                 <button onClick={() => setActiveChart('radar')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'radar' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+                 <button onClick={() => setActiveChart('radar')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'radar' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
                     {t.results.charts.radar}
                  </button>
-                 <button onClick={() => setActiveChart('compare')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'compare' ? 'border-indigo-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+                 <button onClick={() => setActiveChart('compare')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'compare' ? 'border-indigo-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
                     {t.results.charts.comparison}
                  </button>
             </div>
-
-            <div className="p-6 md:p-8 min-h-[450px] flex items-center justify-center relative w-full">
-                <div className="absolute top-4 right-4 z-20">
+            <div className="p-2 md:p-8 min-h-[400px] flex items-center justify-center relative w-full">
+                <div className="absolute top-2 right-2 z-20">
                     <InfoButton 
                         title={activeChart === 'radar' ? t.results.charts.radar : t.results.charts.comparison}
                         desc={activeChart === 'radar' ? t.results.charts.radar_desc : t.results.charts.compare_desc}
                     />
                 </div>
-
                 <div className="w-full h-full">
-                    {activeChart === 'radar' ? (
-                        <ResultsChart results={currentResults} factors={factors} />
-                    ) : (
-                        <ComparisonChart allResults={allResults} candidates={rawCandidates} />
-                    )}
+                    {activeChart === 'radar' ? <ResultsChart results={currentResults} factors={factors} /> : <ComparisonChart allResults={allResults} candidates={rawCandidates} />}
                 </div>
             </div>
         </section>
 
-        {/* 4. CLASSIFICA DETTAGLIATA (Full Width) */}
+        {/* 4. CLASSIFICA (Full Bleed su Mobile) */}
         <section className="w-full space-y-4">
             <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.ranking_title}</h3>
-                <InfoButton title={t.results.ranking_title} desc={t.results.math_legend_desc} />
             </div>
-            <RankingTable results={currentResults} factors={factors} />
+            {/* Wrapper per far uscire la tabella dai bordi su mobile */}
+            <div className="-mx-4 md:mx-0">
+                <RankingTable results={currentResults} factors={factors} />
+            </div>
         </section>
 
-        {/* 5. MATRICE TRASPARENZA (Full Width) */}
+        {/* 5. MATRICE (Full Bleed su Mobile) */}
         <section className="w-full space-y-4">
              <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.matrix_title}</h3>
                 <InfoButton title={t.results.matrix_title} desc={t.results.matrix_subtitle} />
             </div>
-            <ResultsMatrix 
-                candidates={rawCandidates}
-                participants={participants}
-                votes={rawVotes}
-                currentUserId={userId}
-                badges={userBadges}
-            />
+            <div className="-mx-4 md:mx-0">
+                <ResultsMatrix 
+                    candidates={rawCandidates}
+                    participants={participants}
+                    votes={rawVotes}
+                    currentUserId={userId}
+                    badges={userBadges}
+                />
+            </div>
         </section>
 
-        {/* 6. ADMIN & LEGEND */}
+        {/* 6. ADMIN */}
         {isHost && (
              <div className="w-full bg-indigo-950/20 p-6 rounded-2xl border border-indigo-900/30 flex flex-col items-center justify-center gap-4">
                 <button onClick={handleReopen} disabled={reopening} className="w-full md:w-auto px-8 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-all border border-gray-600 hover:border-white shadow-lg active:scale-95 flex justify-center items-center gap-2">
@@ -191,7 +180,6 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                 </button>
             </div>
         )}
-
       </div>
     </div>
   )
