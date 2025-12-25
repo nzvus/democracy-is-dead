@@ -11,7 +11,7 @@ import { UI } from '@/lib/constants'
 import LobbyOnboarding from '@/components/lobby/lobby-onboarding'
 import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
 import VotingWrapper from '@/components/lobby/voting/voting-wrapper'
-import LobbyResults from '@/components/lobby/lobby-results'
+import LobbyResults from '@/components/lobby/results/results-wrapper'
 import LobbyChat from '@/components/lobby/lobby-chat'
 
 export default function LobbyPage() {
