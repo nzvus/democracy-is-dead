@@ -3,20 +3,22 @@
 import { useLanguage } from '@/components/providers/language-provider'
 
 export default function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguage()
-
-  const toggleLanguage = () => {
-    setLanguage(language === 'it' ? 'en' : 'it')
-  }
+  const { lang, setLang } = useLanguage()
 
   return (
-    <button 
-      onClick={toggleLanguage}
-      className="fixed top-4 right-4 z-50 bg-gray-900/80 backdrop-blur border border-gray-700 rounded-full px-3 py-1.5 text-sm font-bold text-white hover:bg-gray-800 transition-all shadow-lg flex items-center gap-2"
-      title={language === 'it' ? "Switch to English" : "Passa all'Italiano"}
-    >
-      <span>{language === 'it' ? '🇮🇹' : '🇬🇧'}</span>
-      <span className="opacity-70 text-xs font-mono uppercase">{language}</span>
-    </button>
+    <div className="fixed top-4 right-4 z-50 flex gap-1 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10">
+      <button 
+        onClick={() => setLang('it')}
+        className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${lang === 'it' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+      >
+        IT
+      </button>
+      <button 
+        onClick={() => setLang('en')}
+        className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${lang === 'en' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+      >
+        EN
+      </button>
+    </div>
   )
 }

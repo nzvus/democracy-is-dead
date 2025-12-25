@@ -1,49 +1,55 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { dictionaries, Language } from '@/lib/i18n'
+import { dictionaries, Language, Dictionary } from '@/lib/i18n'
 
-type Dictionary = typeof dictionaries.it
-
-interface LanguageContextType {
-  language: Language
-  setLanguage: (lang: Language) => void
-  t: Dictionary
+// Definiamo il tipo del Context
+type LanguageContextType = {
+  t: Dictionary            // Il dizionario corrente (es. l'oggetto italiano)
+  lang: Language           // La lingua corrente stringa ('it' | 'en')
+  setLang: (lang: Language) => void // Funzione per cambiare lingua
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+// Creiamo il contesto
+const LanguageContext = createContext<LanguageContextType | null>(null)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('it')
+  // Stato predefinito: Italiano
+  const [lang, setLangState] = useState<Language>('it')
 
-  // Carica preferenza salvata solo lato client
+  // Funzione per cambiare lingua
+  const setLang = (newLang: Language) => {
+    setLangState(newLang)
+    // Opzionale: Salva nel localStorage per ricordare la scelta
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('app-lang', newLang)
+    }
+  }
+
+  // Al montaggio, controlla se c'era una lingua salvata
   useEffect(() => {
-    const saved = localStorage.getItem('did_lang') as Language
-    if (saved && (saved === 'it' || saved === 'en')) {
-      setLanguageState(saved)
+    if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('app-lang') as Language
+        if (saved && dictionaries[saved]) {
+            setLangState(saved)
+        }
     }
   }, [])
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang)
-    localStorage.setItem('did_lang', lang)
-  }
+  // Recupera il dizionario giusto in base alla lingua scelta
+  const t = dictionaries[lang]
 
-  // Fallback sicuro
-  const t = dictionaries[language] || dictionaries.it
-
-  // NOTA: Abbiamo rimosso il check "if (!mounted) return <>{children}</>"
-  // Il Provider deve avvolgere i figli SEMPRE, anche durante il server rendering.
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ t, lang, setLang }}>
       {children}
     </LanguageContext.Provider>
   )
 }
 
-export function useLanguage() {
+// Hook personalizzato per usare la lingua nei componenti
+export const useLanguage = () => {
   const context = useContext(LanguageContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider')
   }
   return context
