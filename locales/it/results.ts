@@ -4,5 +4,7 @@ export default {
     ranking_title: "Classifica Completa",
     col_cand: "Candidato",
     math_legend_title: "Come funziona il calcolo?",
-    math_legend_desc: "I voti soggettivi sono normalizzati (Z-Score) per eliminare le differenze tra giudici severi e buoni. I dati oggettivi sono scalati 0-10."
+    math_legend_desc: "I voti soggettivi sono normalizzati (Z-Score) per eliminare le differenze tra giudici severi e buoni. I dati oggettivi sono scalati 0-10.",
+    reopen_btn: "Riapri Votazione",
+    reopen_confirm: "Vuoi riaprire la votazione? Gli utenti potranno modificare i loro voti."
 }

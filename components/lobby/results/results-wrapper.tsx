@@ -6,22 +6,25 @@ import { calculateResults } from '@/lib/voting-engine'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Factor } from '@/types'
 import { UI } from '@/lib/constants'
+import { toast } from 'sonner' // <--- Import toast
 
-// Componenti Sotto-cartella o Genitore
+// Componenti
 import RankingTable from './ranking-table'
 import ShareLobby from '../share-lobby'
 
-export default function ResultsWrapper({ lobby }: { lobby: any }) {
+// Aggiungi isHost alle props
+export default function ResultsWrapper({ lobby, isHost }: { lobby: any, isHost: boolean }) {
   const { t } = useLanguage()
   const supabase = createClient()
   
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [reopening, setReopening] = useState(false) // Stato per il bottone riapri
+
   const factors: Factor[] = lobby.settings.factors || []
 
   useEffect(() => {
     const calculate = async () => {
-      // 1. Scarica TUTTI i dati necessari
       const { data: candidates } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id)
       const { data: votes } = await supabase.from('votes').select('*').eq('lobby_id', lobby.id)
       
@@ -30,7 +33,6 @@ export default function ResultsWrapper({ lobby }: { lobby: any }) {
           return
       }
 
-      // 2. Calcola con il motore
       const calculated = calculateResults(
           candidates, 
           votes, 
@@ -44,6 +46,22 @@ export default function ResultsWrapper({ lobby }: { lobby: any }) {
 
     calculate()
   }, [lobby, supabase])
+
+  // Funzione per riaprire la votazione
+  const handleReopen = async () => {
+      if (!confirm(t.results.reopen_confirm)) return
+
+      setReopening(true)
+      const { error } = await supabase
+          .from('lobbies')
+          .update({ status: 'voting' })
+          .eq('id', lobby.id)
+      
+      if (error) toast.error(t.common.error)
+      else toast.success("Votazione riaperta!")
+      
+      setReopening(false)
+  }
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">
@@ -89,18 +107,35 @@ export default function ResultsWrapper({ lobby }: { lobby: any }) {
                 <p className="text-xs text-gray-500 mt-1">{t.results.winner_subtitle}</p>
             </div>
 
+            {/* Share mobile */}
             <div className="md:hidden flex justify-center mt-4">
                  <ShareLobby code={lobby.code} compact={true} />
             </div>
         </div>
 
-        {/* 2. TABELLA ANALITICA (Componente Separato) */}
+        {/* 2. TABELLA ANALITICA */}
         <RankingTable results={results} factors={factors} />
 
-        {/* 3. LEGENDA MATEMATICA */}
-        <div className="bg-black/30 p-6 rounded-2xl border border-gray-800 text-xs text-gray-500 leading-relaxed">
-            <h3 className="font-bold text-gray-300 mb-2">{t.results.math_legend_title}</h3>
-            <p>{t.results.math_legend_desc}</p>
+        {/* 3. LEGENDA & ADMIN ACTIONS */}
+        <div className="grid md:grid-cols-2 gap-4 items-start">
+            <div className="bg-black/30 p-6 rounded-2xl border border-gray-800 text-xs text-gray-500 leading-relaxed">
+                <h3 className="font-bold text-gray-300 mb-2">{t.results.math_legend_title}</h3>
+                <p>{t.results.math_legend_desc}</p>
+            </div>
+
+            {/* BOTTONE ADMIN RIAPERTURA */}
+            {isHost && (
+                <div className="bg-black/30 p-6 rounded-2xl border border-gray-800 flex flex-col items-center justify-center gap-2">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Admin Area</p>
+                    <button 
+                        onClick={handleReopen}
+                        disabled={reopening}
+                        className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-all border border-gray-600 hover:border-white shadow-lg"
+                    >
+                        {reopening ? '...' : `🔄 ${t.results.reopen_btn}`}
+                    </button>
+                </div>
+            )}
         </div>
 
       </div>

@@ -1,9 +1,9 @@
 import { it } from '@/locales/it'
-import { en } from '@/locales/en' // <--- IMPORTANTE: Importa dalla cartella EN
+import { en } from '@/locales/en' 
 
 export const dictionaries = {
   it: it,
-  en: en // <--- IMPORTANTE: Usa l'oggetto EN, non IT
+  en: en
 }
 
 export type Dictionary = typeof dictionaries.it
