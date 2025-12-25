@@ -18,5 +18,15 @@ export default {
     factor_type_vote: "Voto Utente",
     factor_weight: "Peso",
     add_factor_btn: "Aggiungi Fattore",
-    start_voting_btn: "Avvia Votazione"
+    start_voting_btn: "Avvia Votazione",
+    settings_tab: {
+        title: "Impostazioni Generali",
+        scale_label: "Scala di Voto (Max)",
+        decimals_label: "Consenti Decimali",
+        danger_zone: "Zona Pericolo",
+        reset_votes_btn: "Resetta Tutti i Voti",
+        reset_confirm: "SEI SICURO? Cancellerà tutti i voti ricevuti finora.",
+        reset_success: "Voti resettati con successo."
+    }
+    
 }

@@ -3,6 +3,7 @@
 import { Factor } from '@/types'
 import { UI } from '@/lib/constants'
 import { useLanguage } from '@/components/providers/language-provider'
+import { getScoreColor } from '@/lib/lobby-utils' // <--- IMPORT CONDIVISO
 
 interface RankingTableProps {
     results: any[]
@@ -66,25 +67,29 @@ export default function RankingTable({ results, factors }: RankingTableProps) {
                                 </td>
 
                                 {factors.map(f => {
+                                    // Punteggio normalizzato (0-10) calcolato dall'engine
                                     const normalizedScore = r.debugDetails[f.name] || 0 
+                                    
+                                    // Calcoliamo il colore della barra
+                                    // Passiamo false perché l'engine ha già invertito i trend (quindi qui 10 è sempre verde)
+                                    const barColor = getScoreColor(normalizedScore, 10, false)
+                                    
+                                    // Valore da mostrare (es. "150€" se statico, o "8.5" se voto)
                                     let displayValue: string | number = "-"
-
                                     if (f.type === 'static') {
                                         displayValue = r.static_values?.[f.id] ?? "-"
                                     } else {
                                         displayValue = normalizedScore.toFixed(1)
                                     }
 
-                                    const isGood = normalizedScore > 6
-                                    const isBad = normalizedScore < 4
-
                                     return (
                                         <td key={f.id} className="p-4 text-center border-l border-gray-800 relative">
+                                            {/* Sfondo colorato in base alla qualità del dato */}
                                             <div 
-                                                className={`absolute bottom-0 left-0 h-0.5 transition-all ${isGood ? 'bg-green-500' : (isBad ? 'bg-red-500' : 'bg-yellow-500')}`} 
-                                                style={{ width: `${Math.min(normalizedScore * 10, 100)}%`, opacity: 0.5 }}
+                                                className={`absolute bottom-0 left-0 h-1 transition-all ${barColor}`} 
+                                                style={{ width: `${Math.min(normalizedScore * 10, 100)}%`, opacity: 0.6 }}
                                             />
-                                            <span className={`font-mono font-bold ${isGood ? 'text-white' : 'text-gray-500'}`}>
+                                            <span className={`font-mono font-bold relative z-10 ${normalizedScore > 5 ? 'text-white' : 'text-gray-400'}`}>
                                                 {displayValue}
                                             </span>
                                         </td>

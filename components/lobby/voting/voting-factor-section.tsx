@@ -3,6 +3,7 @@
 import { UI } from '@/lib/constants'
 import { Factor, Candidate } from '@/types'
 import { useLanguage } from '@/components/providers/language-provider'
+import { getScoreColor } from '@/lib/lobby-utils' // <--- IMPORT CONDIVISO
 
 interface VotingFactorSectionProps {
   factor: Factor
@@ -16,15 +17,6 @@ interface VotingFactorSectionProps {
   onVote: (candId: string, val: number) => void
   onStaticUpdate: (candId: string, val: number) => void
   onShowInfo: (candidate: Candidate) => void
-}
-
-// Helper per colore barra
-const getScoreColor = (score: number, max: number, isLowerBetter: boolean) => {
-  let normalized = score / max
-  if (isLowerBetter) normalized = 1 - normalized
-  if (normalized < 0.3) return 'bg-red-500'
-  if (normalized < 0.7) return 'bg-yellow-500'
-  return 'bg-green-500'
 }
 
 export default function VotingFactorSection({
@@ -86,8 +78,10 @@ export default function VotingFactorSection({
             <div className="px-5 pb-8 space-y-8 border-t border-gray-800/50 pt-6 animate-in slide-in-from-top-2">
                 {candidates.map((candidate) => {
                     const score = votes[candidate.id]?.[factor.id] || 0
-                    const barColor = getScoreColor(score, maxScale, isLowerBetter)
                     const staticVal = candidate.static_values?.[factor.id] ?? 0
+                    
+                    // Usa la funzione condivisa per il colore
+                    const barColor = getScoreColor(score, maxScale, isLowerBetter)
 
                     return (
                         <div key={candidate.id} className="group">

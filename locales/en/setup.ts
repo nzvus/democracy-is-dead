@@ -18,5 +18,14 @@ export default {
     factor_type_vote: "User Vote",
     factor_weight: "Weight",
     add_factor_btn: "Add Factor",
-    start_voting_btn: "Start Voting"
+    start_voting_btn: "Start Voting",
+    settings_tab: {
+        title: "General Settings",
+        scale_label: "Voting Scale (Max)",
+        decimals_label: "Allow Decimals",
+        danger_zone: "Danger Zone",
+        reset_votes_btn: "Reset All Votes",
+        reset_confirm: "ARE YOU SURE? This will delete all cast votes.",
+        reset_success: "Votes reset successfully."
+    }
 }
