@@ -26,6 +26,10 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
   const [myNickname, setMyNickname] = useState('')
   const [avatarsMap, setAvatarsMap] = useState<Record<string, string | null>>({})
 
+  // Stati per Edit/Delete
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -34,9 +38,11 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
 
   useEffect(() => {
     const init = async () => {
+        // 1. Recupera il mio nickname
         const { data: userData } = await supabase.from('lobby_participants').select('nickname').eq('lobby_id', lobbyId).eq('user_id', userId).maybeSingle()
         if (userData) setMyNickname(userData.nickname)
 
+        // 2. Mappa Avatar
         const { data: participants } = await supabase.from('lobby_participants').select('user_id, avatar_url').eq('lobby_id', lobbyId)
         if (participants) {
             const map: Record<string, string | null> = {}
@@ -44,19 +50,29 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             setAvatarsMap(map)
         }
 
+        // 3. Carica messaggi
         const { data } = await supabase.from('lobby_messages').select('*').eq('lobby_id', lobbyId).order('created_at', { ascending: true })
         if (data) setMessages(data)
         scrollToBottom()
     }
     init()
 
+    // 4. Realtime Listener (INSERT, UPDATE, DELETE)
     const channel = supabase.channel('chat_room')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lobby_messages', filter: `lobby_id=eq.${lobbyId}` }, 
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_messages', filter: `lobby_id=eq.${lobbyId}` }, 
           (payload) => {
-             const newMsg = payload.new as Message
-             setMessages((prev) => [...prev, newMsg])
-             if (!isOpen && newMsg.user_id !== userId) setUnreadCount(prev => prev + 1)
-             setTimeout(scrollToBottom, 100)
+             if (payload.eventType === 'INSERT') {
+                 const newMsg = payload.new as Message
+                 setMessages((prev) => [...prev, newMsg])
+                 if (!isOpen && newMsg.user_id !== userId) setUnreadCount(prev => prev + 1)
+                 setTimeout(scrollToBottom, 100)
+             } 
+             else if (payload.eventType === 'DELETE') {
+                 setMessages((prev) => prev.filter(m => m.id !== payload.old.id))
+             }
+             else if (payload.eventType === 'UPDATE') {
+                 setMessages((prev) => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new as Message } : m))
+             }
           }
       )
       .subscribe()
@@ -71,6 +87,24 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     const { error } = await supabase.from('lobby_messages').insert({ lobby_id: lobbyId, user_id: userId, nickname: senderName, content: newMessage })
     if (error) toast.error(t.common.error)
     else setNewMessage('')
+  }
+
+  const deleteMessage = async (msgId: string) => {
+      if(!confirm(t.common.confirm + "?")) return
+      const { error } = await supabase.from('lobby_messages').delete().eq('id', msgId)
+      if (error) toast.error("Impossibile eliminare")
+  }
+
+  const startEdit = (msg: Message) => {
+      setEditingId(msg.id)
+      setEditText(msg.content)
+  }
+
+  const saveEdit = async (msgId: string) => {
+      if (!editText.trim()) return
+      const { error } = await supabase.from('lobby_messages').update({ content: editText }).eq('id', msgId)
+      if (error) toast.error("Impossibile modificare")
+      else setEditingId(null)
   }
 
   const toggleChat = () => {
@@ -97,22 +131,52 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             
             {messages.map((msg, index) => {
                 const isMe = msg.user_id === userId
-                // Logica raggruppamento: se il messaggio precedente è dello stesso utente, non mostrare avatar/nome
                 const isSequence = index > 0 && messages[index - 1].user_id === msg.user_id
+                const isEditing = editingId === msg.id
                 
                 return (
-                    <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''} ${isSequence ? 'mt-0.5' : 'mt-4'}`}>
+                    <div key={msg.id} className={`flex gap-3 group ${isMe ? 'flex-row-reverse' : ''} ${isSequence ? 'mt-0.5' : 'mt-4'}`}>
+                        {/* Avatar */}
                         <div className="w-8 shrink-0 flex flex-col items-center">
                             {!isSequence && <Avatar src={avatarsMap[msg.user_id]} seed={msg.user_id} className="w-8 h-8" />}
                         </div>
                         
-                        <div className={`max-w-[80%] px-4 py-2 text-sm ${
+                        {/* Bubble */}
+                        <div className={`max-w-[85%] relative ${
                             isMe 
                             ? `bg-${UI.COLORS.PRIMARY}-600 text-white rounded-2xl ${isSequence ? 'rounded-tr-md' : 'rounded-tr-none'}` 
                             : `bg-gray-800 text-gray-200 rounded-2xl border border-gray-700 ${isSequence ? 'rounded-tl-md' : 'rounded-tl-none'}`
                         }`}>
-                            {!isMe && !isSequence && <div className="text-[10px] font-bold mb-1 opacity-50 text-indigo-300">{msg.nickname}</div>}
-                            <p className="break-words leading-relaxed">{msg.content}</p>
+                            
+                            <div className="px-4 py-2">
+                                {!isMe && !isSequence && <div className="text-[10px] font-bold mb-1 opacity-50 text-indigo-300">{msg.nickname}</div>}
+                                
+                                {isEditing ? (
+                                    <div className="flex flex-col gap-2 min-w-[200px]">
+                                        <input 
+                                            value={editText} 
+                                            onChange={(e) => setEditText(e.target.value)}
+                                            className="bg-black/20 rounded p-1 text-sm outline-none w-full"
+                                            autoFocus
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => setEditingId(null)} className="text-[10px] uppercase opacity-70 hover:opacity-100">{t.common.cancel}</button>
+                                            <button onClick={() => saveEdit(msg.id)} className="text-[10px] uppercase font-bold hover:text-green-300">{t.common.save}</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="break-words leading-relaxed text-sm">{msg.content}</p>
+                                )}
+                            </div>
+
+                            {/* Actions (Edit/Delete) - Visibili solo su hover dei propri messaggi */}
+                            {isMe && !isEditing && (
+                                <div className="absolute -top-3 left-0 -translate-x-full hidden group-hover:flex gap-1 pr-2">
+                                    <button onClick={() => startEdit(msg)} className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center hover:bg-white hover:text-black text-xs transition-colors" title={t.common.edit}>✎</button>
+                                    <button onClick={() => deleteMessage(msg.id)} className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white text-xs transition-colors" title={t.common.delete}>🗑</button>
+                                </div>
+                            )}
+
                         </div>
                     </div>
                 )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation' // <--- IMPORTANTE: Hook ufficiale
 import { createClient } from '@/lib/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
@@ -9,57 +10,63 @@ import { UI } from '@/lib/constants'
 // Componenti Fasi
 import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
 import VotingWrapper from '@/components/lobby/voting/voting-wrapper'
-import ResultsWrapper from '@/components/lobby/results/results-wrapper' // Percorso aggiornato
+import ResultsWrapper from '@/components/lobby/results/results-wrapper'
 
 // Componenti Comuni
 import LobbyOnboarding from '@/components/lobby/lobby-onboarding'
 import LobbyChat from '@/components/lobby/lobby-chat'
 
-export default function LobbyPage({ params }: { params: { code: string } }) {
+export default function LobbyPage() { // <--- Rimosso { params } dalle props
   const { t } = useLanguage()
   const supabase = createClient()
   
+  // 1. Recupera il codice dall'URL in modo sicuro
+  const params = useParams()
+  const lobbyCode = params?.code as string
+
   const [lobby, setLobby] = useState<any>(null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const [hasJoined, setHasJoined] = useState(false)
   const [loading, setLoading] = useState(true)
   
-  // Computed State
   const isHost = lobby && currentUserId ? lobby.host_id === currentUserId : false
 
   useEffect(() => {
+    // Se il codice non è ancora pronto, non fare nulla
+    if (!lobbyCode) return
+
     const initLobby = async () => {
-        // 1. Ottieni/Crea Utente Anonimo
-        const { data: { session }, error: authError } = await supabase.auth.getSession()
+        // A. Gestione Utente (Anonimo o Loggato)
+        const { data: { session } } = await supabase.auth.getSession()
         let userId = session?.user?.id
 
         if (!userId) {
             const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
             if (anonError) {
-                toast.error("Auth Error")
+                console.error("Auth Error:", anonError)
                 return
             }
             userId = anonData.user?.id
         }
         setCurrentUserId(userId!)
 
-        // 2. Fetch Lobby
+        // B. Fetch Lobby
         const { data: lobbyData, error: lobbyError } = await supabase
             .from('lobbies')
             .select('*')
-            .eq('code', params.code)
+            .eq('code', lobbyCode) // Usa la variabile sicura
             .single()
 
         if (lobbyError || !lobbyData) {
             setLoading(false)
-            toast.error(t.home.error_lobby_not_found)
+            // Non mostriamo toast qui per evitare loop se l'utente naviga veloce
+            console.error("Lobby not found or error:", lobbyError)
             return
         }
 
         setLobby(lobbyData)
 
-        // 3. Controllo Onboarding (Partecipante esiste?)
-        // Usa maybeSingle() per evitare errore 406 se l'utente non è ancora registrato
+        // C. Controllo Partecipazione
         const { data: participant } = await supabase
             .from('lobby_participants')
             .select('id')
@@ -76,11 +83,11 @@ export default function LobbyPage({ params }: { params: { code: string } }) {
 
     initLobby()
 
-    // 4. Realtime Listener (Aggiorna stato lobby per tutti)
+    // D. Realtime Listener
     const channel = supabase.channel('lobby_status_updates')
         .on(
             'postgres_changes', 
-            { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `code=eq.${params.code}` },
+            { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `code=eq.${lobbyCode}` },
             (payload) => {
                 setLobby((prev: any) => ({ ...prev, ...payload.new }))
             }
@@ -88,7 +95,7 @@ export default function LobbyPage({ params }: { params: { code: string } }) {
         .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [params.code, supabase, t])
+  }, [lobbyCode, supabase]) // Dipendenza corretta: lobbyCode
 
   // --- RENDERING ---
 
@@ -111,30 +118,22 @@ export default function LobbyPage({ params }: { params: { code: string } }) {
       )
   }
 
-  // 1. Se l'utente non è ancora entrato -> Mostra Onboarding
   if (!hasJoined) {
-    return <LobbyOnboarding lobby={lobby} userId={currentUserId} onJoin={() => setHasJoined(true)} />
-
+      return <LobbyOnboarding lobby={lobby} userId={currentUserId} onJoin={() => setHasJoined(true)} />
   }
 
-  // 2. Switch Contenuto Principale in base allo Status
   let content = null
   if (lobby.status === 'setup') {
-    // Setup (Candidati & Fattori) - Editabile da tutti per ora (o solo host se vuoi restringere)
     content = <SetupWrapper lobby={lobby} userId={currentUserId} />
   } else if (lobby.status === 'voting') {
-    // Votazione
     content = <VotingWrapper lobby={lobby} userId={currentUserId} isHost={isHost} />
   } else if (lobby.status === 'ended') {
-    // Risultati (Passiamo isHost per il tasto Riapri)
     content = <ResultsWrapper lobby={lobby} isHost={isHost} />
   }
 
   return (
     <>
         {content}
-        
-        {/* Chat sempre visibile (tranne in onboarding) */}
         <LobbyChat lobbyId={lobby.id} userId={currentUserId} />
     </>
   )
