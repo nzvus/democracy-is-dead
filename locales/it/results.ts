@@ -12,5 +12,17 @@ export default {
     matrix_anon: "Voto Segreto",
     matrix_anon_desc: "L'host ha impostato i voti come anonimi.",
     average_row: "MEDIA",
-    my_vote: "(Tu)"
+    my_vote: "(Tu)",
+    badges: {
+        hater: "Il Critico",
+        lover: "L'Entusiasta",
+        hive_mind: "Il Conformista",
+        maverick: "Bastian Contrario"
+    },
+    badges_desc: {
+        hater: "Ha dato i voti più bassi",
+        lover: "Ha dato i voti più alti",
+        hive_mind: "Vota come la massa",
+        maverick: "Non è d'accordo con nessuno"
+    }
 }

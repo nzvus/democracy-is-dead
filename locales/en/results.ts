@@ -12,5 +12,17 @@ export default {
     matrix_anon: "Secret Ballot",
     matrix_anon_desc: "The host has set votes as anonymous.",
     average_row: "AVERAGE",
-    my_vote: "(You)"
+    my_vote: "(You)",
+    badges: {
+        hater: "The Hater",
+        lover: "The Lover",
+        hive_mind: "The Hive Mind",
+        maverick: "The Maverick"
+    },
+    badges_desc: {
+        hater: "Gave the lowest scores",
+        lover: "Gave the highest scores",
+        hive_mind: "Voted like the average",
+        maverick: "Disagreed with everyone"
+    }
 }

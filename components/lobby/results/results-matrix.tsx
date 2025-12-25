@@ -3,13 +3,15 @@
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Candidate, Participant } from '@/types'
+import { BadgeType, getBadgeIcon } from '@/lib/gamification'
 
 interface ResultsMatrixProps {
   candidates: Candidate[]
   participants: Participant[]
-  votes: any[] // Raw votes from DB
+  votes: any[]
   currentUserId: string
-  isAnonymous?: boolean // Futuro: se aggiungi l'opzione privacy
+  isAnonymous?: boolean
+  badges?: Record<string, BadgeType[]>
 }
 
 export default function ResultsMatrix({ 
@@ -17,7 +19,8 @@ export default function ResultsMatrix({
   participants, 
   votes, 
   currentUserId,
-  isAnonymous = false 
+  isAnonymous = false,
+  badges = {}
 }: ResultsMatrixProps) {
   const { t } = useLanguage()
 
@@ -31,13 +34,11 @@ export default function ResultsMatrix({
       )
   }
 
-  // Helper per ottenere il voto totale medio dato da un utente a un candidato
+  // Helper: Calcola la media dei voti dati da Utente X a Candidato Y
   const getUserScore = (userId: string, candId: string) => {
-      // Troviamo il voto specifico
       const voteRecord = votes.find(v => v.voter_id === userId && v.candidate_id === candId)
       if (!voteRecord || !voteRecord.scores) return "-"
 
-      // Calcoliamo la media semplice dei voti dati sui vari fattori
       const scores = Object.values(voteRecord.scores) as number[]
       if (scores.length === 0) return "-"
       
@@ -59,13 +60,13 @@ export default function ResultsMatrix({
                 {/* HEADER: Candidati */}
                 <thead>
                     <tr>
-                        <th className="p-4 bg-gray-950/50 sticky left-0 z-10 border-b border-gray-800 min-w-[150px]">
-                            {/* Cella vuota angolo in alto a sx */}
+                        <th className="p-4 bg-gray-950/50 sticky left-0 z-10 border-b border-gray-800 min-w-[180px]">
+                            {/* Angolo Vuoto */}
                         </th>
                         {candidates.map(c => (
                             <th key={c.id} className="p-3 border-b border-l border-gray-800 text-center min-w-[100px]">
                                 <div className="flex flex-col items-center gap-2">
-                                    <div className="w-8 h-8 rounded bg-gray-800 overflow-hidden">
+                                    <div className="w-8 h-8 rounded bg-gray-800 overflow-hidden border border-gray-700">
                                         {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-xs">👤</span>}
                                     </div>
                                     <span className="text-[10px] uppercase font-bold text-gray-400 truncate w-24 block">
@@ -81,19 +82,40 @@ export default function ResultsMatrix({
                 <tbody className="divide-y divide-gray-800">
                     {participants.map(p => {
                         const isMe = p.user_id === currentUserId
+                        const userBadges = badges[p.user_id] || []
+
                         return (
                             <tr key={p.id} className={`hover:bg-gray-800/30 transition-colors ${isMe ? 'bg-indigo-900/10' : ''}`}>
-                                {/* Colonna Nome Partecipante */}
-                                <td className="p-3 sticky left-0 z-10 bg-gray-900 border-r border-gray-800">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden">
+                                
+                                {/* Cella Nome + Badges */}
+                                <td className="p-3 sticky left-0 z-10 bg-gray-900 border-r border-gray-800 shadow-[2px_0_10px_rgba(0,0,0,0.2)]">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gray-800 overflow-hidden shrink-0 border border-gray-700">
                                              {p.avatar_url ? <img src={p.avatar_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-xs">👤</span>}
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className={`text-xs font-bold ${isMe ? 'text-indigo-400' : 'text-gray-300'}`}>
-                                                {p.nickname}
-                                            </span>
-                                            {isMe && <span className="text-[9px] text-gray-600 font-mono uppercase">{t.results.my_vote}</span>}
+                                        <div className="flex flex-col min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-sm font-bold truncate ${isMe ? 'text-indigo-400' : 'text-gray-200'}`}>
+                                                    {p.nickname}
+                                                </span>
+                                                {/* BADGES ICONS */}
+                                                {userBadges.map(b => (
+                                                    <div 
+                                                        key={b} 
+                                                        className="group relative cursor-help"
+                                                    >
+                                                        <span className="text-sm hover:scale-125 transition-transform inline-block">
+                                                            {getBadgeIcon(b)}
+                                                        </span>
+                                                        {/* Tooltip Badge */}
+                                                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 border border-gray-700 shadow-xl">
+                                                            <span className="font-bold text-yellow-500 block">{t.results.badges[b]}</span>
+                                                            <span className="opacity-75">{t.results.badges_desc[b]}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {isMe && <span className="text-[9px] text-indigo-500/70 font-mono uppercase tracking-wider font-bold">{t.results.my_vote}</span>}
                                         </div>
                                     </div>
                                 </td>
@@ -102,11 +124,13 @@ export default function ResultsMatrix({
                                 {candidates.map(c => {
                                     const score = getUserScore(p.user_id, c.id)
                                     const numScore = parseFloat(score)
+                                    
+                                    // Color Coding Semplice
                                     let colorClass = "text-gray-500"
                                     if (!isNaN(numScore)) {
                                         if (numScore >= 8) colorClass = "text-green-400 font-black"
                                         else if (numScore <= 4) colorClass = "text-red-400"
-                                        else colorClass = "text-yellow-500"
+                                        else colorClass = "text-yellow-500 font-bold"
                                     }
 
                                     return (

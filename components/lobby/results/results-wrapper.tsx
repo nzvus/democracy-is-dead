@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/client'
 import { calculateResults } from '@/lib/voting-engine'
+import { calculateBadges, BadgeType } from '@/lib/gamification' // Assicurati che questo file esista
 import { useLanguage } from '@/components/providers/language-provider'
 import { Factor } from '@/types'
 import { UI } from '@/lib/constants'
@@ -23,22 +24,25 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   const { t } = useLanguage()
   const supabase = createClient()
   
-  // State per i risultati calcolati
+  // State Risultati
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [reopening, setReopening] = useState(false)
 
-  // State per i dati grezzi (necessari per la Matrice)
+  // State Dati Grezzi (per Matrice e Gamification)
   const [rawCandidates, setRawCandidates] = useState<any[]>([])
   const [rawVotes, setRawVotes] = useState<any[]>([])
   const [participants, setParticipants] = useState<any[]>([])
+  
+  // State Gamification
+  const [userBadges, setUserBadges] = useState<Record<string, BadgeType[]>>({})
 
   const factors: Factor[] = lobby.settings.factors || []
 
   useEffect(() => {
     const fetchDataAndCalculate = async () => {
       try {
-        // 1. Fetch parallelo di tutti i dati necessari
+        // 1. Fetch parallelo di tutti i dati
         const [candsRes, votesRes, partsRes] = await Promise.all([
             supabase.from('candidates').select('*').eq('lobby_id', lobby.id),
             supabase.from('votes').select('*').eq('lobby_id', lobby.id),
@@ -55,7 +59,6 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
         const votes = votesRes.data || []
         const parts = partsRes.data || []
 
-        // 2. Salviamo i dati grezzi per la visualizzazione Matrice
         setRawCandidates(candidates)
         setRawVotes(votes)
         setParticipants(parts)
@@ -65,15 +68,19 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             return
         }
 
-        // 3. Calcoliamo la classifica ponderata
-        const calculated = calculateResults(
+        // 2. Calcola Classifica
+        const calculatedResults = calculateResults(
             candidates, 
             votes, 
             factors, 
             lobby.settings.voting_scale?.max || 10
         )
+        setResults(calculatedResults)
 
-        setResults(calculated)
+        // 3. Calcola Badge Gamification
+        const badges = calculateBadges(parts, votes, calculatedResults)
+        setUserBadges(badges)
+
       } catch (e) {
         console.error("Calculation error:", e)
         toast.error(t.common.error)
@@ -100,7 +107,6 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
           setReopening(false)
       } else {
           toast.success("Votazione riaperta!")
-          // Non serve setReopening(false) perché il componente verrà smontato dal cambio di status in page.tsx
       }
   }
 
@@ -133,7 +139,6 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
 
             <div className="inline-block relative group cursor-pointer hover:scale-105 transition-transform duration-300">
-                {/* Alone luminoso */}
                 <div className="absolute inset-0 bg-yellow-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
                 
                 <div className="w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-yellow-500 shadow-[0_0_80px_rgba(234,179,8,0.3)] overflow-hidden mx-auto bg-gray-800 relative z-10">
@@ -163,22 +168,23 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </div>
 
-        {/* 2. CLASSIFICA DETTAGLIATA */}
+        {/* 2. CLASSIFICA PRINCIPALE */}
         <section>
             <RankingTable results={results} factors={factors} />
         </section>
 
-        {/* 3. MATRICE DEI VOTI (Trasparenza) */}
+        {/* 3. MATRICE DEI VOTI & BADGE */}
         <section className="animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200">
             <ResultsMatrix 
                 candidates={rawCandidates}
                 participants={participants}
                 votes={rawVotes}
                 currentUserId={userId}
+                badges={userBadges}
             />
         </section>
 
-        {/* 4. LEGENDA & AZIONI */}
+        {/* 4. LEGENDA & ADMIN */}
         <div className="grid md:grid-cols-2 gap-6 items-start">
             {/* Info Box */}
             <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 text-xs text-gray-500 leading-relaxed">
