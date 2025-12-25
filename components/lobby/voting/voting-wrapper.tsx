@@ -6,8 +6,9 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Factor, Candidate, Participant } from '@/types'
-import { QRCodeSVG } from 'qrcode.react' 
+import ShareLobby from '@/components/lobby/share-lobby'
 
+// Helper colori barre
 const getScoreColor = (score: number, max: number, isLowerBetter: boolean) => {
   let normalized = score / max
   if (isLowerBetter) normalized = 1 - normalized
@@ -29,15 +30,13 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
   // UI State
   const [activeFactorId, setActiveFactorId] = useState<string | null>(null)
   const [infoOpen, setInfoOpen] = useState<string | null>(null)
-  const [showQR, setShowQR] = useState(false)
   
   // Modal Candidato
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
 
   const factors: Factor[] = lobby.settings.factors || []
   const maxScale = lobby.settings.voting_scale?.max || 10
-  const allowDecimals = lobby.settings.allow_decimals || false
-  const step = allowDecimals ? 0.1 : 1
+  const step = lobby.settings.allow_decimals ? 0.1 : 1
 
   useEffect(() => {
     const init = async () => {
@@ -65,7 +64,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
             const updatedParticipant = payload.new as Participant
             setParticipants(prev => prev.map(p => p.id === updatedParticipant.id ? updatedParticipant : p))
         })
-        // Ascolta modifiche ai candidati (es. Host cambia valore statico)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'candidates', filter: `lobby_id=eq.${lobby.id}` },
         (payload) => {
              const updatedCand = payload.new as Candidate
@@ -122,26 +120,14 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
   return (
     <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-52 flex flex-col items-center relative`}>
         
-        {/* HEADER & QR TOGGLE */}
-        <header className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} flex items-start justify-between mt-4 mb-6`}>
+        {/* HEADER & SHARE */}
+        <header className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} flex items-start justify-between mt-6 mb-6`}>
              <div className="space-y-1">
                 <h1 className="text-2xl font-bold tracking-tight">{t.lobby.voting.title}</h1>
                 <p className="text-gray-400 text-xs">{t.lobby.voting.subtitle}</p>
              </div>
-             <button onClick={() => setShowQR(!showQR)} className="bg-gray-800 p-2 rounded-xl border border-gray-700 text-xl" title={t.lobby.voting.scan_to_join}>
-                📱
-             </button>
+             <ShareLobby code={lobby.code} compact={true} />
         </header>
-
-        {/* QR CODE OVERLAY */}
-        {showQR && (
-            <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mb-6 bg-white text-black p-6 rounded-3xl flex flex-col items-center animate-in slide-in-from-top-4`}>
-                <QRCodeSVG value={`${window.location.origin}/lobby/${lobby.code}`} size={150} />
-                <p className="font-bold text-xl mt-4 tracking-widest">{lobby.code}</p>
-                <p className="text-xs text-gray-500 mt-1 uppercase">{t.lobby.voting.scan_to_join}</p>
-                <button onClick={() => setShowQR(false)} className="mt-4 text-xs font-bold underline">{t.lobby.voting.close}</button>
-            </div>
-        )}
 
         {/* MONITORAGGIO PARTECIPANTI */}
         <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mb-6 bg-gray-900/50 p-4 ${UI.LAYOUT.ROUNDED_MD} border border-gray-800`}>
@@ -171,7 +157,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
 
                 return (
                     <div key={factor.id} className={`border ${UI.LAYOUT.ROUNDED_LG} overflow-hidden transition-all duration-300 ${borderColor} ${bgStyle}`}>
-                        {/* HEADER FATTORE (Click to expand) */}
+                        {/* HEADER FATTORE */}
                         <div className="p-5">
                             <button onClick={() => setActiveFactorId(isActive ? null : factor.id)} className="w-full flex items-center justify-between outline-none">
                                 <div className="flex items-center gap-4 text-left">
@@ -216,7 +202,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                                     return (
                                         <div key={candidate.id} className="group">
                                             <div className="flex justify-between items-end mb-4">
-                                                {/* CANDIDATE INFO & POPUP TRIGGER */}
+                                                {/* CANDIDATE INFO & CLICK */}
                                                 <div 
                                                     className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                                                     onClick={() => setSelectedCandidate(candidate)}
@@ -224,7 +210,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                                                 >
                                                     <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 relative group-hover:ring-2 ring-indigo-500">
                                                         {candidate.image_url ? <img src={candidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full">👤</span>}
-                                                        {/* Badge Info al passaggio mouse */}
                                                         <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-[8px] uppercase font-bold text-white backdrop-blur-[1px]">{t.lobby.voting.info_badge}</div>
                                                     </div>
                                                     <span className="font-bold text-lg leading-none border-b border-transparent group-hover:border-gray-500 transition-colors">{candidate.name}</span>

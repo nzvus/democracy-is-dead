@@ -1,78 +1,107 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/client'
+import { createClient } from '@/lib/client' // <--- Aggiornato per puntare a lib
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
-import ShareModal from '@/components/lobby/share-modal'
-import SettingsForm from './settings-form'
+import { UI } from '@/lib/constants'
+
+// Componenti
 import CandidatesManager from './candidates-manager'
+import FactorsManager from './factors-manager'
+import ShareLobby from '../share-lobby'
 
 export default function SetupWrapper({ lobby, userId }: { lobby: any, userId: string }) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const [tab, setTab] = useState<'candidates' | 'settings'>('candidates')
-  const [showShare, setShowShare] = useState(false)
+  
+  // Tabs: 'candidates', 'factors'
+  const [activeTab, setActiveTab] = useState<'candidates' | 'factors'>('candidates')
+  const [loading, setLoading] = useState(false)
 
-  const updateSettings = async (newSettings: any) => {
-    const { error } = await supabase.from('lobbies').update({ settings: newSettings }).eq('id', lobby.id)
-    if (error) toast.error("Error saving settings")
-  }
+  const startVoting = async () => {
+    // 1. Controllo: servono almeno 2 candidati
+    const { count } = await supabase
+        .from('candidates')
+        .select('*', { count: 'exact', head: true })
+        .eq('lobby_id', lobby.id)
 
-  const startElection = async () => {
-    const { count } = await supabase.from('candidates').select('*', { count: 'exact', head: true }).eq('lobby_id', lobby.id)
-    if ((count || 0) < 2) return toast.error("Need at least 2 candidates")
+    if ((count || 0) < 2) {
+        toast.error("Devi avere almeno 2 candidati per iniziare!")
+        return
+    }
 
-    await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobby.id)
+    // 2. Controllo: serve almeno 1 fattore
+    const factors = lobby.settings.factors || []
+    if (factors.length === 0) {
+        toast.error("Devi impostare almeno un criterio di voto (Fattore)!")
+        setActiveTab('factors')
+        return
+    }
+
+    if(confirm(t.common.confirm + "?")){
+        setLoading(true)
+        const { error } = await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobby.id)
+        
+        if (error) toast.error(t.common.error)
+        else toast.success("Votazione avviata!")
+        
+        setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center p-4">
+    <div className={`min-h-screen bg-gray-950 text-white pb-32`}>
         
-        <header className="w-full max-w-2xl text-center space-y-4 mb-8 pt-8">
-            <div className="inline-flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 rounded-full px-4 py-1 text-xs font-mono text-gray-400">
-                <span>{t.lobby.code_label} {lobby.code}</span>
-                <button onClick={() => setShowShare(true)} className="text-indigo-400 hover:underline font-bold">{t.lobby.share_link}</button>
-            </div>
-            <h1 className="text-3xl font-bold">{t.lobby.setup_title}</h1>
-        </header>
+        {/* HEADER & SHARE (Sticky) */}
+        <div className={`bg-gray-900 border-b border-gray-800 sticky top-0 z-40 shadow-xl`}>
+            <div className={`${UI.LAYOUT.MAX_WIDTH_CONTAINER} ${UI.LAYOUT.PADDING_X} py-6 mx-auto`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold">{t.setup.title}</h1>
+                        <p className="text-gray-400 text-xs">{t.setup.subtitle}</p>
+                    </div>
+                    {/* Componente Share Unificato */}
+                    <ShareLobby code={lobby.code} />
+                </div>
 
-        <div className="w-full max-w-2xl bg-black/20 backdrop-blur-sm rounded-3xl border border-gray-800/50 p-1 shadow-2xl overflow-hidden">
-            
-            <div className="grid grid-cols-2 p-1 bg-gray-900/80 rounded-t-3xl border-b border-gray-800">
-                <button 
-                    onClick={() => setTab('candidates')}
-                    className={`py-3 text-sm font-bold rounded-2xl transition-all ${tab === 'candidates' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                    {t.lobby.tab_candidates}
-                </button>
-                <button 
-                    onClick={() => setTab('settings')}
-                    className={`py-3 text-sm font-bold rounded-2xl transition-all ${tab === 'settings' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                    {t.lobby.tab_settings}
-                </button>
-            </div>
-
-            <div className="p-4 md:p-8 min-h-[400px]">
-                {tab === 'candidates' ? (
-                    <CandidatesManager lobby={lobby} />
-                ) : (
-                    <SettingsForm lobby={lobby} updateSettings={updateSettings} />
-                )}
-            </div>
-
-            <div className="p-4 bg-gray-900/50 border-t border-gray-800">
-                <button 
-                    onClick={startElection}
-                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/20 transition-all active:scale-[0.98]"
-                >
-                    {t.lobby.start_btn}
-                </button>
+                {/* TABS NAVIGATION */}
+                <div className="flex gap-2 bg-black/20 p-1 rounded-xl w-full md:w-auto self-start border border-gray-800">
+                    <button 
+                        onClick={() => setActiveTab('candidates')}
+                        className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'candidates' ? `bg-${UI.COLORS.PRIMARY}-600 text-white shadow-lg` : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}
+                    >
+                        {t.setup.tabs.candidates}
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('factors')}
+                        className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'factors' ? `bg-${UI.COLORS.PRIMARY}-600 text-white shadow-lg` : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}
+                    >
+                        {t.setup.tabs.factors}
+                    </button>
+                </div>
             </div>
         </div>
 
-        {showShare && <ShareModal code={lobby.code} onClose={() => setShowShare(false)} />}
+        {/* CONTENT AREA */}
+        <div className={`pt-8 ${UI.LAYOUT.PADDING_X}`}>
+            {activeTab === 'candidates' ? (
+                <CandidatesManager lobby={lobby} />
+            ) : (
+                <FactorsManager lobby={lobby} />
+            )}
+        </div>
+
+        {/* FOOTER ACTION (Avvia Voto) */}
+        <div className="fixed bottom-0 left-0 w-full p-6 bg-gray-950/95 backdrop-blur-xl border-t border-gray-800 z-50">
+             <button 
+                onClick={startVoting}
+                disabled={loading}
+                className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mx-auto py-4 bg-green-600 hover:bg-green-500 text-white ${UI.LAYOUT.ROUNDED_MD} font-black text-lg shadow-lg shadow-green-900/20 transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-2`}
+            >
+                {loading ? t.common.loading : t.setup.start_voting_btn} 🚀
+            </button>
+        </div>
     </div>
   )
 }

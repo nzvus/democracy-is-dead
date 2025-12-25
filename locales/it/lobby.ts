@@ -1,0 +1,32 @@
+export default {
+    status_label: "Stato Lobby",
+    status_waiting: "In attesa dell'Host...",
+    status_setup: "Setup in corso",
+    status_voting: "Votazione in corso",
+    status_ended: "Votazione conclusa",
+    guest_title: "Lobby in configurazione",
+    guest_desc: "L'host sta configurando i candidati e i criteri di voto. Mettiti comodo, la votazione inizierà a breve!",
+    terminate_btn: "Termina Votazione",
+    terminate_confirm: "Sei sicuro di voler terminare la votazione? Non si potrà tornare indietro.",
+    chat_title: "Chat Stanza",
+    chat_placeholder: "Scrivi un messaggio...",
+    chat_empty: "Nessun messaggio ancora. Rompi il ghiaccio!",
+    anon_user: "Anonimo",
+    
+    voting: {
+        title: "Scheda Elettorale",
+        subtitle: "Esprimi il tuo giudizio sui candidati",
+        submit_btn: "Invia Voti",
+        submitted_msg: "Voti inviati! In attesa degli altri...",
+        trend_explanation: "Come votare questo fattore?",
+        trend_info_high: "Valore ALTO è positivo (es. 10 = Buonissimo) ↗",
+        trend_info_low: "Valore BASSO è positivo (es. 10€ = Pessimo) ↘",
+        static_factor_warning: "⚠️ Dato oggettivo (inserito dall'admin)",
+        scan_to_join: "Scansiona per entrare",
+        close: "Chiudi",
+        click_details: "Clicca per dettagli",
+        info_badge: "Info",
+        static_value_label: "Valore Oggettivo:",
+        no_description: "Nessuna descrizione fornita."
+    }
+}

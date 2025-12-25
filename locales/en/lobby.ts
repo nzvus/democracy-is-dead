@@ -1,0 +1,32 @@
+export default {
+    status_label: "Lobby Status",
+    status_waiting: "Waiting for Host...",
+    status_setup: "Setup in progress",
+    status_voting: "Voting in progress",
+    status_ended: "Voting ended",
+    guest_title: "Lobby Configuration",
+    guest_desc: "The host is setting up candidates and voting criteria. Sit tight, voting will start soon!",
+    terminate_btn: "End Voting",
+    terminate_confirm: "Are you sure you want to end voting? This action cannot be undone.",
+    chat_title: "Room Chat",
+    chat_placeholder: "Type a message...",
+    chat_empty: "No messages yet. Break the ice!",
+    anon_user: "Anonymous",
+    
+    voting: {
+        title: "Ballot Paper",
+        subtitle: "Express your judgment on the candidates",
+        submit_btn: "Submit Votes",
+        submitted_msg: "Votes submitted! Waiting for others...",
+        trend_explanation: "How to vote this factor?",
+        trend_info_high: "HIGH value is positive (e.g. 10 = Best) ↗",
+        trend_info_low: "LOW value is positive (e.g. 10€ = Cheap) ↘",
+        static_factor_warning: "⚠️ Objective Data (set by admin)",
+        scan_to_join: "Scan to Join",
+        close: "Close",
+        click_details: "Click for details",
+        info_badge: "Info",
+        static_value_label: "Objective Value:",
+        no_description: "No description provided."
+    }
+}

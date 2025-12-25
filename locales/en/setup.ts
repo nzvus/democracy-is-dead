@@ -1,0 +1,22 @@
+export default {
+    title: "Lobby Setup",
+    subtitle: "Define what to vote and how",
+    tabs: { 
+        candidates: "Candidates", 
+        factors: "Voting Factors", 
+        settings: "Settings" 
+    },
+    add_candidate_title: "Add Candidate",
+    candidate_name_ph: "Name (e.g. Pizza Margherita)",
+    candidate_desc_ph: "Description (optional)",
+    upload_photo: "Upload Photo",
+    list_candidates: "Candidates List",
+    static_data_label: "Objective Data",
+    trend_high: "Higher is Better",
+    trend_low: "Lower is Better",
+    factor_type_static: "Static Data",
+    factor_type_vote: "User Vote",
+    factor_weight: "Weight",
+    add_factor_btn: "Add Factor",
+    start_voting_btn: "Start Voting"
+}
