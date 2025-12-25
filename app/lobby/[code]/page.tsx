@@ -128,7 +128,7 @@ export default function LobbyPage() { // <--- Rimosso { params } dalle props
   } else if (lobby.status === 'voting') {
     content = <VotingWrapper lobby={lobby} userId={currentUserId} isHost={isHost} />
   } else if (lobby.status === 'ended') {
-    content = <ResultsWrapper lobby={lobby} isHost={isHost} />
+content = <ResultsWrapper lobby={lobby} isHost={isHost} userId={currentUserId} /> 
   }
 
   return (
