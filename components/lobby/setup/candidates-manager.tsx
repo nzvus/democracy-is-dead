@@ -63,20 +63,23 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
     }
   }
 
+
   const addCandidate = async () => {
     if (!newName.trim()) return
 
     setLoading(true)
     let finalImageUrl = null
-
     if (imageFile) {
         finalImageUrl = await handleImageUpload(imageFile)
     }
 
+    // FIX: Se la descrizione è vuota, passa NULL o stringa vuota, non il placeholder
+    const descriptionToSave = newDesc.trim().length > 0 ? newDesc : null;
+
     const { error } = await supabase.from('candidates').insert({
       lobby_id: lobby.id,
       name: newName,
-      description: newDesc,
+      description: descriptionToSave, // <--- FIX QUI
       image_url: finalImageUrl,
       static_values: {} 
     })
