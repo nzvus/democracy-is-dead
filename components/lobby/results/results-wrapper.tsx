@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import RankingTable from './ranking-table'
 import ResultsMatrix from './results-matrix'
 import ShareLobby from '../share-lobby'
+import ResultsChart from './results-chart'
 
 interface ResultsWrapperProps {
   lobby: any
@@ -128,10 +129,8 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   const winner = results[0]
 
   return (
-    <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-10`}>
-      
-      <div className={`w-full max-w-5xl mx-auto space-y-16 animate-in fade-in duration-500`}>
-        
+<div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-10`}>      
+<div className={`w-full max-w-6xl mx-auto space-y-16 animate-in fade-in duration-500`}>        
         {/* 1. HEADER VINCITORE */}
         <div className="text-center space-y-6 relative">
             <div className="absolute right-0 top-0 hidden md:block">
@@ -167,14 +166,24 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                  <ShareLobby code={lobby.code} compact={true} />
             </div>
         </div>
+{/* 2. GRID LAYOUT: Grafico + Classifica (NUOVO LAYOUT) */}
+        {/* Usiamo una griglia: su Desktop il grafico a sinistra e la tabella a destra (o viceversa), o grafico sopra */}
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+            
+            {/* A. IL GRAFICO (Nuovo componente) */}
+            <div className="animate-in slide-in-from-left-8 duration-700 delay-100">
+                <ResultsChart results={results} factors={factors} />
+            </div>
 
-        {/* 2. CLASSIFICA PRINCIPALE */}
-        <section>
-            <RankingTable results={results} factors={factors} />
-        </section>
+            {/* B. LA CLASSIFICA (Invariato) */}
+            <div className="animate-in slide-in-from-right-8 duration-700 delay-100">
+                <RankingTable results={results} factors={factors} />
+            </div>
 
-        {/* 3. MATRICE DEI VOTI & BADGE */}
-        <section className="animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200">
+        </div>
+
+        {/* 3. MATRICE (Full Width) */}
+        <section className="animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200 space-y-4">
             <ResultsMatrix 
                 candidates={rawCandidates}
                 participants={participants}
@@ -184,33 +193,17 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             />
         </section>
 
-        {/* 4. LEGENDA & ADMIN */}
+        {/* 4. LEGENDA & ADMIN (Invariato) */}
         <div className="grid md:grid-cols-2 gap-6 items-start">
-            {/* Info Box */}
-            <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 text-xs text-gray-500 leading-relaxed">
-                <h3 className="font-bold text-gray-300 mb-2 flex items-center gap-2">
-                    🧮 {t.results.math_legend_title}
-                </h3>
+             {/* ... (codice legenda e admin uguale a prima) */}
+             <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 text-xs text-gray-500 leading-relaxed">
+                <h3 className="font-bold text-gray-300 mb-2 flex items-center gap-2">🧮 {t.results.math_legend_title}</h3>
                 <p>{t.results.math_legend_desc}</p>
             </div>
-
-            {/* Admin Box */}
             {isHost && (
                 <div className="bg-indigo-950/20 p-6 rounded-2xl border border-indigo-900/30 flex flex-col items-center justify-center gap-4">
-                    <div className="text-center">
-                        <p className="text-xs text-indigo-400 uppercase font-bold tracking-widest mb-1">Admin Zone</p>
-                        <p className="text-[10px] text-gray-500">Qualcosa non va? Puoi riaprire il voto.</p>
-                    </div>
-                    <button 
-                        onClick={handleReopen}
-                        disabled={reopening}
-                        className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-all border border-gray-600 hover:border-white shadow-lg active:scale-95 flex justify-center items-center gap-2"
-                    >
-                        {reopening ? (
-                            <span className="animate-spin">⏳</span> 
-                        ) : (
-                            <>🔄 {t.results.reopen_btn}</>
-                        )}
+                     <button onClick={handleReopen} disabled={reopening} className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-all border border-gray-600 hover:border-white shadow-lg active:scale-95 flex justify-center items-center gap-2">
+                        {reopening ? <span className="animate-spin">⏳</span> : <>🔄 {t.results.reopen_btn}</>}
                     </button>
                 </div>
             )}
