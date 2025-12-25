@@ -3,6 +3,7 @@ import { Factor } from '@/types'
 import { UI } from '@/lib/constants'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getScoreColor } from '@/lib/lobby-utils'
+import CandidateTooltip from '@/components/ui/candidate-tooltip'
 
 interface RankingTableProps { results: any[], factors: Factor[] }
 
@@ -34,20 +35,27 @@ export default function RankingTable({ results, factors }: RankingTableProps) {
                         return (
                             <tr key={r.id} className={`group hover:bg-gray-800/30 transition-colors ${isWin ? 'bg-yellow-900/10' : ''}`}>
                                 <td className="p-2 md:p-4 text-center font-mono text-gray-500 font-bold">{i + 1}</td>
+                                
                                 <td className="p-2 md:p-4">
                                     <div className="flex items-center gap-2 md:gap-3">
-                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700">
-                                            {r.image_url && <img src={r.image_url} className="w-full h-full object-cover"/>}
-                                        </div>
+                                        {/* TOOLTIP CANDIDATO */}
+                                        <CandidateTooltip candidate={r}>
+                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 cursor-help hover:border-indigo-500 transition-colors">
+                                                {r.image_url ? <img src={r.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-xs">👤</span>}
+                                            </div>
+                                        </CandidateTooltip>
+                                        
                                         <div className="font-bold leading-tight flex items-center gap-1">
                                             <span className="truncate max-w-[100px] md:max-w-none">{r.name}</span>
                                             {isWin && <span>🥇</span>}
                                         </div>
                                     </div>
                                 </td>
+
                                 <td className="p-2 md:p-4 text-right font-black text-sm md:text-xl font-mono text-yellow-400 border-l border-gray-800 bg-gray-900/30">
                                     {r.finalScore.toFixed(1)}
                                 </td>
+                                
                                 {factors.map(f => {
                                     const normalizedScore = r.debugDetails?.[f.name] || 0
                                     const barColor = getScoreColor(normalizedScore, 10, false)

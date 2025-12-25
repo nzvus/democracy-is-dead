@@ -9,6 +9,7 @@ import { Factor, Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import { toast } from 'sonner'
 
+// Componenti
 import RankingTable from './ranking-table'
 import ResultsMatrix from './results-matrix'
 import ResultsChart from './results-chart'
@@ -30,8 +31,10 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   const [allResults, setAllResults] = useState<Record<VotingSystem, Candidate[]> | null>(null)
   const [activeSystem, setActiveSystem] = useState<VotingSystem>('weighted')
   const [activeChart, setActiveChart] = useState<'radar' | 'compare'>('radar')
+  
   const [loading, setLoading] = useState(true)
   const [reopening, setReopening] = useState(false)
+
   const [rawCandidates, setRawCandidates] = useState<any[]>([])
   const [rawVotes, setRawVotes] = useState<any[]>([])
   const [participants, setParticipants] = useState<any[]>([])
@@ -92,7 +95,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
         <header className="flex flex-col items-center gap-4 relative z-30">
             <ShareLobby code={lobby.code} compact={true} />
             
-            {/* TABS */}
+            {/* TABS SISTEMI */}
             <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full no-scrollbar">
                 {(['weighted', 'borda', 'median'] as VotingSystem[]).map((sys) => (
                     <button
@@ -105,7 +108,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                 ))}
             </div>
 
-            {/* INFO BOX SISTEMA (Risolve il problema del tooltip nascosto) */}
+            {/* INFO BOX SISTEMA CORRENTE */}
             <div className="w-full max-w-lg bg-indigo-950/30 border border-indigo-500/20 p-4 rounded-xl text-center animate-in fade-in slide-in-from-top-2 duration-300">
                 <p className="text-indigo-200 text-xs font-medium leading-relaxed">
                     <span className="font-bold text-white block mb-1 uppercase tracking-widest text-[10px]">
@@ -116,13 +119,14 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </header>
 
-        {/* 2. PODIO (Margine aumentato per la corona) */}
-        <section className="mt-12 md:mt-16 z-10">
+        {/* 2. PODIO */}
+        <section className="mt-8 z-10">
             <Podium top3={currentResults.slice(0, 3)} />
         </section>
 
         {/* 3. DASHBOARD GRAFICI */}
         <section className={`${UI.COLORS.BG_CARD} border border-gray-800 ${UI.LAYOUT.ROUNDED_LG} shadow-2xl w-full overflow-hidden`}>
+            {/* TABS GRAFICI */}
             <div className="flex border-b border-gray-800 bg-gray-900/50">
                  <button onClick={() => setActiveChart('radar')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'radar' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
                     {t.results.charts.radar}
@@ -131,15 +135,22 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                     {t.results.charts.comparison}
                  </button>
             </div>
-            <div className="p-2 md:p-8 min-h-[400px] flex items-center justify-center relative w-full">
+
+            <div className="p-2 md:p-8 min-h-[450px] flex items-center justify-center relative w-full">
+                {/* INFO BUTTON POSIZIONATO */}
                 <div className="absolute top-2 right-2 z-20">
                     <InfoButton 
                         title={activeChart === 'radar' ? t.results.charts.radar : t.results.charts.comparison}
                         desc={activeChart === 'radar' ? t.results.charts.radar_desc : t.results.charts.compare_desc}
                     />
                 </div>
+                
                 <div className="w-full h-full">
-                    {activeChart === 'radar' ? <ResultsChart results={currentResults} factors={factors} /> : <ComparisonChart allResults={allResults} candidates={rawCandidates} />}
+                    {activeChart === 'radar' ? (
+                        <ResultsChart results={currentResults} factors={factors} />
+                    ) : (
+                        <ComparisonChart allResults={allResults} candidates={rawCandidates} />
+                    )}
                 </div>
             </div>
         </section>
@@ -148,8 +159,8 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
         <section className="w-full space-y-4">
             <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.ranking_title}</h3>
+                <InfoButton title={t.results.ranking_title} desc={t.results.math_legend_desc} />
             </div>
-            {/* Wrapper per far uscire la tabella dai bordi su mobile */}
             <div className="-mx-4 md:mx-0">
                 <RankingTable results={currentResults} factors={factors} />
             </div>

@@ -3,6 +3,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Candidate, Participant } from '@/types'
 import { BadgeType, getBadgeIcon } from '@/lib/gamification'
+import CandidateTooltip from '@/components/ui/candidate-tooltip'
 
 interface ResultsMatrixProps {
   candidates: Candidate[]; participants: Participant[]; votes: any[]; currentUserId: string; isAnonymous?: boolean; badges?: Record<string, BadgeType[]>
@@ -31,9 +32,14 @@ export default function ResultsMatrix({ candidates, participants, votes, current
                         {candidates.map(c => (
                             <th key={c.id} className="p-2 border-b border-l border-gray-800 text-center min-w-[60px] md:min-w-[100px]">
                                 <div className="flex flex-col items-center gap-1">
-                                    <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-gray-800 overflow-hidden border border-gray-700">
-                                        {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-xs">👤</span>}
-                                    </div>
+                                    
+                                    {/* TOOLTIP HEADER */}
+                                    <CandidateTooltip candidate={c}>
+                                        <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-gray-800 overflow-hidden border border-gray-700 cursor-help hover:border-yellow-500 transition-colors">
+                                            {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-xs">👤</span>}
+                                        </div>
+                                    </CandidateTooltip>
+
                                     <span className="text-[9px] md:text-[10px] uppercase font-bold text-gray-400 truncate w-16 md:w-24 block">{c.name}</span>
                                 </div>
                             </th>
