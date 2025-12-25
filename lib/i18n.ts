@@ -1,9 +1,9 @@
 import { it } from '@/locales/it'
-// import { en } from '@/locales/en' // Futuro
+import { en } from '@/locales/en' // <--- IMPORTANTE: Importa dalla cartella EN
 
 export const dictionaries = {
   it: it,
-  en: it // Fallback su IT
+  en: en // <--- IMPORTANTE: Usa l'oggetto EN, non IT
 }
 
 export type Dictionary = typeof dictionaries.it
