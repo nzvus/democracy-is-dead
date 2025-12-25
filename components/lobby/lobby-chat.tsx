@@ -97,6 +97,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             
             {messages.map((msg, index) => {
                 const isMe = msg.user_id === userId
+                // Logica raggruppamento: se il messaggio precedente è dello stesso utente, non mostrare avatar/nome
                 const isSequence = index > 0 && messages[index - 1].user_id === msg.user_id
                 
                 return (

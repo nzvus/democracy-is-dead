@@ -6,9 +6,8 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Factor, Candidate, Participant } from '@/types'
-import { QRCodeSVG } from 'qrcode.react' // Assicurati di avere questo pacchetto o usa img src semplice
+import { QRCodeSVG } from 'qrcode.react' 
 
-// Helper colori (invariato)
 const getScoreColor = (score: number, max: number, isLowerBetter: boolean) => {
   let normalized = score / max
   if (isLowerBetter) normalized = 1 - normalized
@@ -32,7 +31,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
   const [infoOpen, setInfoOpen] = useState<string | null>(null)
   const [showQR, setShowQR] = useState(false)
   
-  // Modal Descrizione Candidato
+  // Modal Candidato
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
 
   const factors: Factor[] = lobby.settings.factors || []
@@ -66,7 +65,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
             const updatedParticipant = payload.new as Participant
             setParticipants(prev => prev.map(p => p.id === updatedParticipant.id ? updatedParticipant : p))
         })
-        // Aggiungiamo ascolto per update sui candidati (per i dati statici modificati dall'host)
+        // Ascolta modifiche ai candidati (es. Host cambia valore statico)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'candidates', filter: `lobby_id=eq.${lobby.id}` },
         (payload) => {
              const updatedCand = payload.new as Candidate
@@ -83,18 +82,14 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
     setHasSubmitted(false) 
   }
 
-  // NUOVA FUNZIONE: Host aggiorna valore statico
+  // Host aggiorna valore statico
   const handleStaticUpdate = async (candId: string, factId: string, val: number) => {
-      // Ottimistic update
       setCandidates(prev => prev.map(c => {
           if (c.id !== candId) return c;
           return { ...c, static_values: { ...(c.static_values || {}), [factId]: val } }
       }))
-
-      // Aggiorna DB (recuperiamo prima i valori attuali per fare merge sicuro, ma qui semplifichiamo)
       const candidate = candidates.find(c => c.id === candId)
       const newStatic = { ...(candidate?.static_values || {}), [factId]: val }
-      
       await supabase.from('candidates').update({ static_values: newStatic }).eq('id', candId)
   }
 
@@ -133,7 +128,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                 <h1 className="text-2xl font-bold tracking-tight">{t.lobby.voting.title}</h1>
                 <p className="text-gray-400 text-xs">{t.lobby.voting.subtitle}</p>
              </div>
-             <button onClick={() => setShowQR(!showQR)} className="bg-gray-800 p-2 rounded-xl border border-gray-700 text-xl">
+             <button onClick={() => setShowQR(!showQR)} className="bg-gray-800 p-2 rounded-xl border border-gray-700 text-xl" title={t.lobby.voting.scan_to_join}>
                 📱
              </button>
         </header>
@@ -143,8 +138,8 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
             <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mb-6 bg-white text-black p-6 rounded-3xl flex flex-col items-center animate-in slide-in-from-top-4`}>
                 <QRCodeSVG value={`${window.location.origin}/lobby/${lobby.code}`} size={150} />
                 <p className="font-bold text-xl mt-4 tracking-widest">{lobby.code}</p>
-                <p className="text-xs text-gray-500 mt-1 uppercase">Scan to Join</p>
-                <button onClick={() => setShowQR(false)} className="mt-4 text-xs font-bold underline">Close</button>
+                <p className="text-xs text-gray-500 mt-1 uppercase">{t.lobby.voting.scan_to_join}</p>
+                <button onClick={() => setShowQR(false)} className="mt-4 text-xs font-bold underline">{t.lobby.voting.close}</button>
             </div>
         )}
 
@@ -225,16 +220,16 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                                                 <div 
                                                     className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                                                     onClick={() => setSelectedCandidate(candidate)}
-                                                    title="Click for details"
+                                                    title={t.lobby.voting.click_details}
                                                 >
                                                     <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 relative group-hover:ring-2 ring-indigo-500">
                                                         {candidate.image_url ? <img src={candidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full">👤</span>}
-                                                        <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-[8px] uppercase font-bold text-white">Info</div>
+                                                        {/* Badge Info al passaggio mouse */}
+                                                        <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-[8px] uppercase font-bold text-white backdrop-blur-[1px]">{t.lobby.voting.info_badge}</div>
                                                     </div>
-                                                    <span className="font-bold text-lg leading-none border-b border-transparent group-hover:border-gray-500">{candidate.name}</span>
+                                                    <span className="font-bold text-lg leading-none border-b border-transparent group-hover:border-gray-500 transition-colors">{candidate.name}</span>
                                                 </div>
                                                 
-                                                {/* SCORE DISPLAY */}
                                                 {!isStatic && (
                                                     <div className={`w-12 h-10 flex items-center justify-center rounded-lg text-lg font-bold font-mono transition-colors text-white ${barColor}`}>
                                                         {score}
@@ -245,13 +240,13 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                                             {/* INPUTS */}
                                             {isStatic ? (
                                                 <div className="bg-black/20 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
-                                                    <span className="text-xs text-gray-500 font-bold uppercase">Valore Oggettivo:</span>
+                                                    <span className="text-xs text-gray-500 font-bold uppercase">{t.lobby.voting.static_value_label}</span>
                                                     {isHost ? (
                                                         <input 
                                                             type="number" 
                                                             value={staticVal}
                                                             onChange={(e) => handleStaticUpdate(candidate.id, factor.id, Number(e.target.value))}
-                                                            className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-right font-mono font-bold focus:border-indigo-500 outline-none"
+                                                            className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-right font-mono font-bold focus:border-indigo-500 outline-none transition-all"
                                                         />
                                                     ) : (
                                                         <span className="font-mono font-bold text-lg">{staticVal}</span>
@@ -283,7 +278,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
         {selectedCandidate && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedCandidate(null)}>
                 <div className={`w-full max-w-sm ${UI.COLORS.BG_CARD} p-6 ${UI.LAYOUT.ROUNDED_LG} relative shadow-2xl space-y-4`} onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setSelectedCandidate(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center">×</button>
+                    <button onClick={() => setSelectedCandidate(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center transition-colors">×</button>
                     
                     <div className="w-24 h-24 rounded-2xl bg-gray-800 mx-auto overflow-hidden border-2 border-gray-700 shadow-lg">
                         {selectedCandidate.image_url ? <img src={selectedCandidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-4xl">👤</span>}
@@ -291,12 +286,12 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                     
                     <div className="text-center">
                         <h2 className="text-2xl font-black">{selectedCandidate.name}</h2>
-                        <div className="h-1 w-10 bg-indigo-500 mx-auto mt-2 rounded-full"></div>
+                        <div className={`h-1 w-10 bg-${UI.COLORS.PRIMARY}-500 mx-auto mt-2 rounded-full`}></div>
                     </div>
 
-                    <div className="bg-black/20 p-4 rounded-xl border border-gray-800/50 max-h-60 overflow-y-auto">
+                    <div className="bg-black/20 p-4 rounded-xl border border-gray-800/50 max-h-60 overflow-y-auto custom-scrollbar">
                         <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-                            {selectedCandidate.description || <span className="italic text-gray-600">Nessuna descrizione fornita.</span>}
+                            {selectedCandidate.description || <span className="italic text-gray-600">{t.lobby.voting.no_description}</span>}
                         </p>
                     </div>
                 </div>

@@ -15,12 +15,10 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   
-  // Input Form States
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
 
-  // Filtriamo i fattori statici (quelli che richiedono dati dall'admin)
   const staticFactors = (lobby.settings.factors || []).filter((f: Factor) => f.type === 'static')
 
   useEffect(() => {
@@ -28,32 +26,18 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   }, [lobby.id])
 
   const fetchCandidates = async () => {
-    const { data } = await supabase
-      .from('candidates')
-      .select('*')
-      .eq('lobby_id', lobby.id)
-      .order('created_at', { ascending: true })
+    const { data } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id).order('created_at', { ascending: true })
     if (data) setCandidates(data)
   }
 
-  // Upload Immagine Candidato (Bucket: 'candidates')
   const handleImageUpload = async (file: File) => {
     try {
         setUploading(true)
         const fileExt = file.name.split('.').pop()
         const fileName = `${lobby.id}/${Math.random().toString(36).substring(2)}.${fileExt}`
-
-        // Assicurati di creare il bucket 'candidates' su Supabase
-        const { error: uploadError } = await supabase.storage
-            .from('candidates')
-            .upload(fileName, file)
-
+        const { error: uploadError } = await supabase.storage.from('candidates').upload(fileName, file)
         if (uploadError) throw uploadError
-
-        const { data: { publicUrl } } = supabase.storage
-            .from('candidates')
-            .getPublicUrl(fileName)
-
+        const { data: { publicUrl } } = supabase.storage.from('candidates').getPublicUrl(fileName)
         return publicUrl
     } catch (error) {
         toast.error(t.common.error)
@@ -62,7 +46,6 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
         setUploading(false)
     }
   }
-
 
   const addCandidate = async () => {
     if (!newName.trim()) return
@@ -73,19 +56,19 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
         finalImageUrl = await handleImageUpload(imageFile)
     }
 
-    // FIX: Se la descrizione è vuota, passa NULL o stringa vuota, non il placeholder
+    // FIX: Se descrizione è vuota, salva null, non il testo del placeholder
     const descriptionToSave = newDesc.trim().length > 0 ? newDesc : null;
 
     const { error } = await supabase.from('candidates').insert({
       lobby_id: lobby.id,
       name: newName,
-      description: descriptionToSave, // <--- FIX QUI
+      description: descriptionToSave,
       image_url: finalImageUrl,
       static_values: {} 
     })
 
     if (error) {
-      toast.error("Error: " + error.message)
+      toast.error(t.common.error + ": " + error.message)
     } else {
       setNewName('')
       setNewDesc('')
@@ -102,18 +85,14 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   }
 
   const updateCandidate = async (id: string, field: string, value: any) => {
-    // Update Ottimistico
     setCandidates(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c))
-    // Update Reale
     await supabase.from('candidates').update({ [field]: value }).eq('id', id)
   }
 
   const updateStaticValue = async (candidateId: string, factorId: string, value: number) => {
     const candidate = candidates.find(c => c.id === candidateId)
     if (!candidate) return
-
     const newStaticValues = { ...(candidate.static_values || {}), [factorId]: value }
-    
     setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, static_values: newStaticValues } : c))
     await supabase.from('candidates').update({ static_values: newStaticValues }).eq('id', candidateId)
   }
@@ -121,11 +100,8 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   return (
     <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
       
-      {/* FORM AGGIUNTA */}
       <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4`}>
-         <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">
-            {t.setup.add_candidate_title}
-         </h3>
+         <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_candidate_title}</h3>
          
          <div className="space-y-3">
             <input 
@@ -135,7 +111,6 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                 className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-4 text-base outline-none focus:border-${UI.COLORS.PRIMARY}-500`}
             />
             
-            {/* FILE INPUT CUSTOM */}
             <div className="relative group">
                 <input 
                     type="file"
@@ -169,36 +144,20 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
          </button>
       </div>
 
-      {/* LISTA CANDIDATI */}
       {candidates.length > 0 && (
           <div className="space-y-4 animate-in slide-in-from-bottom-4">
-            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center mt-8 mb-4">
-                {t.setup.list_candidates} ({candidates.length})
-            </h3>
+            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center mt-8 mb-4">{t.setup.list_candidates} ({candidates.length})</h3>
 
             <div className="grid gap-4">
                 {candidates.map((c) => (
                     <div key={c.id} className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.ROUNDED_MD} p-4 relative group flex flex-col gap-4`}>
-                        
-                        {/* Tasto Rimuovi */}
-                        <button 
-                            onClick={() => removeCandidate(c.id)}
-                            className="absolute top-2 right-2 z-10 w-8 h-8 bg-black/50 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
-                        >
-                            ×
-                        </button>
+                        <button onClick={() => removeCandidate(c.id)} className="absolute top-2 right-2 z-10 w-8 h-8 bg-black/50 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100">×</button>
 
                         <div className="flex gap-4 items-start">
-                            {/* Immagine */}
                             <div className="w-20 h-20 bg-gray-800 rounded-xl overflow-hidden shrink-0 border border-gray-700">
-                                {c.image_url ? (
-                                    <img src={c.image_url} alt={c.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-3xl opacity-50">👤</div>
-                                )}
+                                {c.image_url ? <img src={c.image_url} alt={c.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl opacity-50">👤</div>}
                             </div>
                             
-                            {/* Info Editabili */}
                             <div className="flex-1 space-y-2">
                                 <input 
                                     value={c.name}
@@ -215,7 +174,6 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                             </div>
                         </div>
 
-                        {/* SEZIONE DATI OGGETTIVI (Visibile solo se configurati) */}
                         {staticFactors.length > 0 && (
                             <div className="bg-gray-900/80 p-3 rounded-xl border border-gray-700/50 mt-2">
                                 <h4 className="text-[10px] uppercase font-bold text-gray-500 mb-2 tracking-wider">{t.setup.static_data_label}</h4>
@@ -225,19 +183,13 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                                             <label className="text-[10px] text-gray-400 block mb-1 truncate font-bold">{f.name}</label>
                                             <div className="flex items-center gap-2">
                                                 <input 
-                                                    type="number"
-                                                    step="0.01"
+                                                    type="number" step="0.01"
                                                     value={c.static_values?.[f.id] ?? ''}
                                                     onChange={(e) => updateStaticValue(c.id, f.id, Number(e.target.value))}
                                                     className="w-full bg-black/40 border border-gray-700 rounded px-2 py-1.5 text-sm font-mono outline-none focus:border-indigo-500 text-white"
                                                     placeholder="0"
                                                 />
-                                                {/* Indicatore visivo Trend */}
-                                                {f.trend === 'lower_better' ? (
-                                                    <span className="text-[10px] text-amber-500" title={t.setup.trend_low}>↘</span>
-                                                ) : (
-                                                    <span className="text-[10px] text-green-500" title={t.setup.trend_high}>↗</span>
-                                                )}
+                                                {f.trend === 'lower_better' ? <span className="text-[10px] text-amber-500" title={t.setup.trend_low}>↘</span> : <span className="text-[10px] text-green-500" title={t.setup.trend_high}>↗</span>}
                                             </div>
                                         </div>
                                     ))}

@@ -72,9 +72,16 @@ export const dictionaries = {
             factor_avg: "Media Attuale",
             trend_explanation: "Come votare questo fattore?",
             trend_info_high: "Valore ALTO è positivo (es. 10 = Buonissimo) ↗",
-            trend_info_low: "Valore BASSO è positivo (es. 10€ = Economico) ↘",
-            static_factor_warning: "⚠️ Dato oggettivo (inserito dall'admin)"
+            trend_info_low: "Valore BASSO è positivo (es. 10 = Pessimo) ↘",
+            static_factor_warning: "⚠️ Dato oggettivo (inserito dall'admin)",
+            scan_to_join: "Scansiona per entrare",
+            close: "Chiudi",
+            click_details: "Clicca per dettagli",
+            info_badge: "Info",
+            static_value_label: "Valore Oggettivo:",
+            no_description: "Nessuna descrizione fornita."
         },
+
     },
     setup: {
         add_placeholder: "Nome Candidato (es. Opzione A)",
@@ -199,8 +206,14 @@ export const dictionaries = {
             factor_avg: "Current Avg",
             trend_explanation: "How to vote this?",
             trend_info_high: "HIGH value is positive (e.g. 10 = Best) ↗",
-            trend_info_low: "LOW value is positive (e.g. 10€ = Cheap) ↘",
-            static_factor_warning: "⚠️ Objective Data (set by admin)"
+            trend_info_low: "LOW value is positive (e.g. 10€ = Worst) ↘",
+            static_factor_warning: "⚠️ Objective Data (set by admin)",
+            scan_to_join: "Scan to Join",
+            close: "Close",
+            click_details: "Click for details",
+            info_badge: "Info",
+            static_value_label: "Objective Value:",
+            no_description: "No description provided."
         },
     },
     setup: {
