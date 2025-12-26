@@ -12,4 +12,7 @@ export default {
     close: "Close",
     yes: "Yes",
     no: "No",
+    // New additions
+    delete_msg_title: "Delete Message",
+    delete_msg_desc: "Are you sure you want to delete this message?"
 }

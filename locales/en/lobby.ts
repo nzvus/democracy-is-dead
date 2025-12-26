@@ -15,6 +15,9 @@ export default {
     no_description: "No description available.",
     participants_tab: "Participants",
     online_status: "Online",
+    hub_title: "Lobby Hub",
+    participant_role: "Participant",
+    voted_badge: "VOTED",
     chat_tab: "Chat",
     voting: {
         title: "Ballot Paper",

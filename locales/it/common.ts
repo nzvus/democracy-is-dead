@@ -11,4 +11,8 @@ export default {
     next: "Avanti",
     yes: "Sì",
     no: "No",
+    close: "Chiudi", // Era mancante nel file IT fornito all'inizio, ma presente in EN
+    // Nuove aggiunte
+    delete_msg_title: "Elimina Messaggio",
+    delete_msg_desc: "Sei sicuro di voler eliminare questo messaggio?"
 }

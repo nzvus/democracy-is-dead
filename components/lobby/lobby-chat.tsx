@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/client'
 import { useLanguage } from '@/components/providers/language-provider'
 import Avatar from '@/components/ui/avatar' 
 import { toast } from 'sonner'
 import { UI } from '@/lib/constants'
 import { Participant } from '@/types'
-import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
+import { useConfirm } from '@/components/providers/confirm-provider'
 
 type Message = {
   id: string; user_id: string; nickname: string; content: string; created_at: string
@@ -16,7 +16,7 @@ type Message = {
 export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId: string }) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const { confirm } = useConfirm() // <--- Hook
+  const { confirm } = useConfirm()
   
   const [isOpen, setIsOpen] = useState(false) 
   const [activeTab, setActiveTab] = useState<'chat' | 'participants'>('chat')
@@ -30,6 +30,29 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }
+
+  // Gestione apertura/chiusura
+  const toggleChat = useCallback(() => {
+    setIsOpen(prev => {
+        const newState = !prev;
+        if (!newState) { 
+            setUnreadCount(0); 
+            setTimeout(scrollToBottom, 200) 
+        }
+        return newState;
+    })
+  }, [])
+
+  // Chiusura con tasto ESC
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && isOpen) {
+            toggleChat()
+        }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [isOpen, toggleChat])
 
   useEffect(() => {
     const init = async () => {
@@ -85,41 +108,47 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
 
   const deleteMessage = async (msgId: string) => {
       const isConfirmed = await confirm({
-          title: "Elimina Messaggio",
-          description: "Sei sicuro di voler eliminare questo messaggio?",
+          title: t.common.delete_msg_title, // [FIX] Ora usa i18n
+          description: t.common.delete_msg_desc, // [FIX] Ora usa i18n
           confirmText: t.common.delete,
           variant: 'danger'
       })
       if (!isConfirmed) return
-      setMessages(prev => prev.filter(m => m.id !== msgId)) // Optimistic
+      setMessages(prev => prev.filter(m => m.id !== msgId)) 
       await supabase.from('lobby_messages').delete().eq('id', msgId)
   }
 
   const saveEdit = async (msgId: string) => {
       if (!editText.trim()) return
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editText } : m)) // Optimistic
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editText } : m)) 
       setEditingId(null)
       await supabase.from('lobby_messages').update({ content: editText }).eq('id', msgId)
   }
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen)
-    if (!isOpen) { setUnreadCount(0); setTimeout(scrollToBottom, 200) }
-  }
-
   return (
     <>
+      {/* Floating Button */}
       <button onClick={toggleChat} className={`fixed bottom-28 md:bottom-8 right-4 z-[60] p-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 rounded-full shadow-2xl transition-all hover:scale-110 group border-2 border-white/10`}>
         <span className="text-2xl">💬</span>
         {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full animate-bounce">{unreadCount}</span>}
       </button>
 
+      {/* Slide-over Panel */}
       <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-[70] flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        
+        {/* Header */}
         <div className="p-4 border-b border-gray-800 bg-gray-950 flex flex-col gap-4">
             <div className="flex justify-between items-center">
-                 <h2 className="font-bold text-lg flex items-center gap-2">Lobby Hub</h2>
-                 <button onClick={toggleChat} className="p-2 hover:bg-gray-800 rounded-full text-gray-400">✖️</button>
+                 <h2 className="font-bold text-lg flex items-center gap-2">{t.lobby.hub_title}</h2> {/* [FIX] Ora usa i18n */}
+                 <button 
+                    onClick={toggleChat} 
+                    className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+                    title={t.common.close}
+                 >
+                    ✖️
+                 </button>
             </div>
+            {/* Tabs */}
             <div className="flex bg-gray-800 rounded-lg p-1">
                 <button onClick={() => setActiveTab('chat')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'chat' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}>{t.lobby.chat_tab}</button>
                 <button onClick={() => setActiveTab('participants')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'participants' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}>{t.lobby.participants_tab} ({participants.length})</button>
@@ -175,15 +204,19 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                                  <Avatar src={p.avatar_url} seed={p.user_id} className="w-10 h-10" />
                                  <div>
                                      <p className="font-bold text-sm text-white">{p.nickname}</p>
-                                     <p className="text-[10px] text-gray-500 uppercase font-bold">{p.user_id === userId ? t.results.my_vote : 'Partecipante'}</p>
+                                     <p className="text-[10px] text-gray-500 uppercase font-bold">
+                                        {p.user_id === userId ? t.results.my_vote : t.lobby.participant_role} {/* [FIX] Ora usa i18n */}
+                                     </p>
                                  </div>
                              </div>
-                             {p.has_voted && <span className="text-green-400 bg-green-900/20 px-2 py-1 rounded text-[10px] font-bold border border-green-500/30">VOTED</span>}
+                             {p.has_voted && <span className="text-green-400 bg-green-900/20 px-2 py-1 rounded text-[10px] font-bold border border-green-500/30">{t.lobby.voted_badge}</span>} {/* [FIX] Ora usa i18n */}
                         </div>
                     ))}
                 </div>
             )}
         </div>
+        
+        {/* Input Area */}
         {activeTab === 'chat' && (
             <form onSubmit={sendMessage} className="p-4 border-t border-gray-800 bg-gray-900 pb-8 md:pb-4">
                 <div className="flex gap-2">
@@ -193,6 +226,8 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             </form>
         )}
       </div>
+
+      {/* Backdrop (Click to close) */}
       {isOpen && <div onClick={toggleChat} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] md:hidden" />}
     </>
   )
