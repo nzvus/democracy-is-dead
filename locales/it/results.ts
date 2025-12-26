@@ -40,6 +40,7 @@ export default {
         radar: "Radar Fattori",
         distribution: "Distribuzione",
         comparison: "Confronto Sistemi",
+        compare_title: "Classifica (Barra più corta = Migliore)",
         radar_desc: "Visualizza i punti di forza e debolezza di ogni candidato sui vari criteri.",
         compare_desc: "Confronta come cambierebbe la classifica usando sistemi di voto diversi."
     },

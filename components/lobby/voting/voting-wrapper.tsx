@@ -117,23 +117,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
              <ShareLobby code={lobby.code} compact={true} />
         </header>
 
-        {/* MONITORAGGIO PARTECIPANTI */}
-        <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mb-6 bg-gray-900/50 p-4 ${UI.LAYOUT.ROUNDED_MD} border border-gray-800`}>
-            <h3 className="text-[10px] font-bold uppercase text-gray-500 mb-3 flex justify-between">
-                <span>{t.lobby.status_label}</span>
-                <span>{participants.filter(p=>p.has_voted).length} / {participants.length}</span>
-            </h3>
-            <div className="flex flex-wrap gap-2">
-                {participants.map(p => (
-                    <div key={p.id} className={`px-2 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 transition-all ${p.has_voted ? 'bg-green-900/30 border-green-500/50 text-green-400' : 'bg-gray-800 border-gray-700 text-gray-500'}`}>
-                        {p.avatar_url ? <img src={p.avatar_url} className="w-4 h-4 rounded-full"/> : <span>👤</span>}
-                        {p.nickname}
-                        {p.has_voted && <span>✓</span>}
-                    </div>
-                ))}
-            </div>
-        </div>
-
         {/* LISTA FATTORI DI VOTO */}
         <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} space-y-6`}>
             {factors.map((factor) => (

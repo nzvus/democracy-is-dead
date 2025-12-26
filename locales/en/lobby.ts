@@ -12,6 +12,10 @@ export default {
     chat_placeholder: "Type a message...",
     chat_empty: "No messages yet. Break the ice!",
     anon_user: "Anonymous",
+no_description: "No description available.",
+    participants_tab: "Participants",
+    online_status: "Online",
+    chat_tab: "Chat",
     
     voting: {
         title: "Ballot Paper",

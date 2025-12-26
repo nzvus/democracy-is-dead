@@ -12,6 +12,10 @@ export default {
     chat_placeholder: "Scrivi un messaggio...",
     chat_empty: "Nessun messaggio ancora. Rompi il ghiaccio!",
     anon_user: "Anonimo",
+    no_description: "Nessuna descrizione disponibile.",
+participants_tab: "Partecipanti",
+online_status: "Online",
+chat_tab: "Chat",
     
     voting: {
         title: "Scheda Elettorale",

@@ -40,9 +40,11 @@ export default {
         radar: "Factor Radar",
         distribution: "Distribution",
         comparison: "System Comparison",
+        compare_title: "Ranking (Shorter bar = Better)",
         radar_desc: "Visualizes the strengths and weaknesses of each candidate across criteria.",
         compare_desc: "Compares how the ranking would change using different voting systems."
-    },
+    
+},
 
     // Matrix & Transparency
     matrix_title: "Voting Matrix",
