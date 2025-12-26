@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Candidate } from '@/types'
 import { UI } from '@/lib/constants'
-import CandidateTooltip from '@/components/ui/candidate-tooltip'
+import DescriptionTooltip from '@/components/ui/description-tooltip'
 import { useConfirm } from '@/components/providers/confirm-provider'
 
 export default function CandidatesManager({ lobby }: { lobby: any }) {
@@ -49,8 +49,7 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
     const isConfirmed = await confirm({
         title: t.setup.remove_candidate_title,
         description: t.setup.remove_candidate_confirm,
-        // NON passo confirmText così usa il default reattivo (t.common.confirm) del provider, o puoi forzare:
-        confirmText: t.common.delete, 
+        confirmText: t.common.delete,
         variant: 'danger'
     })
     if (!isConfirmed) return
@@ -80,11 +79,11 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
            candidates.map((c) => (
                 <div key={c.id} className={`${UI.COLORS.BG_CARD} p-4 ${UI.LAYOUT.ROUNDED_MD} flex justify-between items-center border border-gray-800 hover:border-gray-700 transition-colors group`}>
                     <div className="flex items-center gap-4 overflow-hidden">
-                        <CandidateTooltip candidate={c}>
+                        <DescriptionTooltip title={c.name} description={c.description}>
                             <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center text-xl overflow-hidden border border-gray-700 cursor-help group-hover:border-indigo-500 transition-colors shrink-0">
                                 {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover"/> : <span>👤</span>}
                             </div>
-                        </CandidateTooltip>
+                        </DescriptionTooltip>
                         <div className="min-w-0">
                             <p className="font-bold truncate text-white">{c.name}</p>
                             {c.description ? <p className="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md">{c.description}</p> : <p className="text-[10px] text-gray-600 italic">{t.setup.no_description}</p>}

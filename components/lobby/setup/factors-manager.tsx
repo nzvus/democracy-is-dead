@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Factor } from '@/types'
 import { UI } from '@/lib/constants'
+import DescriptionTooltip from '@/components/ui/description-tooltip'
 
 export default function FactorsManager({ lobby }: { lobby: any }) {
   const { t } = useLanguage()
@@ -15,6 +16,8 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
 
   // Form State
   const [newName, setNewName] = useState('')
+  const [newDesc, setNewDesc] = useState('')
+  const [newImage, setNewImage] = useState('')
   const [newWeight, setNewWeight] = useState(1)
   const [newType, setNewType] = useState<'vote'|'static'>('vote')
   const [newTrend, setNewTrend] = useState<'higher_better'|'lower_better'>('higher_better')
@@ -43,6 +46,8 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
     const newFactor: Factor = {
         id: Math.random().toString(36).substr(2, 9),
         name: newName,
+        description: newDesc,
+        image_url: newImage || null,
         weight: newWeight,
         type: newType,
         trend: newTrend
@@ -50,6 +55,8 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
 
     await saveFactors([...factors, newFactor])
     setNewName('')
+    setNewDesc('')
+    setNewImage('')
     setNewWeight(1)
   }
 
@@ -68,6 +75,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
         <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4`}>
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_factor_btn}</h3>
             
+            {/* Nome e Peso */}
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400">{t.setup.factor_name_label}</label>
@@ -75,7 +83,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         placeholder={t.setup.factor_name_ph}
-                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500`}
+                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500 transition-all font-bold`}
                     />
                 </div>
                 
@@ -90,6 +98,29 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
                 </div>
             </div>
 
+            {/* Immagine e Descrizione */}
+            <div className="space-y-3">
+                 <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400">Icona/Immagine (URL)</label>
+                    <input 
+                        value={newImage}
+                        onChange={(e) => setNewImage(e.target.value)}
+                        placeholder="https://..."
+                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500 text-xs font-mono`}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400">Descrizione (Opzionale)</label>
+                    <textarea 
+                        value={newDesc}
+                        onChange={(e) => setNewDesc(e.target.value)}
+                        placeholder="Spiega cosa valutare in questo fattore..."
+                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500 min-h-[60px] resize-none text-sm`}
+                    />
+                </div>
+            </div>
+
+            {/* Tipo e Trend */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                      <label className="text-xs font-bold text-gray-400">{t.setup.factor_type_label}</label>
@@ -130,9 +161,11 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
             {factors.map((f, i) => (
                 <div key={i} className={`${UI.COLORS.BG_CARD} p-4 ${UI.LAYOUT.ROUNDED_MD} flex justify-between items-center border border-gray-800`}>
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-gray-800 border ${f.type === 'static' ? 'border-amber-500/50 text-amber-500' : 'border-gray-700'}`}>
-                            {f.type === 'static' ? '📊' : '🗳️'}
-                        </div>
+                        <DescriptionTooltip title={f.name} description={f.description}>
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-gray-800 border cursor-help hover:border-white transition-colors overflow-hidden ${f.type === 'static' ? 'border-amber-500/50 text-amber-500' : 'border-gray-700'}`}>
+                                {f.image_url ? <img src={f.image_url} className="w-full h-full object-cover"/> : (f.type === 'static' ? '📊' : '🗳️')}
+                            </div>
+                        </DescriptionTooltip>
                         <div>
                             <p className="font-bold">{f.name}</p>
                             <div className="flex gap-2 text-[10px] uppercase font-bold text-gray-500">

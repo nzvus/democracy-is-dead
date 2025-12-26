@@ -4,7 +4,7 @@ import { UI } from '@/lib/constants'
 import { Factor, Candidate } from '@/types'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getScoreColor } from '@/lib/lobby-utils'
-import CandidateTooltip from '@/components/ui/candidate-tooltip'
+import DescriptionTooltip from '@/components/ui/description-tooltip'
 
 interface VotingFactorSectionProps {
   factor: Factor
@@ -48,30 +48,38 @@ export default function VotingFactorSection({
         
         {/* HEADER (Clickable) */}
         <div className="p-5">
-            <button onClick={onToggle} className="w-full flex items-center justify-between outline-none">
-                <div className="flex items-center gap-4 text-left">
-                    <div className="w-12 h-12 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden shrink-0">
-                        {factor.image_url ? <img src={factor.image_url} className="w-full h-full object-cover" /> : <span className="text-xl">📊</span>}
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xl font-black">{factor.name}</span>
-                            {isLowerBetter ? (
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_LOW}`}>↘ LOW</span>
-                            ) : (
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_HIGH}`}>↗ HIGH</span>
-                            )}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-left w-full">
+                    
+                    {/* TOOLTIP SULL'ICONA DEL FATTORE */}
+                    <DescriptionTooltip title={factor.name} description={factor.description}>
+                        <div className="w-12 h-12 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden shrink-0 cursor-help hover:border-white transition-colors relative z-20 shadow-lg">
+                            {factor.image_url ? <img src={factor.image_url} className="w-full h-full object-cover" /> : <span className="text-xl">📊</span>}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 font-mono mt-1">
-                            <span>x{factor.weight}</span>
-                            {isStatic && <span className="text-amber-500"> • {t.setup.factor_type_static}</span>}
+                    </DescriptionTooltip>
+
+                    {/* Area cliccabile per espandere (il resto della riga) */}
+                    <button onClick={onToggle} className="flex-1 flex items-center justify-between outline-none text-left pl-2">
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xl font-black">{factor.name}</span>
+                                {isLowerBetter ? (
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_LOW}`}>↘ LOW</span>
+                                ) : (
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_HIGH}`}>↗ HIGH</span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 font-mono mt-1">
+                                <span>x{factor.weight}</span>
+                                {isStatic && <span className="text-amber-500"> • {t.setup.factor_type_static}</span>}
+                            </div>
                         </div>
-                    </div>
+                        <div className={`text-xl transition-transform ${isActive ? 'rotate-180' : ''}`}>▼</div>
+                    </button>
                 </div>
-                <div className={`text-xl transition-transform ${isActive ? 'rotate-180' : ''}`}>▼</div>
-            </button>
+            </div>
             
-            {/* INFO TREND (NON BLOCCANTE) */}
+            {/* INFO TREND */}
             {isActive && (
                 <div className="mt-2 pl-[4rem]">
                     <div className="text-[10px] text-gray-400 italic">
@@ -92,13 +100,13 @@ export default function VotingFactorSection({
                     return (
                         <div key={candidate.id} className="group">
                             <div className="flex justify-between items-end mb-4">
-                                {/* INFO CANDIDATO (TOOLTIP SMART) */}
+                                {/* INFO CANDIDATO (TOOLTIP) */}
                                 <div className="flex items-center gap-3">
-                                    <CandidateTooltip candidate={candidate}>
+                                    <DescriptionTooltip title={candidate.name} description={candidate.description}>
                                         <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 relative group-hover:ring-2 ring-indigo-500 cursor-help transition-all">
                                             {candidate.image_url ? <img src={candidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full">👤</span>}
                                         </div>
-                                    </CandidateTooltip>
+                                    </DescriptionTooltip>
                                     <span className="font-bold text-lg leading-none">{candidate.name}</span>
                                 </div>
                                 

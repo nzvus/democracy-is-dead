@@ -17,6 +17,7 @@ export interface Factor {
   type: FactorType;
   trend: Trend;
   image_url?: string | null; // Icona/Immagine del fattore
+  description?: string; // <--- NUOVO CAMPO
 }
 
 export interface Candidate {
