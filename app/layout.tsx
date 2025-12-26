@@ -1,15 +1,18 @@
-import type { Metadata, Viewport } from "next"; // Aggiungi Viewport
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/components/providers/language-provider";
-import { ConfirmProvider } from "@/components/providers/confirm-provider"; // <--- IMPORT
-import { Toaster } from 'sonner'; // <--- IMPORT
+import { ConfirmProvider } from "@/components/providers/confirm-provider";
+import { Toaster } from 'sonner';
+import LanguageSwitcher from "@/components/ui/language-switcher"; // <--- 1. Importa
 
 const inter = Inter({ subsets: ["latin"] });
 
-// ... metadata code ...
+export const metadata: Metadata = {
+  title: "Votazione Collaborativa",
+  description: "App per decisioni di gruppo",
+};
 
-// Aggiungi export viewport per gestire lo zoom su mobile
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -26,10 +29,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-gray-950 text-white overflow-x-hidden`}>
         <LanguageProvider>
-          <ConfirmProvider> {/* <--- WRAPPER */}
+          <ConfirmProvider>
+             
+             {/* 2. AGGIUNGI IL SWITCHER QUI */}
+             <LanguageSwitcher />
+             
              {children}
              
-             {/* TOASTER GLOBALE CONFIGURATO */}
              <Toaster 
                 position="top-center" 
                 theme="dark" 
@@ -37,7 +43,6 @@ export default function RootLayout({
                 closeButton
                 toastOptions={{
                     style: { background: '#111827', border: '1px solid #374151', borderRadius: '12px' },
-                    className: 'my-toast-class',
                 }}
              />
           </ConfirmProvider>
