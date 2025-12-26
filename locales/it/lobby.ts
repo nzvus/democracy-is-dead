@@ -13,10 +13,9 @@ export default {
     chat_empty: "Nessun messaggio ancora. Rompi il ghiaccio!",
     anon_user: "Anonimo",
     no_description: "Nessuna descrizione disponibile.",
-participants_tab: "Partecipanti",
-online_status: "Online",
-chat_tab: "Chat",
-    
+    participants_tab: "Partecipanti",
+    online_status: "Online",
+    chat_tab: "Chat",
     voting: {
         title: "Scheda Elettorale",
         subtitle: "Esprimi il tuo giudizio sui candidati",
