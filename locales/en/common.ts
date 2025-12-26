@@ -9,5 +9,7 @@ export default {
     edit: "Edit",
     back: "Back",
     next: "Next",
-    close: "Close"
+    close: "Close",
+    yes: "Yes",
+    no: "No",
 }

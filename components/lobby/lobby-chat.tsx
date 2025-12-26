@@ -7,44 +7,32 @@ import Avatar from '@/components/ui/avatar'
 import { toast } from 'sonner'
 import { UI } from '@/lib/constants'
 import { Participant } from '@/types'
+import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
 
 type Message = {
-  id: string
-  user_id: string
-  nickname: string
-  content: string
-  created_at: string
+  id: string; user_id: string; nickname: string; content: string; created_at: string
 }
 
 export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId: string }) {
   const { t } = useLanguage()
   const supabase = createClient()
+  const { confirm } = useConfirm() // <--- Hook
   
   const [isOpen, setIsOpen] = useState(false) 
   const [activeTab, setActiveTab] = useState<'chat' | 'participants'>('chat')
-  
-  // Dati Chat
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
-  
-  // Dati Utente & Partecipanti
   const [myNickname, setMyNickname] = useState('')
   const [participants, setParticipants] = useState<Participant[]>([])
-
-  // Edit/Delete State
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }
 
   useEffect(() => {
     const init = async () => {
-        // 1. Dati Iniziali
         const { data: userData } = await supabase.from('lobby_participants').select('nickname').eq('lobby_id', lobbyId).eq('user_id', userId).maybeSingle()
         if (userData) setMyNickname(userData.nickname)
 
@@ -53,22 +41,16 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
 
         const { data: msgs } = await supabase.from('lobby_messages').select('*').eq('lobby_id', lobbyId).order('created_at', { ascending: true })
         if (msgs) setMessages(msgs)
-        
         scrollToBottom()
     }
     init()
 
-    // 2. Realtime CHAT
     const chatChannel = supabase.channel('chat_room_msgs')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_messages', filter: `lobby_id=eq.${lobbyId}` }, 
           (payload) => {
              if (payload.eventType === 'INSERT') {
                  const newMsg = payload.new as Message
-                 setMessages((prev) => {
-                     // Evita duplicati se l'abbiamo aggiunto noi ottimisticamente (future proofing)
-                     if (prev.find(m => m.id === newMsg.id)) return prev
-                     return [...prev, newMsg]
-                 })
+                 setMessages((prev) => { if (prev.find(m => m.id === newMsg.id)) return prev; return [...prev, newMsg] })
                  if (!isOpen && newMsg.user_id !== userId) setUnreadCount(prev => prev + 1)
                  setTimeout(scrollToBottom, 100)
              } 
@@ -78,123 +60,80 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
              else if (payload.eventType === 'UPDATE') {
                  setMessages((prev) => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new as Message } : m))
              }
-          }
-      )
+          })
       .subscribe()
 
-    // 3. Realtime PARTECIPANTI
     const partsChannel = supabase.channel('chat_room_parts')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby_participants', filter: `lobby_id=eq.${lobbyId}` },
         (payload) => {
-             if (payload.eventType === 'INSERT') {
-                 setParticipants(prev => [...prev, payload.new as Participant])
-             } else if (payload.eventType === 'UPDATE') {
-                 setParticipants(prev => prev.map(p => p.id === payload.new.id ? payload.new as Participant : p))
-             }
-        }
-      )
+             if (payload.eventType === 'INSERT') setParticipants(prev => [...prev, payload.new as Participant])
+             else if (payload.eventType === 'UPDATE') setParticipants(prev => prev.map(p => p.id === payload.new.id ? payload.new as Participant : p))
+        })
       .subscribe()
     
-    return () => { 
-        supabase.removeChannel(chatChannel)
-        supabase.removeChannel(partsChannel)
-    }
+    return () => { supabase.removeChannel(chatChannel); supabase.removeChannel(partsChannel) }
   }, [lobbyId, isOpen, userId])
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim()) return
     const senderName = myNickname || t.lobby.anon_user
-    
-    // Invio
     const { error } = await supabase.from('lobby_messages').insert({ lobby_id: lobbyId, user_id: userId, nickname: senderName, content: newMessage })
-    
     if (error) toast.error(t.common.error)
     else setNewMessage('')
   }
 
   const deleteMessage = async (msgId: string) => {
-      if(!confirm(t.common.confirm + "?")) return
-      
-      // Optimistic UI: Rimuovi subito dalla lista
-      setMessages(prev => prev.filter(m => m.id !== msgId))
-
-      const { error } = await supabase.from('lobby_messages').delete().eq('id', msgId)
-      if (error) {
-          toast.error("Errore eliminazione")
-          // Revert in caso di errore (bisognerebbe ricaricare, ma per ora ok)
-      }
+      const isConfirmed = await confirm({
+          title: "Elimina Messaggio",
+          description: "Sei sicuro di voler eliminare questo messaggio?",
+          confirmText: t.common.delete,
+          variant: 'danger'
+      })
+      if (!isConfirmed) return
+      setMessages(prev => prev.filter(m => m.id !== msgId)) // Optimistic
+      await supabase.from('lobby_messages').delete().eq('id', msgId)
   }
 
   const saveEdit = async (msgId: string) => {
       if (!editText.trim()) return
-      
-      // Optimistic UI: Aggiorna subito lo stato locale
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editText } : m))
-      setEditingId(null) // Chiudi subito l'editor
-
-      const { error } = await supabase.from('lobby_messages').update({ content: editText }).eq('id', msgId)
-      if (error) toast.error("Errore modifica")
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editText } : m)) // Optimistic
+      setEditingId(null)
+      await supabase.from('lobby_messages').update({ content: editText }).eq('id', msgId)
   }
 
   const toggleChat = () => {
     setIsOpen(!isOpen)
-    if (!isOpen) {
-        setUnreadCount(0)
-        setTimeout(scrollToBottom, 200)
-    }
+    if (!isOpen) { setUnreadCount(0); setTimeout(scrollToBottom, 200) }
   }
 
   return (
     <>
-      {/* BOTTONE FLOTTANTE (Z-INDEX ALTO) */}
-      <button 
-        onClick={toggleChat} 
-        className={`fixed bottom-28 md:bottom-8 right-4 z-[60] p-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 rounded-full shadow-2xl transition-all hover:scale-110 group border-2 border-white/10`}
-      >
+      <button onClick={toggleChat} className={`fixed bottom-28 md:bottom-8 right-4 z-[60] p-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 rounded-full shadow-2xl transition-all hover:scale-110 group border-2 border-white/10`}>
         <span className="text-2xl">💬</span>
         {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full animate-bounce">{unreadCount}</span>}
       </button>
 
-      {/* PANNELLO LATERALE */}
       <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-[70] flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        
-        {/* HEADER TAB */}
         <div className="p-4 border-b border-gray-800 bg-gray-950 flex flex-col gap-4">
             <div className="flex justify-between items-center">
                  <h2 className="font-bold text-lg flex items-center gap-2">Lobby Hub</h2>
                  <button onClick={toggleChat} className="p-2 hover:bg-gray-800 rounded-full text-gray-400">✖️</button>
             </div>
-            
             <div className="flex bg-gray-800 rounded-lg p-1">
-                <button 
-                    onClick={() => setActiveTab('chat')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'chat' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                >
-                    {t.lobby.chat_tab}
-                </button>
-                <button 
-                    onClick={() => setActiveTab('participants')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'participants' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                >
-                    {t.lobby.participants_tab} ({participants.length})
-                </button>
+                <button onClick={() => setActiveTab('chat')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'chat' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}>{t.lobby.chat_tab}</button>
+                <button onClick={() => setActiveTab('participants')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'participants' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}>{t.lobby.participants_tab} ({participants.length})</button>
             </div>
         </div>
 
-        {/* CONTENUTO */}
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-900/50">
-            
-            {/* TAB: CHAT */}
             {activeTab === 'chat' && (
                 <div className="p-4 space-y-1 min-h-full flex flex-col justify-end">
                     {messages.length === 0 && <div className="text-center text-gray-500 mb-auto mt-10 italic text-sm">{t.lobby.chat_empty}</div>}
-                    
                     {messages.map((msg, index) => {
                         const isMe = msg.user_id === userId
                         const isSequence = index > 0 && messages[index - 1].user_id === msg.user_id
                         const isEditing = editingId === msg.id
-                        
                         return (
                             <div key={msg.id} className={`flex gap-3 group ${isMe ? 'flex-row-reverse' : ''} ${isSequence ? 'mt-0.5' : 'mt-4'}`}>
                                 <div className="w-8 shrink-0 flex flex-col items-center">
@@ -228,8 +167,6 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                     <div ref={messagesEndRef} />
                 </div>
             )}
-
-            {/* TAB: PARTECIPANTI */}
             {activeTab === 'participants' && (
                 <div className="p-4 space-y-2">
                     {participants.map(p => (
@@ -241,16 +178,12 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                                      <p className="text-[10px] text-gray-500 uppercase font-bold">{p.user_id === userId ? t.results.my_vote : 'Partecipante'}</p>
                                  </div>
                              </div>
-                             {p.has_voted && (
-                                 <span className="text-green-400 bg-green-900/20 px-2 py-1 rounded text-[10px] font-bold border border-green-500/30">VOTED</span>
-                             )}
+                             {p.has_voted && <span className="text-green-400 bg-green-900/20 px-2 py-1 rounded text-[10px] font-bold border border-green-500/30">VOTED</span>}
                         </div>
                     ))}
                 </div>
             )}
         </div>
-
-        {/* INPUT CHAT (Visibile solo in tab chat) */}
         {activeTab === 'chat' && (
             <form onSubmit={sendMessage} className="p-4 border-t border-gray-800 bg-gray-900 pb-8 md:pb-4">
                 <div className="flex gap-2">
@@ -260,8 +193,6 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
             </form>
         )}
       </div>
-      
-      {/* Overlay Mobile */}
       {isOpen && <div onClick={toggleChat} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] md:hidden" />}
     </>
   )

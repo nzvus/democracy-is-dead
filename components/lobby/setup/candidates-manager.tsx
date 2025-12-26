@@ -7,70 +7,52 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import CandidateTooltip from '@/components/ui/candidate-tooltip'
+import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
 
 export default function CandidatesManager({ lobby }: { lobby: any }) {
   const { t } = useLanguage()
   const supabase = createClient()
+  const { confirm } = useConfirm() // <--- Hook
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Carica i candidati all'avvio
   useEffect(() => {
     const fetchCandidates = async () => {
-        const { data } = await supabase
-            .from('candidates')
-            .select('*')
-            .eq('lobby_id', lobby.id)
-            .order('created_at', { ascending: true })
-        
+        const { data } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id).order('created_at', { ascending: true })
         if (data) setCandidates(data)
     }
     fetchCandidates()
-
-    // Realtime subscription per tenere sincronizzati più admin (opzionale ma utile)
     const channel = supabase.channel('candidates_setup')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates', filter: `lobby_id=eq.${lobby.id}` }, 
         (payload) => {
-            if (payload.eventType === 'INSERT') {
-                setCandidates(prev => [...prev, payload.new as Candidate])
-            } else if (payload.eventType === 'DELETE') {
-                setCandidates(prev => prev.filter(c => c.id !== payload.old.id))
-            } else if (payload.eventType === 'UPDATE') {
-                setCandidates(prev => prev.map(c => c.id === payload.new.id ? payload.new as Candidate : c))
-            }
+            if (payload.eventType === 'INSERT') setCandidates(prev => [...prev, payload.new as Candidate])
+            else if (payload.eventType === 'DELETE') setCandidates(prev => prev.filter(c => c.id !== payload.old.id))
+            else if (payload.eventType === 'UPDATE') setCandidates(prev => prev.map(c => c.id === payload.new.id ? payload.new as Candidate : c))
         })
         .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [lobby.id, supabase])
 
   const addCandidate = async () => {
     if (!newName.trim()) return
-
     setLoading(true)
-    const newCandidate = {
-        lobby_id: lobby.id,
-        name: newName,
-        description: newDesc,
-        // image_url: ... (Qui potresti aggiungere logica upload se volessi)
-    }
-
-    const { error } = await supabase.from('candidates').insert(newCandidate)
-
-    if (error) {
-        toast.error(t.common.error)
-    } else {
-        toast.success(t.common.saved)
-        setNewName('')
-        setNewDesc('')
-    }
+    const { error } = await supabase.from('candidates').insert({ lobby_id: lobby.id, name: newName, description: newDesc })
+    if (error) toast.error(t.common.error)
+    else { toast.success(t.common.saved); setNewName(''); setNewDesc('') }
     setLoading(false)
   }
 
   const removeCandidate = async (id: string) => {
+    const isConfirmed = await confirm({
+        title: "Rimuovi Candidato",
+        description: "Vuoi davvero rimuovere questo candidato dalla lista?",
+        confirmText: t.common.delete,
+        variant: 'danger'
+    })
+    if (!isConfirmed) return
     const { error } = await supabase.from('candidates').delete().eq('id', id)
     if (error) toast.error(t.common.error)
     else toast.success("Candidato rimosso")
@@ -78,79 +60,32 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
 
   return (
     <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
-        
-        {/* FORM AGGIUNTA */}
         <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4 border border-gray-800`}>
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_candidate_title}</h3>
-            
             <div className="space-y-3">
-                <div className="space-y-1">
-                    <input 
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        placeholder={t.setup.candidate_name_ph}
-                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all font-bold`}
-                        onKeyDown={(e) => e.key === 'Enter' && addCandidate()}
-                    />
-                </div>
-                
-                <div className="space-y-1">
-                    <textarea 
-                        value={newDesc}
-                        onChange={(e) => setNewDesc(e.target.value)}
-                        placeholder={t.setup.candidate_desc_ph}
-                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all min-h-[80px] resize-none text-sm`}
-                    />
-                </div>
+                <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t.setup.candidate_name_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all font-bold`} onKeyDown={(e) => e.key === 'Enter' && addCandidate()} />
+                <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t.setup.candidate_desc_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all min-h-[80px] resize-none text-sm`} />
             </div>
-
-            <button 
-                onClick={addCandidate}
-                disabled={loading || !newName}
-                className={`w-full bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white font-bold py-3 ${UI.LAYOUT.ROUNDED_MD} transition-all shadow-lg active:scale-[0.98]`}
-            >
-                {loading ? t.common.loading : '+ ' + t.common.save}
-            </button>
+            <button onClick={addCandidate} disabled={loading || !newName} className={`w-full bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white font-bold py-3 ${UI.LAYOUT.ROUNDED_MD} transition-all shadow-lg active:scale-[0.98]`}>{loading ? t.common.loading : '+ ' + t.common.save}</button>
         </div>
 
-        {/* LISTA CANDIDATI */}
         <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest pl-1">{t.setup.list_candidates} ({candidates.length})</h3>
-            
-            {candidates.length === 0 && (
-                <div className="text-center p-8 border border-dashed border-gray-800 rounded-xl text-gray-600 italic">
-                    Nessun candidato aggiunto. Inizia ora!
-                </div>
-            )}
-
+            {candidates.length === 0 && <div className="text-center p-8 border border-dashed border-gray-800 rounded-xl text-gray-600 italic">Nessun candidato aggiunto. Inizia ora!</div>}
             {candidates.map((c) => (
                 <div key={c.id} className={`${UI.COLORS.BG_CARD} p-4 ${UI.LAYOUT.ROUNDED_MD} flex justify-between items-center border border-gray-800 hover:border-gray-700 transition-colors group`}>
                     <div className="flex items-center gap-4 overflow-hidden">
-                        
-                        {/* TOOLTIP SULL'ICONA */}
                         <CandidateTooltip candidate={c}>
                             <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center text-xl overflow-hidden border border-gray-700 cursor-help group-hover:border-indigo-500 transition-colors shrink-0">
                                 {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover"/> : <span>👤</span>}
                             </div>
                         </CandidateTooltip>
-
                         <div className="min-w-0">
                             <p className="font-bold truncate text-white">{c.name}</p>
-                            {c.description ? (
-                                <p className="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md">{c.description}</p>
-                            ) : (
-                                <p className="text-[10px] text-gray-600 italic">Nessuna descrizione</p>
-                            )}
+                            {c.description ? <p className="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md">{c.description}</p> : <p className="text-[10px] text-gray-600 italic">Nessuna descrizione</p>}
                         </div>
                     </div>
-                    
-                    <button 
-                        onClick={() => removeCandidate(c.id)} 
-                        className="text-gray-600 hover:text-red-400 p-2 rounded-full hover:bg-gray-800 transition-all"
-                        title={t.common.delete}
-                    >
-                        🗑
-                    </button>
+                    <button onClick={() => removeCandidate(c.id)} className="text-gray-600 hover:text-red-400 p-2 rounded-full hover:bg-gray-800 transition-all" title={t.common.delete}>🗑</button>
                 </div>
             ))}
         </div>

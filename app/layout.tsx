@@ -1,32 +1,20 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next"; // Aggiungi Viewport
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/providers/auth-provider";
-import { Toaster } from "sonner";
 import { LanguageProvider } from "@/components/providers/language-provider";
-import LanguageSwitcher from "@/components/ui/language-switcher";
+import { ConfirmProvider } from "@/components/providers/confirm-provider"; // <--- IMPORT
+import { Toaster } from 'sonner'; // <--- IMPORT
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// ... metadata code ...
 
-// 1. Export Viewport separato (Fix Warning)
+// Aggiungi export viewport per gestire lo zoom su mobile
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-};
-
-// 2. Metadata standard
-export const metadata: Metadata = {
-  title: "Democracy is Dead",
-  description: "Social Choice Theory App",
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -35,18 +23,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-950 text-white`}>
-        <AuthProvider>
-          <LanguageProvider>
-            
-            {/* Il selettore è sicuro perché LanguageProvider è sempre renderizzato */}
-            <LanguageSwitcher />
-            
-            {children}
-            <Toaster position="top-center" richColors />
-          </LanguageProvider>
-        </AuthProvider>
+    <html lang="en">
+      <body className={`${inter.className} bg-gray-950 text-white overflow-x-hidden`}>
+        <LanguageProvider>
+          <ConfirmProvider> {/* <--- WRAPPER */}
+             {children}
+             
+             {/* TOASTER GLOBALE CONFIGURATO */}
+             <Toaster 
+                position="top-center" 
+                theme="dark" 
+                richColors 
+                closeButton
+                toastOptions={{
+                    style: { background: '#111827', border: '1px solid #374151', borderRadius: '12px' },
+                    className: 'my-toast-class',
+                }}
+             />
+          </ConfirmProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -8,5 +8,7 @@ export default {
     delete: "Elimina",
     edit: "Modifica",
     back: "Indietro",
-    next: "Avanti"
+    next: "Avanti",
+    yes: "Sì",
+    no: "No",
 }

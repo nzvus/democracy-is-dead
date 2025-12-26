@@ -8,6 +8,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { Factor, Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import { toast } from 'sonner'
+import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
 
 import RankingTable from './ranking-table'
 import ResultsMatrix from './results-matrix'
@@ -26,6 +27,7 @@ interface ResultsWrapperProps {
 export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapperProps) {
   const { t } = useLanguage()
   const supabase = createClient()
+  const { confirm } = useConfirm() // <--- Hook
   
   const [allResults, setAllResults] = useState<Record<VotingSystem, Candidate[]> | null>(null)
   const [activeSystem, setActiveSystem] = useState<VotingSystem>('weighted')
@@ -74,7 +76,15 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   }, [lobby.id, supabase, factors, t.common.error, lobby.settings.voting_scale?.max])
 
   const handleReopen = async () => {
-      if (!confirm(t.results.reopen_confirm)) return
+      const isConfirmed = await confirm({
+          title: t.results.reopen_btn,
+          description: t.results.reopen_confirm,
+          confirmText: "Riapri Voto",
+          variant: 'danger'
+      })
+
+      if (!isConfirmed) return
+
       setReopening(true)
       const { error } = await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobby.id)
       if (error) { toast.error(t.common.error); setReopening(false) }
@@ -84,32 +94,22 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
   if (loading || !allResults) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white"><div className="animate-spin text-4xl">⏳</div></div>
 
   const currentResults = allResults[activeSystem]
-  // Descrizione dinamica del grafico corrente
   const currentChartDesc = activeChart === 'radar' ? t.results.charts.radar_desc : t.results.charts.compare_desc
 
   return (
     <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-6 flex flex-col items-center overflow-x-hidden`}>
-      
       <div className="w-full max-w-5xl space-y-12 flex flex-col">
         
-        {/* 1. HEADER & SISTEMI */}
+        {/* 1. HEADER */}
         <header className="flex flex-col items-center gap-4 relative z-30">
             <ShareLobby code={lobby.code} compact={true} />
-            
-            {/* TABS SISTEMI */}
             <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full no-scrollbar">
                 {(['weighted', 'borda', 'median'] as VotingSystem[]).map((sys) => (
-                    <button
-                        key={sys}
-                        onClick={() => setActiveSystem(sys)}
-                        className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeSystem === sys ? 'bg-gray-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
-                    >
+                    <button key={sys} onClick={() => setActiveSystem(sys)} className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeSystem === sys ? 'bg-gray-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}>
                         {t.results.systems[sys].title}
                     </button>
                 ))}
             </div>
-
-            {/* DIDASCALIA SISTEMA */}
             <div className="w-full max-w-lg bg-indigo-950/30 border border-indigo-500/20 p-3 rounded-xl text-center">
                 <p className="text-indigo-200 text-xs font-medium leading-relaxed">
                     <strong className="text-white uppercase tracking-wider mr-2">{t.results.systems[activeSystem].title}:</strong>
@@ -123,32 +123,18 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             <Podium top3={currentResults.slice(0, 3)} />
         </section>
 
-        {/* 3. DASHBOARD GRAFICI */}
+        {/* 3. DASHBOARD */}
         <section className={`${UI.COLORS.BG_CARD} border border-gray-800 ${UI.LAYOUT.ROUNDED_LG} shadow-2xl w-full overflow-hidden`}>
-            {/* TABS GRAFICI */}
             <div className="flex border-b border-gray-800 bg-gray-900/50">
-                 <button onClick={() => setActiveChart('radar')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'radar' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-                    {t.results.charts.radar}
-                 </button>
-                 <button onClick={() => setActiveChart('compare')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'compare' ? 'border-indigo-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-                    {t.results.charts.comparison}
-                 </button>
+                 <button onClick={() => setActiveChart('radar')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'radar' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>{t.results.charts.radar}</button>
+                 <button onClick={() => setActiveChart('compare')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'compare' ? 'border-indigo-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>{t.results.charts.comparison}</button>
             </div>
-
-            {/* DIDASCALIA GRAFICO (Sopra al contenuto, integrata) */}
             <div className="bg-gray-900/30 py-2 px-4 text-center border-b border-gray-800/50">
-                <p className="text-[10px] md:text-xs text-gray-500 italic">
-                    {currentChartDesc}
-                </p>
+                <p className="text-[10px] md:text-xs text-gray-500 italic">{currentChartDesc}</p>
             </div>
-
             <div className="p-2 md:p-8 min-h-[450px] flex items-center justify-center w-full">
                 <div className="w-full h-full">
-                    {activeChart === 'radar' ? (
-                        <ResultsChart results={currentResults} factors={factors} />
-                    ) : (
-                        <ComparisonChart allResults={allResults} candidates={rawCandidates} />
-                    )}
+                    {activeChart === 'radar' ? <ResultsChart results={currentResults} factors={factors} /> : <ComparisonChart allResults={allResults} candidates={rawCandidates} />}
                 </div>
             </div>
         </section>
@@ -171,13 +157,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
                 <InfoButton title={t.results.matrix_title} desc={t.results.matrix_subtitle} />
             </div>
             <div className="-mx-4 md:mx-0">
-                <ResultsMatrix 
-                    candidates={rawCandidates}
-                    participants={participants}
-                    votes={rawVotes}
-                    currentUserId={userId}
-                    badges={userBadges}
-                />
+                <ResultsMatrix candidates={rawCandidates} participants={participants} votes={rawVotes} currentUserId={userId} badges={userBadges} />
             </div>
         </section>
 
