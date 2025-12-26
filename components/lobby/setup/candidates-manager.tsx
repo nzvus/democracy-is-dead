@@ -7,12 +7,12 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import CandidateTooltip from '@/components/ui/candidate-tooltip'
-import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
+import { useConfirm } from '@/components/providers/confirm-provider'
 
 export default function CandidatesManager({ lobby }: { lobby: any }) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const { confirm } = useConfirm() // <--- Hook
+  const { confirm } = useConfirm()
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [newName, setNewName] = useState('')
@@ -47,15 +47,16 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
 
   const removeCandidate = async (id: string) => {
     const isConfirmed = await confirm({
-        title: "Rimuovi Candidato",
-        description: "Vuoi davvero rimuovere questo candidato dalla lista?",
-        confirmText: t.common.delete,
+        title: t.setup.remove_candidate_title,
+        description: t.setup.remove_candidate_confirm,
+        // NON passo confirmText così usa il default reattivo (t.common.confirm) del provider, o puoi forzare:
+        confirmText: t.common.delete, 
         variant: 'danger'
     })
     if (!isConfirmed) return
     const { error } = await supabase.from('candidates').delete().eq('id', id)
     if (error) toast.error(t.common.error)
-    else toast.success("Candidato rimosso")
+    else toast.success(t.setup.candidate_removed)
   }
 
   return (
@@ -86,7 +87,7 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
                         </CandidateTooltip>
                         <div className="min-w-0">
                             <p className="font-bold truncate text-white">{c.name}</p>
-                            {c.description ? <p className="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md">{c.description}</p> : <p className="text-[10px] text-gray-600 italic">Nessuna descrizione</p>}
+                            {c.description ? <p className="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md">{c.description}</p> : <p className="text-[10px] text-gray-600 italic">{t.setup.no_description}</p>}
                         </div>
                     </div>
                     <button onClick={() => removeCandidate(c.id)} className="text-gray-600 hover:text-red-400 p-2 rounded-full hover:bg-gray-800 transition-all" title={t.common.delete}>🗑</button>

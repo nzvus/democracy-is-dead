@@ -9,16 +9,17 @@ export default {
     terminate_btn: "Termina Votazione",
     terminate_confirm: "Sei sicuro di voler terminare la votazione? Non si potrà tornare indietro.",
     chat_title: "Chat Stanza",
-    hub_title: "Lobby Hub", // Nuova
+    hub_title: "Lobby Hub",
     chat_placeholder: "Scrivi un messaggio...",
     chat_empty: "Nessun messaggio ancora. Rompi il ghiaccio!",
     anon_user: "Anonimo",
     no_description: "Nessuna descrizione disponibile.",
     participants_tab: "Partecipanti",
-    participant_role: "Partecipante", // Nuova
-    voted_badge: "VOTATO", // Nuova
+    participant_role: "Partecipante",
+    voted_badge: "VOTATO",
     online_status: "Online",
     chat_tab: "Chat",
+    join_lobby: "Entra nella Lobby", // Nuova
     voting: {
         title: "Scheda Elettorale",
         subtitle: "Esprimi il tuo giudizio sui candidati",

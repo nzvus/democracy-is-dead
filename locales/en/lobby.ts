@@ -19,6 +19,7 @@ export default {
     participant_role: "Participant",
     voted_badge: "VOTED",
     chat_tab: "Chat",
+    join_lobby: "Join Lobby", // Nuova
     voting: {
         title: "Ballot Paper",
         subtitle: "Express your judgment on the candidates",

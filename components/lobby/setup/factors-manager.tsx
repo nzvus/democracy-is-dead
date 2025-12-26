@@ -55,7 +55,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
 
   const removeFactor = async (id: string) => {
     if (factors.length <= 1) {
-        toast.error("Devi avere almeno un fattore di voto!")
+        toast.error(t.setup.min_one_factor)
         return
     }
     await saveFactors(factors.filter(f => f.id !== id))
@@ -70,11 +70,11 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
             
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400">Nome Fattore</label>
+                    <label className="text-xs font-bold text-gray-400">{t.setup.factor_name_label}</label>
                     <input 
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        placeholder="Es. Prezzo, Estetica..."
+                        placeholder={t.setup.factor_name_ph}
                         className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500`}
                     />
                 </div>
@@ -92,7 +92,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                     <label className="text-xs font-bold text-gray-400">Tipo</label>
+                     <label className="text-xs font-bold text-gray-400">{t.setup.factor_type_label}</label>
                      <div className="flex gap-2">
                         <button onClick={() => setNewType('vote')} className={`flex-1 py-2 text-xs font-bold rounded border ${newType === 'vote' ? `bg-${UI.COLORS.PRIMARY}-900 border-${UI.COLORS.PRIMARY}-500` : 'bg-gray-800 border-gray-700'}`}>
                             🗳️ {t.setup.factor_type_vote}
@@ -104,7 +104,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
                 </div>
 
                 <div className="space-y-2">
-                     <label className="text-xs font-bold text-gray-400">Trend</label>
+                     <label className="text-xs font-bold text-gray-400">{t.setup.factor_trend_label}</label>
                      <div className="flex gap-2">
                         <button onClick={() => setNewTrend('higher_better')} className={`flex-1 py-2 text-xs font-bold rounded border ${newTrend === 'higher_better' ? 'bg-green-900/30 border-green-500' : 'bg-gray-800 border-gray-700'}`}>
                             ↗ {t.setup.trend_high}
@@ -136,9 +136,9 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
                         <div>
                             <p className="font-bold">{f.name}</p>
                             <div className="flex gap-2 text-[10px] uppercase font-bold text-gray-500">
-                                <span>Weight: x{f.weight}</span>
+                                <span>{t.setup.factor_weight}: x{f.weight}</span>
                                 <span>•</span>
-                                <span>{f.trend === 'higher_better' ? 'High Good' : 'Low Good'}</span>
+                                <span>{f.trend === 'higher_better' ? t.setup.trend_high : t.setup.trend_low}</span>
                             </div>
                         </div>
                     </div>

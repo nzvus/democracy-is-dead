@@ -22,7 +22,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
   const copyLink = () => {
     if (!lobbyUrl) return
     navigator.clipboard.writeText(lobbyUrl)
-    toast.success("Link copiato!") // Puoi aggiungere questa chiave a common.ts se vuoi
+    toast.success(t.common.link_copied)
   }
 
   return (
@@ -34,7 +34,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
         <button 
             onClick={copyLink}
             className={`flex items-center gap-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-4 py-2 ${UI.LAYOUT.ROUNDED_MD} transition-all active:scale-95 group`}
-            title="Copia Link"
+            title={t.common.copy_link}
         >
             <span className="font-mono font-bold tracking-widest text-lg group-hover:text-yellow-400 transition-colors">{code}</span>
             <span className="opacity-50 text-xs uppercase font-bold border-l border-gray-600 pl-3">📋</span>
@@ -68,7 +68,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
                     ×
                 </button>
 
-                <h3 className="font-black text-2xl mb-2 tracking-tight text-center">Join Lobby</h3>
+                <h3 className="font-black text-2xl mb-2 tracking-tight text-center">{t.lobby.join_lobby}</h3>
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">{t.lobby.voting.scan_to_join}</p>
                 
                 {/* QR Container */}

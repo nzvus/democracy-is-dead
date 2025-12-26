@@ -1,7 +1,9 @@
 'use client'
 import { useState } from 'react'
+import { useLanguage } from '@/components/providers/language-provider'
 
 export default function InfoButton({ title, desc, history }: { title: string, desc: string, history?: string }) {
+  const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -28,7 +30,7 @@ export default function InfoButton({ title, desc, history }: { title: string, de
          
          {history && (
              <div className="bg-black/40 p-2 rounded border border-gray-800/50 relative z-10">
-                 <p className="text-[9px] text-yellow-500 uppercase font-bold mb-1 tracking-widest">Storico</p>
+                 <p className="text-[9px] text-yellow-500 uppercase font-bold mb-1 tracking-widest">{t.common.history}</p>
                  <p className="text-[10px] text-gray-400 italic leading-relaxed">{history}</p>
              </div>
          )}
