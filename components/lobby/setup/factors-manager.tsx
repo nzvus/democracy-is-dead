@@ -7,6 +7,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { Factor } from '@/types'
 import { UI } from '@/lib/constants'
 import DescriptionTooltip from '@/components/ui/description-tooltip'
+import ImagePicker from '@/components/ui/image-picker'
 
 export default function FactorsManager({ lobby }: { lobby: any }) {
   const { t } = useLanguage()
@@ -14,10 +15,9 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
   const [factors, setFactors] = useState<Factor[]>(lobby.settings.factors || [])
   const [loading, setLoading] = useState(false)
 
-  // Form State
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
-  const [newImage, setNewImage] = useState('')
+  const [newImage, setNewImage] = useState<string | null>(null)
   const [newWeight, setNewWeight] = useState(1)
   const [newType, setNewType] = useState<'vote'|'static'>('vote')
   const [newTrend, setNewTrend] = useState<'higher_better'|'lower_better'>('higher_better')
@@ -47,7 +47,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
         id: Math.random().toString(36).substr(2, 9),
         name: newName,
         description: newDesc,
-        image_url: newImage || null,
+        image_url: newImage,
         weight: newWeight,
         type: newType,
         trend: newTrend
@@ -56,7 +56,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
     await saveFactors([...factors, newFactor])
     setNewName('')
     setNewDesc('')
-    setNewImage('')
+    setNewImage(null)
     setNewWeight(1)
   }
 
@@ -99,24 +99,19 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
             </div>
 
             {/* Immagine e Descrizione */}
-            <div className="space-y-3">
+            <div className="grid md:grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400">Icona/Immagine (URL)</label>
-                    <input 
-                        value={newImage}
-                        onChange={(e) => setNewImage(e.target.value)}
-                        placeholder="https://..."
-                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500 text-xs font-mono`}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400">Descrizione (Opzionale)</label>
+                    <label className="text-xs font-bold text-gray-400">{t.common.description_label}</label>
                     <textarea 
                         value={newDesc}
                         onChange={(e) => setNewDesc(e.target.value)}
-                        placeholder="Spiega cosa valutare in questo fattore..."
-                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500 min-h-[60px] resize-none text-sm`}
+                        placeholder={t.common.description_ph}
+                        className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:border-${UI.COLORS.PRIMARY}-500 min-h-[100px] resize-none text-sm`}
                     />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400">{t.common.image_label}</label>
+                    <ImagePicker value={newImage} onChange={setNewImage} />
                 </div>
             </div>
 

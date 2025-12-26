@@ -12,9 +12,19 @@ export default {
     yes: "Sì",
     no: "No",
     close: "Chiudi",
-    copy_link: "Copia Link", // Nuova
-    link_copied: "Link copiato!", // Nuova
-    history: "Storico", // Nuova
+    copy_link: "Copia Link",
+    link_copied: "Link copiato!",
+    history: "Storico",
     delete_msg_title: "Elimina Messaggio",
-    delete_msg_desc: "Sei sicuro di voler eliminare questo messaggio?"
+    delete_msg_desc: "Sei sicuro di voler eliminare questo messaggio?",
+    // Image Picker & Forms
+    img_picker_tab_url: "Link URL",
+    img_picker_tab_file: "Carica File",
+    img_picker_ph: "Incolla link immagine (https://...)",
+    img_picker_drag: "Clicca o trascina immagine qui",
+    img_picker_remove: "Rimuovi Immagine",
+    img_picker_too_large: "File troppo grande (Max 1MB)",
+    description_label: "Descrizione",
+    description_ph: "Aggiungi una descrizione opzionale...",
+    image_label: "Immagine"
 }

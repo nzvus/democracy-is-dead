@@ -5,29 +5,31 @@ import { createClient } from '@/lib/client'
 import { useLanguage } from '@/components/providers/language-provider'
 import { toast } from 'sonner'
 import { UI } from '@/lib/constants'
+import ImagePicker from '@/components/ui/image-picker'
 
 export default function LobbyOnboarding({ lobby, userId, onJoin }: { lobby: any, userId: string, onJoin: () => void }) {
   const { t } = useLanguage()
   const supabase = createClient()
   
   const [nickname, setNickname] = useState('')
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleJoin = async () => {
       if(!nickname.trim()) {
-          // CORRETTO: Usa t.onboarding
           toast.error(t.onboarding.error_nick)
           return
       }
       setLoading(true)
 
-      const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${nickname}`
+      // Usa customAvatar se presente, altrimenti genera DiceBear
+      const finalAvatar = customAvatar || `https://api.dicebear.com/9.x/notionists/svg?seed=${nickname}`
 
       const { error } = await supabase.from('lobby_participants').insert({
             lobby_id: lobby.id,
             user_id: userId,
             nickname: nickname,
-            avatar_url: avatarUrl,
+            avatar_url: finalAvatar,
             has_voted: false
       })
       
@@ -48,14 +50,24 @@ export default function LobbyOnboarding({ lobby, userId, onJoin }: { lobby: any,
                 <p className="text-gray-400">{t.onboarding.subtitle}</p>
             </div>
 
-            <div className="flex justify-center">
-                 <div className="w-24 h-24 rounded-full bg-gray-900 border-2 border-dashed border-gray-700 flex items-center justify-center overflow-hidden relative group">
-                    {nickname ? (
-                        <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${nickname}`} alt="Avatar" className="w-full h-full object-cover animate-in fade-in" />
-                    ) : (
-                        <span className="text-4xl grayscale opacity-50">{t.onboarding.avatar_placeholder}</span>
-                    )}
-                 </div>
+            <div className="space-y-4">
+                {/* Anteprima Avatar Default se non c'è custom */}
+                {!customAvatar && (
+                    <div className="flex justify-center mb-6">
+                        <div className="w-24 h-24 rounded-full bg-gray-900 border-2 border-dashed border-gray-700 flex items-center justify-center overflow-hidden relative opacity-60">
+                            {nickname ? (
+                                <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${nickname}`} alt="Avatar Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-4xl grayscale opacity-50">👤</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+                
+                {/* Selettore Immagine */}
+                <div className="px-4">
+                    <ImagePicker value={customAvatar} onChange={setCustomAvatar} />
+                </div>
             </div>
 
             <div className="space-y-4">

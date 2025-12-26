@@ -12,9 +12,19 @@ export default {
     close: "Close",
     yes: "Yes",
     no: "No",
-    copy_link: "Copy Link", // Nuova
-    link_copied: "Link copied!", // Nuova
-    history: "History", // Nuova
+    copy_link: "Copy Link",
+    link_copied: "Link copied!",
+    history: "History",
     delete_msg_title: "Delete Message",
-    delete_msg_desc: "Are you sure you want to delete this message?"
+    delete_msg_desc: "Are you sure you want to delete this message?",
+    // Image Picker & Forms
+    img_picker_tab_url: "Link URL",
+    img_picker_tab_file: "Upload File",
+    img_picker_ph: "Paste image link (https://...)",
+    img_picker_drag: "Click or drag image here",
+    img_picker_remove: "Remove Image",
+    img_picker_too_large: "File too large (Max 1MB)",
+    description_label: "Description",
+    description_ph: "Add an optional description...",
+    image_label: "Image"
 }

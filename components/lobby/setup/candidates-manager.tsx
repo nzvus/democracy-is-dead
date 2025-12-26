@@ -8,6 +8,7 @@ import { Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import DescriptionTooltip from '@/components/ui/description-tooltip'
 import { useConfirm } from '@/components/providers/confirm-provider'
+import ImagePicker from '@/components/ui/image-picker'
 
 export default function CandidatesManager({ lobby }: { lobby: any }) {
   const { t } = useLanguage()
@@ -17,6 +18,7 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
+  const [newImage, setNewImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -39,9 +41,17 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
   const addCandidate = async () => {
     if (!newName.trim()) return
     setLoading(true)
-    const { error } = await supabase.from('candidates').insert({ lobby_id: lobby.id, name: newName, description: newDesc })
+    const { error } = await supabase.from('candidates').insert({ 
+        lobby_id: lobby.id, 
+        name: newName, 
+        description: newDesc,
+        image_url: newImage 
+    })
     if (error) toast.error(t.common.error)
-    else { toast.success(t.common.saved); setNewName(''); setNewDesc('') }
+    else { 
+        toast.success(t.common.saved); 
+        setNewName(''); setNewDesc(''); setNewImage(null) 
+    }
     setLoading(false)
   }
 
@@ -62,13 +72,30 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
     <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
         <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4 border border-gray-800`}>
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_candidate_title}</h3>
-            <div className="space-y-3">
+            
+            <div className="space-y-4">
+                {/* NOME */}
                 <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t.setup.candidate_name_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all font-bold`} onKeyDown={(e) => e.key === 'Enter' && addCandidate()} />
-                <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t.setup.candidate_desc_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all min-h-[80px] resize-none text-sm`} />
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                    {/* DESCRIZIONE */}
+                    <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-bold text-gray-500 pl-1">{t.common.description_label}</label>
+                        <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t.common.description_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all min-h-[100px] resize-none text-sm`} />
+                    </div>
+
+                    {/* IMMAGINE (IMAGE PICKER) */}
+                    <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-bold text-gray-500 pl-1">{t.common.image_label}</label>
+                        <ImagePicker value={newImage} onChange={setNewImage} />
+                    </div>
+                </div>
             </div>
+
             <button onClick={addCandidate} disabled={loading || !newName} className={`w-full bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white font-bold py-3 ${UI.LAYOUT.ROUNDED_MD} transition-all shadow-lg active:scale-[0.98]`}>{loading ? t.common.loading : '+ ' + t.common.save}</button>
         </div>
 
+        {/* LISTA */}
         <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest pl-1">{t.setup.list_candidates} ({candidates.length})</h3>
 {candidates.length === 0 ? (
