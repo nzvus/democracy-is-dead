@@ -4,7 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { ConfirmProvider } from "@/components/providers/confirm-provider";
 import { Toaster } from 'sonner';
-import LanguageSwitcher from "@/components/ui/language-switcher"; // <--- 1. Importa
+import LanguageSwitcher from "@/components/ui/language-switcher"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,7 +31,7 @@ export default function RootLayout({
         <LanguageProvider>
           <ConfirmProvider>
              
-             {/* 2. AGGIUNGI IL SWITCHER QUI */}
+             {}
              <LanguageSwitcher />
              
              {children}

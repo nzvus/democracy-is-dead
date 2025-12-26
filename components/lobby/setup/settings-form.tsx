@@ -11,7 +11,7 @@ export default function SettingsForm({ lobby }: { lobby: any }) {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
 
-  // State locale inizializzato dai settings del DB
+  
   const [maxScale, setMaxScale] = useState<number>(lobby.settings.voting_scale?.max || 10)
   const [allowDecimals, setAllowDecimals] = useState<boolean>(lobby.settings.allow_decimals || false)
 
@@ -34,16 +34,16 @@ export default function SettingsForm({ lobby }: { lobby: any }) {
     setLoading(false)
   }
 
-  // Admin Power: Reset Voti
+  
   const resetVotes = async () => {
       if(!confirm(t.setup.settings_tab.reset_confirm)) return;
 
       setLoading(true)
       
-      // 1. Cancella voti
+      
       const { error: delError } = await supabase.from('votes').delete().eq('lobby_id', lobby.id)
       
-      // 2. Resetta stato partecipanti
+      
       const { error: upError } = await supabase
         .from('lobby_participants')
         .update({ has_voted: false })
@@ -58,13 +58,13 @@ export default function SettingsForm({ lobby }: { lobby: any }) {
   return (
     <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
         
-        {/* CARD IMPOSTAZIONI */}
+        {}
         <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-6 border border-gray-800`}>
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">
                 {t.setup.settings_tab.title}
             </h3>
 
-            {/* Scala Max */}
+            {}
             <div className="space-y-2">
                 <div className="flex justify-between">
                     <label className="text-sm font-bold text-gray-300">{t.setup.settings_tab.scale_label}</label>
@@ -74,13 +74,13 @@ export default function SettingsForm({ lobby }: { lobby: any }) {
                     type="range" min="5" max="100" step="1"
                     value={maxScale}
                     onChange={(e) => setMaxScale(Number(e.target.value))}
-                    onMouseUp={() => saveSettings(maxScale, allowDecimals)} // Salva al rilascio
+                    onMouseUp={() => saveSettings(maxScale, allowDecimals)} 
                     onTouchEnd={() => saveSettings(maxScale, allowDecimals)}
                     className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
                 />
             </div>
 
-            {/* Toggle Decimali */}
+            {}
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-800">
                 <label className="text-sm font-bold text-gray-300">{t.setup.settings_tab.decimals_label}</label>
                 <button 
@@ -96,7 +96,7 @@ export default function SettingsForm({ lobby }: { lobby: any }) {
             </div>
         </div>
 
-        {/* DANGER ZONE */}
+        {}
         <div className="border border-red-900/30 bg-red-950/10 rounded-xl p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase text-red-500 tracking-widest flex items-center gap-2">
                 ⚠️ {t.setup.settings_tab.danger_zone}

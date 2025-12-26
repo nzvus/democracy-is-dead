@@ -1,13 +1,13 @@
-// Definizioni globali per il progetto Democracy is Dead
 
-// Tipologie di Trend per i fattori
-// higher_better: Più alto è il voto, meglio è (es. Gusto)
-// lower_better: Più basso è il valore, meglio è (es. Prezzo, Calorie)
+
+
+
+
 export type Trend = 'higher_better' | 'lower_better';
 
-// Tipologia di Fattore
-// vote: Votato soggettivamente dagli utenti (slider)
-// static: Dato oggettivo inserito dall'admin (input numerico)
+
+
+
 export type FactorType = 'vote' | 'static';
 
 export interface Factor {
@@ -16,8 +16,8 @@ export interface Factor {
   weight: number;
   type: FactorType;
   trend: Trend;
-  image_url?: string | null; // Icona/Immagine del fattore
-  description?: string; // <--- NUOVO CAMPO
+  image_url?: string | null; 
+  description?: string; 
 }
 
 export interface Candidate {
@@ -26,7 +26,7 @@ export interface Candidate {
   name: string;
   description: string;
   image_url: string | null;
-  // Valori per i fattori statici (es. { "prezzo_id": 3.50 })
+  
   static_values?: Record<string, number>; 
 }
 
@@ -35,7 +35,7 @@ export interface Participant {
   user_id: string;
   nickname: string;
   has_voted: boolean;
-  avatar_url?: string | null; // Avatar personalizzato utente
+  avatar_url?: string | null; 
   is_online?: boolean;
 }
 

@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Candidate } from '@/types'
-import { useLanguage } from '@/components/providers/language-provider' // <--- Import
+import { useLanguage } from '@/components/providers/language-provider' 
 
 interface CandidateTooltipProps {
   candidate: Candidate
@@ -11,7 +11,7 @@ interface CandidateTooltipProps {
 }
 
 export default function CandidateTooltip({ candidate, children, className = '' }: CandidateTooltipProps) {
-  const { t } = useLanguage() // <--- Hook
+  const { t } = useLanguage() 
   const [isOpen, setIsOpen] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -48,7 +48,7 @@ export default function CandidateTooltip({ candidate, children, className = '' }
                     <h4 className="font-bold text-white text-sm mb-1">{candidate.name}</h4>
                     <div className="h-0.5 w-8 bg-indigo-500 mx-auto mb-2 rounded-full"></div>
                     <p className="text-gray-300 text-xs leading-relaxed line-clamp-6">
-                        {/* FIX QUI: Usa il dizionario */}
+                        {}
                         {candidate.description || <span className="italic text-gray-500">{t.lobby.no_description}</span>}
                     </p>
                 </div>

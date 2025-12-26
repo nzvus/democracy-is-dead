@@ -5,18 +5,18 @@ export default {
     ranking_title: "Dettaglio Punteggi",
     col_cand: "Candidato",
     
-    // Legenda Matematica
+    
     math_legend_title: "Come funziona il calcolo?",
     math_legend_desc: "I voti sono normalizzati per eliminare le differenze tra giudici severi e buoni. Il punteggio finale dipende dal sistema di voto selezionato in alto.",
 
-    // Podio
+    
     podium: {
         gold: "Vincitore",
         silver: "2° Classificato",
         bronze: "3° Classificato"
     },
 
-    // Sistemi di Voto (Tabs)
+    
     systems: {
         weighted: {
             title: "Media Ponderata",
@@ -35,7 +35,7 @@ export default {
         }
     },
 
-    // Grafici
+    
     charts: {
         radar: "Radar Fattori",
         distribution: "Distribuzione",
@@ -45,14 +45,14 @@ export default {
         compare_desc: "Confronta come cambierebbe la classifica usando sistemi di voto diversi."
     },
 
-    // Matrice & Trasparenza
+    
     matrix_title: "Matrice dei Voti",
     matrix_subtitle: "Scopri chi ha votato cosa (Trasparenza)",
     matrix_anon: "Voto Segreto",
     matrix_anon_desc: "L'host ha impostato i voti come anonimi.",
     my_vote: "(Tu)",
 
-    // Gamification (Badges)
+    
     badges: {
         hater: "Il Critico",
         lover: "L'Entusiasta",
@@ -66,7 +66,7 @@ export default {
         maverick: "Vota spesso all'opposto del gruppo"
     },
 
-    // Admin Actions
+    
     reopen_btn: "Riapri Votazione",
     reopen_confirm: "Vuoi riaprire la votazione? Gli utenti potranno modificare i loro voti e i risultati potrebbero cambiare."
 }

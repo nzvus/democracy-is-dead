@@ -19,7 +19,7 @@ export default function ImagePicker({ value, onChange, className = '' }: ImagePi
         const file = e.target.files?.[0]
         if (!file) return
         
-        // Limite 1MB per evitare problemi col DB
+        
         if (file.size > 1024 * 1024) { 
              toast.error(t.common.img_picker_too_large)
              return

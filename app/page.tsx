@@ -79,12 +79,12 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-950 text-white relative overflow-hidden">
       
-      {/* Sfondo Decorativo */}
+      {}
       <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-${UI.COLORS.PRIMARY}-900/20 via-gray-950 to-gray-950 z-0 pointer-events-none`}></div>
 
       <div className="z-10 w-full max-w-md md:max-w-2xl text-center space-y-10 md:space-y-16 animate-in fade-in zoom-in-95 duration-700">
         
-        {/* TITOLO */}
+        {}
         <div className="space-y-6">
             <h1 className="text-5xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 whitespace-pre-line leading-tight drop-shadow-2xl">
                 {t.home.title}
@@ -94,7 +94,7 @@ export default function Home() {
             </p>
         </div>
         
-        {/* AZIONI */}
+        {}
         <div className={`flex flex-col items-center gap-6 w-full px-4 ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mx-auto`}>
             
             <button

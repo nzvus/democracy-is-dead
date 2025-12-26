@@ -1,10 +1,10 @@
 'use client'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { Candidate } from '@/types'
-import { useLanguage } from '@/components/providers/language-provider' // <--- Import
+import { useLanguage } from '@/components/providers/language-provider' 
 
 export default function ComparisonChart({ allResults, candidates }: { allResults: any, candidates: Candidate[] }) {
-  const { t } = useLanguage() // <--- Hook
+  const { t } = useLanguage() 
 
   if (!allResults) return null;
   const data = candidates.map(c => {
@@ -16,7 +16,7 @@ export default function ComparisonChart({ allResults, candidates }: { allResults
 
   return (
     <div className="w-full h-[350px]">
-        {/* FIX QUI: Usa il dizionario */}
+        {}
         <h4 className="text-center text-xs text-gray-500 mb-4 font-mono uppercase">{t.results.charts.compare_title}</h4>
         
         <ResponsiveContainer width="100%" height="100%">

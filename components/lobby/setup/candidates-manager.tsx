@@ -74,17 +74,17 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_candidate_title}</h3>
             
             <div className="space-y-4">
-                {/* NOME */}
+                {}
                 <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t.setup.candidate_name_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all font-bold`} onKeyDown={(e) => e.key === 'Enter' && addCandidate()} />
                 
                 <div className="grid md:grid-cols-2 gap-4">
-                    {/* DESCRIZIONE */}
+                    {}
                     <div className="space-y-1">
                         <label className="text-[10px] uppercase font-bold text-gray-500 pl-1">{t.common.description_label}</label>
                         <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t.common.description_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all min-h-[100px] resize-none text-sm`} />
                     </div>
 
-                    {/* IMMAGINE (IMAGE PICKER) */}
+                    {}
                     <div className="space-y-1">
                         <label className="text-[10px] uppercase font-bold text-gray-500 pl-1">{t.common.image_label}</label>
                         <ImagePicker value={newImage} onChange={setNewImage} />
@@ -95,7 +95,7 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
             <button onClick={addCandidate} disabled={loading || !newName} className={`w-full bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white font-bold py-3 ${UI.LAYOUT.ROUNDED_MD} transition-all shadow-lg active:scale-[0.98]`}>{loading ? t.common.loading : '+ ' + t.common.save}</button>
         </div>
 
-        {/* LISTA */}
+        {}
         <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest pl-1">{t.setup.list_candidates} ({candidates.length})</h3>
 {candidates.length === 0 ? (

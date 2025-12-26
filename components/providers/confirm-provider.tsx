@@ -40,11 +40,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {options && (
         <div 
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200 p-4"
-            onClick={() => handleClose(false)} // Chiude se clicchi fuori (overlay)
+            onClick={() => handleClose(false)} 
         >
           <div 
               className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
-              onClick={(e) => e.stopPropagation()} // Impedisce la chiusura se clicchi dentro il box
+              onClick={(e) => e.stopPropagation()} 
           >
             <div className="p-6">
               <h3 className="text-lg font-bold text-white mb-2">{options.title}</h3>
@@ -55,7 +55,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 onClick={() => handleClose(false)}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
               >
-                {/* Usa la prop se fornita, altrimenti usa la traduzione reattiva */}
+                {}
                 {options.cancelText || t.common.cancel}
               </button>
               <button
@@ -66,7 +66,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                     : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/20'
                 }`}
               >
-                {/* Usa la prop se fornita, altrimenti usa la traduzione reattiva */}
+                {}
                 {options.confirmText || t.common.confirm}
               </button>
             </div>

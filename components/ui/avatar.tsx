@@ -3,8 +3,8 @@
 import { UI } from '@/lib/constants'
 
 interface AvatarProps {
-  src?: string | null     // URL immagine caricata (opzionale)
-  seed?: string           // Seed per generare avatar se manca src (es. user_id o nome)
+  src?: string | null     
+  seed?: string           
   alt?: string
   className?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
@@ -18,7 +18,7 @@ export default function Avatar({
   size = 'md'
 }: AvatarProps) {
   
-  // Dimensioni standard basate sulle costanti (opzionale, o classi Tailwind dirette)
+  
   const sizeClasses = {
     sm: "w-8 h-8",
     md: "w-10 h-10",
@@ -26,7 +26,7 @@ export default function Avatar({
     xl: "w-24 h-24"
   }
 
-  // Se c'è un'immagine caricata valida, usala
+  
   if (src) {
     return (
       <img 
@@ -37,8 +37,8 @@ export default function Avatar({
     )
   }
 
-  // Altrimenti genera con DiceBear (stile 'avataaars' o 'shapes')
-  // Nota: encodeURIComponent è importante per seed con caratteri speciali
+  
+  
   const fallbackUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9`
 
   return (

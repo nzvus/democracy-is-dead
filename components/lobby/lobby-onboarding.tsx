@@ -22,7 +22,7 @@ export default function LobbyOnboarding({ lobby, userId, onJoin }: { lobby: any,
       }
       setLoading(true)
 
-      // Usa customAvatar se presente, altrimenti genera DiceBear
+      
       const finalAvatar = customAvatar || `https://api.dicebear.com/9.x/notionists/svg?seed=${nickname}`
 
       const { error } = await supabase.from('lobby_participants').insert({
@@ -51,7 +51,7 @@ export default function LobbyOnboarding({ lobby, userId, onJoin }: { lobby: any,
             </div>
 
             <div className="space-y-4">
-                {/* Anteprima Avatar Default se non c'è custom */}
+                {}
                 {!customAvatar && (
                     <div className="flex justify-center mb-6">
                         <div className="w-24 h-24 rounded-full bg-gray-900 border-2 border-dashed border-gray-700 flex items-center justify-center overflow-hidden relative opacity-60">
@@ -64,7 +64,7 @@ export default function LobbyOnboarding({ lobby, userId, onJoin }: { lobby: any,
                     </div>
                 )}
                 
-                {/* Selettore Immagine */}
+                {}
                 <div className="px-4">
                     <ImagePicker value={customAvatar} onChange={setCustomAvatar} />
                 </div>

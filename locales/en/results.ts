@@ -5,18 +5,18 @@ export default {
     ranking_title: "Score Breakdown",
     col_cand: "Candidate",
     
-    // Math Legend
+    
     math_legend_title: "How is it calculated?",
     math_legend_desc: "Votes are normalized to eliminate bias between strict and lenient judges. The final score depends on the voting system selected above.",
 
-    // Podium
+    
     podium: {
         gold: "Winner",
         silver: "2nd Place",
         bronze: "3rd Place"
     },
 
-    // Voting Systems (Tabs)
+    
     systems: {
         weighted: {
             title: "Weighted Avg",
@@ -35,7 +35,7 @@ export default {
         }
     },
 
-    // Charts
+    
     charts: {
         radar: "Factor Radar",
         distribution: "Distribution",
@@ -46,14 +46,14 @@ export default {
     
 },
 
-    // Matrix & Transparency
+    
     matrix_title: "Voting Matrix",
     matrix_subtitle: "See who voted what (Transparency)",
     matrix_anon: "Secret Ballot",
     matrix_anon_desc: "The host has set votes as anonymous.",
     my_vote: "(You)",
 
-    // Gamification (Badges)
+    
     badges: {
         hater: "The Hater",
         lover: "The Lover",
@@ -67,7 +67,7 @@ export default {
         maverick: "Often votes the opposite of the group"
     },
 
-    // Admin Actions
+    
     reopen_btn: "Reopen Voting",
     reopen_confirm: "Do you want to reopen voting? Users will be able to change their votes and results may change."
 }

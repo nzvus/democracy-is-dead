@@ -2,21 +2,21 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
-// Importiamo i dizionari IT
+
 import itCommon from '@/locales/it/common'
 import itHome from '@/locales/it/home'
 import itSetup from '@/locales/it/setup'
 import itLobby from '@/locales/it/lobby'
 import itResults from '@/locales/it/results'
-import itOnboarding from '@/locales/it/onboarding' // <--- 1. IMPORTA NUOVO FILE
+import itOnboarding from '@/locales/it/onboarding' 
 
-// Importiamo i dizionari EN
+
 import enCommon from '@/locales/en/common'
 import enHome from '@/locales/en/home'
 import enSetup from '@/locales/en/setup'
 import enLobby from '@/locales/en/lobby'
 import enResults from '@/locales/en/results'
-import enOnboarding from '@/locales/en/onboarding' // <--- 1. IMPORTA NUOVO FILE
+import enOnboarding from '@/locales/en/onboarding' 
 
 type Language = 'it' | 'en'
 
@@ -27,7 +27,7 @@ const dictionaries = {
     setup: itSetup,
     lobby: itLobby,
     results: itResults,
-    onboarding: itOnboarding, // <--- 2. AGGIUNGI QUI
+    onboarding: itOnboarding, 
   },
   en: {
     common: enCommon,
@@ -35,7 +35,7 @@ const dictionaries = {
     setup: enSetup,
     lobby: enLobby,
     results: enResults,
-    onboarding: enOnboarding, // <--- 2. AGGIUNGI QUI
+    onboarding: enOnboarding, 
   }
 }
 

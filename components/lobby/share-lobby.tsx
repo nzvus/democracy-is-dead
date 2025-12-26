@@ -9,7 +9,7 @@ import { UI } from '@/lib/constants'
 interface ShareLobbyProps {
   code: string
   className?: string
-  compact?: boolean // Se true, mostra una versione ridotta (es. per header mobile)
+  compact?: boolean 
 }
 
 export default function ShareLobby({ code, className = '', compact = false }: ShareLobbyProps) {
@@ -25,10 +25,10 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
 
   return (
     <div className={`${className}`}>
-      {/* TRIGGER BUTTONS */}
+      {}
       <div className={`flex items-center gap-2 ${compact ? 'justify-end' : 'justify-center w-full'}`}>
         
-        {/* Tasto Copia Codice/Link */}
+        {}
         <button 
             onClick={copyLink}
             className={`flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-4 py-2 ${UI.LAYOUT.ROUNDED_MD} transition-all active:scale-95`}
@@ -38,7 +38,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
             <span className="opacity-50 text-xs uppercase font-bold">📋</span>
         </button>
 
-        {/* Tasto QR */}
+        {}
         <button 
             onClick={() => setShowQR(true)}
             className={`bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white p-2.5 ${UI.LAYOUT.ROUNDED_MD} transition-all active:scale-95`}
@@ -48,7 +48,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
         </button>
       </div>
 
-      {/* QR CODE MODAL OVERLAY */}
+      {}
       {showQR && (
         <div 
             className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"

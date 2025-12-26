@@ -17,7 +17,6 @@ export default {
     history: "Storico",
     delete_msg_title: "Elimina Messaggio",
     delete_msg_desc: "Sei sicuro di voler eliminare questo messaggio?",
-    // Image Picker & Forms
     img_picker_tab_url: "Link URL",
     img_picker_tab_file: "Carica File",
     img_picker_ph: "Incolla link immagine (https://...)",

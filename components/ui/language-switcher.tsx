@@ -3,7 +3,7 @@
 import { useLanguage } from '@/components/providers/language-provider'
 
 export default function LanguageSwitcher() {
-  // Ora TypeScript riconoscerà language e setLanguage!
+  
   const { language, setLanguage } = useLanguage()
 
   return (

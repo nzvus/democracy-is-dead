@@ -8,7 +8,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { Factor, Candidate } from '@/types'
 import { UI } from '@/lib/constants'
 import { toast } from 'sonner'
-import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
+import { useConfirm } from '@/components/providers/confirm-provider' 
 
 import RankingTable from './ranking-table'
 import ResultsMatrix from './results-matrix'
@@ -27,7 +27,7 @@ interface ResultsWrapperProps {
 export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapperProps) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const { confirm } = useConfirm() // <--- Hook
+  const { confirm } = useConfirm() 
   
   const [allResults, setAllResults] = useState<Record<VotingSystem, Candidate[]> | null>(null)
   const [activeSystem, setActiveSystem] = useState<VotingSystem>('weighted')
@@ -100,7 +100,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
     <div className={`min-h-screen bg-gray-950 text-white ${UI.LAYOUT.PADDING_X} pb-32 pt-6 flex flex-col items-center overflow-x-hidden`}>
       <div className="w-full max-w-5xl space-y-12 flex flex-col">
         
-        {/* 1. HEADER */}
+        {}
         <header className="flex flex-col items-center gap-4 relative z-30">
             <ShareLobby code={lobby.code} compact={true} />
             <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full no-scrollbar">
@@ -118,12 +118,12 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </header>
 
-        {/* 2. PODIO */}
+        {}
         <section className="mt-8 z-10">
             <Podium top3={currentResults.slice(0, 3)} />
         </section>
 
-        {/* 3. DASHBOARD */}
+        {}
         <section className={`${UI.COLORS.BG_CARD} border border-gray-800 ${UI.LAYOUT.ROUNDED_LG} shadow-2xl w-full overflow-hidden`}>
             <div className="flex border-b border-gray-800 bg-gray-900/50">
                  <button onClick={() => setActiveChart('radar')} className={`flex-1 py-4 text-[10px] md:text-xs font-bold uppercase tracking-widest border-b-2 transition-colors ${activeChart === 'radar' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>{t.results.charts.radar}</button>
@@ -139,7 +139,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </section>
 
-        {/* 4. CLASSIFICA */}
+        {}
         <section className="w-full space-y-4">
             <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.ranking_title}</h3>
@@ -150,7 +150,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </section>
 
-        {/* 5. MATRICE */}
+        {}
         <section className="w-full space-y-4">
              <div className="flex items-center gap-2 mb-2 px-1">
                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest">{t.results.matrix_title}</h3>
@@ -161,7 +161,7 @@ export default function ResultsWrapper({ lobby, isHost, userId }: ResultsWrapper
             </div>
         </section>
 
-        {/* 6. ADMIN */}
+        {}
         {isHost && (
              <div className="w-full bg-indigo-950/20 p-6 rounded-2xl border border-indigo-900/30 flex flex-col items-center justify-center gap-4">
                 <button onClick={handleReopen} disabled={reopening} className="w-full md:w-auto px-8 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-all border border-gray-600 hover:border-white shadow-lg active:scale-95 flex justify-center items-center gap-2">

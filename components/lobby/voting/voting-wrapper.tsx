@@ -8,12 +8,12 @@ import { UI } from '@/lib/constants'
 import { Factor, Candidate, Participant } from '@/types'
 import ShareLobby from '@/components/lobby/share-lobby'
 import VotingFactorSection from './voting-factor-section'
-import { useConfirm } from '@/components/providers/confirm-provider' // <--- Import
+import { useConfirm } from '@/components/providers/confirm-provider' 
 
 export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, userId: string, isHost: boolean }) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const { confirm } = useConfirm() // <--- Hook
+  const { confirm } = useConfirm() 
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [votes, setVotes] = useState<Record<string, Record<string, number>>>({})

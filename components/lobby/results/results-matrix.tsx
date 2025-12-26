@@ -28,10 +28,10 @@ export default function ResultsMatrix({ candidates, participants, votes, current
             <table className="w-full text-left border-collapse min-w-[350px]">
                 <thead>
                     <tr>
-                        {/* Header Partecipanti */}
+                        {}
                         <th className="p-2 md:p-3 bg-gray-950/50 sticky left-0 z-10 border-b border-gray-800 min-w-[130px] md:min-w-[180px]"></th>
                         
-                        {/* Header Candidati */}
+                        {}
                         {candidates.map(c => (
                             <th key={c.id} className="p-2 border-b border-l border-gray-800 text-center min-w-[60px] md:min-w-[100px]">
                                 <div className="flex flex-col items-center gap-1">
@@ -49,12 +49,12 @@ export default function ResultsMatrix({ candidates, participants, votes, current
                 <tbody className="divide-y divide-gray-800 text-xs">
                     {participants.map(p => {
                         const isMe = p.user_id === currentUserId
-                        const userBadges = badges[p.user_id] || [] // Recupera badge utente
+                        const userBadges = badges[p.user_id] || [] 
                         
                         return (
                             <tr key={p.id} className={`hover:bg-gray-800/30 transition-colors ${isMe ? 'bg-indigo-900/10' : ''}`}>
                                 
-                                {/* Colonna Partecipante */}
+                                {}
                                 <td className="p-2 md:p-3 sticky left-0 z-10 bg-gray-900 border-r border-gray-800 shadow-[2px_0_10px_rgba(0,0,0,0.2)]">
                                     <div className="flex items-center gap-2 md:gap-3">
                                         <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gray-800 overflow-hidden shrink-0 border border-gray-700">
@@ -64,7 +64,7 @@ export default function ResultsMatrix({ candidates, participants, votes, current
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className={`text-xs md:text-sm font-bold truncate max-w-[80px] md:max-w-none ${isMe ? 'text-indigo-400' : 'text-gray-200'}`}>{p.nickname}</span>
                                                 
-                                                {/* BADGES SECTION */}
+                                                {}
                                                 {userBadges.map(b => (
                                                     <DescriptionTooltip 
                                                         key={b} 
@@ -83,7 +83,7 @@ export default function ResultsMatrix({ candidates, participants, votes, current
                                     </div>
                                 </td>
 
-                                {/* Voti */}
+                                {}
                                 {candidates.map(c => {
                                     const score = getUserScore(p.user_id, c.id)
                                     const num = parseFloat(score)

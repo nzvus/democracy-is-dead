@@ -38,7 +38,7 @@ export default function RankingTable({ results, factors }: RankingTableProps) {
                                 
                                 <td className="p-2 md:p-4">
                                     <div className="flex items-center gap-2 md:gap-3">
-                                        {/* TOOLTIP CANDIDATO */}
+                                        {}
                                         <CandidateTooltip candidate={r}>
                                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 cursor-help hover:border-indigo-500 transition-colors">
                                                 {r.image_url ? <img src={r.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full text-xs">👤</span>}

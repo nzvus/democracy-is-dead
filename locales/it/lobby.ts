@@ -19,7 +19,7 @@ export default {
     voted_badge: "VOTATO",
     online_status: "Online",
     chat_tab: "Chat",
-    join_lobby: "Entra nella Lobby", // Nuova
+    join_lobby: "Entra nella Lobby", 
     voting: {
         title: "Scheda Elettorale",
         subtitle: "Esprimi il tuo giudizio sui candidati",

@@ -1,26 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation' // <--- IMPORTANTE: Hook ufficiale
+import { useParams } from 'next/navigation' 
 import { createClient } from '@/lib/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 
-// Componenti Fasi
 import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
 import VotingWrapper from '@/components/lobby/voting/voting-wrapper'
 import ResultsWrapper from '@/components/lobby/results/results-wrapper'
 
-// Componenti Comuni
 import LobbyOnboarding from '@/components/lobby/lobby-onboarding'
 import LobbyChat from '@/components/lobby/lobby-chat'
 
-export default function LobbyPage() { // <--- Rimosso { params } dalle props
+export default function LobbyPage() { 
   const { t } = useLanguage()
   const supabase = createClient()
   
-  // 1. Recupera il codice dall'URL in modo sicuro
   const params = useParams()
   const lobbyCode = params?.code as string
 
@@ -32,11 +29,9 @@ export default function LobbyPage() { // <--- Rimosso { params } dalle props
   const isHost = lobby && currentUserId ? lobby.host_id === currentUserId : false
 
   useEffect(() => {
-    // Se il codice non è ancora pronto, non fare nulla
     if (!lobbyCode) return
 
     const initLobby = async () => {
-        // A. Gestione Utente (Anonimo o Loggato)
         const { data: { session } } = await supabase.auth.getSession()
         let userId = session?.user?.id
 
@@ -50,23 +45,22 @@ export default function LobbyPage() { // <--- Rimosso { params } dalle props
         }
         setCurrentUserId(userId!)
 
-        // B. Fetch Lobby
         const { data: lobbyData, error: lobbyError } = await supabase
             .from('lobbies')
             .select('*')
-            .eq('code', lobbyCode) // Usa la variabile sicura
+            .eq('code', lobbyCode) 
             .single()
 
         if (lobbyError || !lobbyData) {
             setLoading(false)
-            // Non mostriamo toast qui per evitare loop se l'utente naviga veloce
+            
             console.error("Lobby not found or error:", lobbyError)
             return
         }
 
         setLobby(lobbyData)
 
-        // C. Controllo Partecipazione
+        
         const { data: participant } = await supabase
             .from('lobby_participants')
             .select('id')
@@ -83,7 +77,7 @@ export default function LobbyPage() { // <--- Rimosso { params } dalle props
 
     initLobby()
 
-    // D. Realtime Listener
+    
     const channel = supabase.channel('lobby_status_updates')
         .on(
             'postgres_changes', 
@@ -95,9 +89,9 @@ export default function LobbyPage() { // <--- Rimosso { params } dalle props
         .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [lobbyCode, supabase]) // Dipendenza corretta: lobbyCode
+  }, [lobbyCode, supabase]) 
 
-  // --- RENDERING ---
+  
 
   if (loading) {
       return (

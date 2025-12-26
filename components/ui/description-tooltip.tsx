@@ -19,7 +19,7 @@ export default function DescriptionTooltip({ title, description, children, class
   const handleMouseEnter = () => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
-      // Posiziona sopra l'elemento centrato
+      
       setCoords({ top: rect.top - 10, left: rect.left + rect.width / 2 })
       setIsOpen(true)
     }
@@ -32,7 +32,7 @@ export default function DescriptionTooltip({ title, description, children, class
         className={`relative inline-block ${className}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsOpen(false)}
-        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }} // Stop propagation per evitare conflitti con accordion/padri cliccabili
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }} 
       >
         {children}
       </div>
@@ -44,7 +44,7 @@ export default function DescriptionTooltip({ title, description, children, class
             style={{ top: coords.top, left: coords.left, transform: 'translate(-50%, -100%)' }}
           >
              <div className="bg-gray-950/95 backdrop-blur-xl border border-gray-700 p-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] relative">
-                {/* Freccina */}
+                {}
                 <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-950 border-r border-b border-gray-700 rotate-45"></div>
                 
                 <div className="text-center relative z-10">

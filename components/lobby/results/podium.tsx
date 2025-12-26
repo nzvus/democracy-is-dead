@@ -10,7 +10,7 @@ export default function Podium({ top3 }: { top3: Candidate[] }) {
   return (
     <div className="flex justify-center items-end gap-2 md:gap-4 h-64 md:h-80 w-full max-w-lg mx-auto mb-8">
         
-        {/* 2° POSTO */}
+        {}
         {second && (
             <div className="flex flex-col items-center w-1/3 animate-in slide-in-from-bottom-10 duration-700 delay-100">
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-gray-300 overflow-hidden mb-2 shadow-lg bg-gray-800">
@@ -24,7 +24,7 @@ export default function Podium({ top3 }: { top3: Candidate[] }) {
             </div>
         )}
 
-        {/* 1° POSTO */}
+        {}
         <div className="flex flex-col items-center w-1/3 z-10 animate-in slide-in-from-bottom-10 duration-700">
              <div className="text-4xl mb-2 animate-bounce">👑</div>
              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-yellow-400 overflow-hidden mb-2 shadow-[0_0_30px_rgba(250,204,21,0.4)] bg-gray-800">
@@ -37,7 +37,7 @@ export default function Podium({ top3 }: { top3: Candidate[] }) {
              </div>
         </div>
 
-        {/* 3° POSTO */}
+        {}
         {third && (
             <div className="flex flex-col items-center w-1/3 animate-in slide-in-from-bottom-10 duration-700 delay-200">
                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-orange-700 overflow-hidden mb-2 shadow-lg bg-gray-800">

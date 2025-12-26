@@ -71,11 +71,11 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
   return (
     <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
         
-        {/* ADD FACTOR FORM */}
+        {}
         <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4`}>
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_factor_btn}</h3>
             
-            {/* Nome e Peso */}
+            {}
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400">{t.setup.factor_name_label}</label>
@@ -98,7 +98,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
                 </div>
             </div>
 
-            {/* Immagine e Descrizione */}
+            {}
             <div className="grid md:grid-cols-2 gap-4">
                  <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400">{t.common.description_label}</label>
@@ -115,7 +115,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
                 </div>
             </div>
 
-            {/* Tipo e Trend */}
+            {}
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                      <label className="text-xs font-bold text-gray-400">{t.setup.factor_type_label}</label>
@@ -151,7 +151,7 @@ export default function FactorsManager({ lobby }: { lobby: any }) {
             </button>
         </div>
 
-        {/* LIST FACTORS */}
+        {}
         <div className="space-y-3">
             {factors.map((f, i) => (
                 <div key={i} className={`${UI.COLORS.BG_CARD} p-4 ${UI.LAYOUT.ROUNDED_MD} flex justify-between items-center border border-gray-800`}>

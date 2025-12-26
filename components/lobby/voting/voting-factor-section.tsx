@@ -46,19 +46,19 @@ export default function VotingFactorSection({
   return (
     <div className={`border ${UI.LAYOUT.ROUNDED_LG} overflow-hidden transition-all duration-300 ${borderColor} ${bgStyle}`}>
         
-        {/* HEADER (Clickable) */}
+        {}
         <div className="p-5">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-left w-full">
                     
-                    {/* TOOLTIP SULL'ICONA DEL FATTORE */}
+                    {}
                     <DescriptionTooltip title={factor.name} description={factor.description}>
                         <div className="w-12 h-12 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden shrink-0 cursor-help hover:border-white transition-colors relative z-20 shadow-lg">
                             {factor.image_url ? <img src={factor.image_url} className="w-full h-full object-cover" /> : <span className="text-xl">📊</span>}
                         </div>
                     </DescriptionTooltip>
 
-                    {/* Area cliccabile per espandere (il resto della riga) */}
+                    {}
                     <button onClick={onToggle} className="flex-1 flex items-center justify-between outline-none text-left pl-2">
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -79,7 +79,7 @@ export default function VotingFactorSection({
                 </div>
             </div>
             
-            {/* INFO TREND */}
+            {}
             {isActive && (
                 <div className="mt-2 pl-[4rem]">
                     <div className="text-[10px] text-gray-400 italic">
@@ -89,7 +89,7 @@ export default function VotingFactorSection({
             )}
         </div>
 
-        {/* BODY (Candidates List) */}
+        {}
         {isActive && (
             <div className="px-5 pb-8 space-y-8 border-t border-gray-800/50 pt-6 animate-in slide-in-from-top-2">
                 {candidates.map((candidate) => {
@@ -100,7 +100,7 @@ export default function VotingFactorSection({
                     return (
                         <div key={candidate.id} className="group">
                             <div className="flex justify-between items-end mb-4">
-                                {/* INFO CANDIDATO (TOOLTIP) */}
+                                {}
                                 <div className="flex items-center gap-3">
                                     <DescriptionTooltip title={candidate.name} description={candidate.description}>
                                         <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 relative group-hover:ring-2 ring-indigo-500 cursor-help transition-all">
@@ -117,7 +117,7 @@ export default function VotingFactorSection({
                                 )}
                             </div>
 
-                            {/* INPUTS */}
+                            {}
                             {isStatic ? (
                                 <div className="bg-black/20 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
                                     <span className="text-xs text-gray-500 font-bold uppercase">{t.lobby.voting.static_value_label}</span>
