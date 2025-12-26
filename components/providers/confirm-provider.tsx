@@ -19,85 +19,53 @@ interface ConfirmContextType {
 const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined)
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
-  const { t } = useLanguage() // <--- 2. Usa Hook
-  const [isOpen, setIsOpen] = useState(false)
-  const [options, setOptions] = useState<ConfirmOptions>({ title: '', description: '' })
+  const { t } = useLanguage() // Hook lingua
+  const [options, setOptions] = useState<ConfirmOptions | null>(null)
   const [resolveRef, setResolveRef] = useState<((value: boolean) => void) | null>(null)
 
-  const confirm = useCallback((opts: ConfirmOptions) => {
-    setOptions(opts)
-    setIsOpen(true)
+  const confirm = (opts: ConfirmOptions) => {
     return new Promise<boolean>((resolve) => {
+      setOptions(opts)
       setResolveRef(() => resolve)
     })
-  }, [])
+  }
 
-  const handleConfirm = useCallback(() => {
-    if (resolveRef) resolveRef(true)
-    setIsOpen(false)
-  }, [resolveRef])
-
-  const handleCancel = useCallback(() => {
-    if (resolveRef) resolveRef(false)
-    setIsOpen(false)
-  }, [resolveRef])
-
-  // 3. Gestione Tastiera (Enter / Escape)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return
-      
-      if (e.key === 'Enter') {
-        e.preventDefault() // Evita che l'invio triggeri altri form sotto
-        handleConfirm()
-      } else if (e.key === 'Escape') {
-        handleCancel()
-      }
-    }
-
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown)
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, handleConfirm, handleCancel])
+  const handleClose = (value: boolean) => {
+    setOptions(null)
+    if (resolveRef) resolveRef(value)
+  }
 
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200 relative overflow-hidden">
-                
-                {/* Barra colorata top */}
-                <div className={`absolute top-0 left-0 w-full h-1 ${options.variant === 'danger' ? 'bg-gradient-to-r from-red-600 to-orange-600' : 'bg-gradient-to-r from-indigo-600 to-cyan-600'}`} />
-
-                <h3 className="text-lg font-bold text-white mb-2">{options.title}</h3>
-                {options.description && <p className="text-gray-400 text-sm mb-6 leading-relaxed">{options.description}</p>}
-
-                <div className="flex justify-end gap-3">
-                    <button 
-                        onClick={handleCancel}
-                        className="px-4 py-2 rounded-lg text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                    >
-                        {/* 4. Usa traduzioni di default se non passate */}
-                        {options.cancelText || t.common.cancel}
-                    </button>
-                    <button 
-                        onClick={handleConfirm}
-                        className={`px-6 py-2 rounded-lg text-sm font-bold text-white shadow-lg transition-transform active:scale-95 ${
-                            options.variant === 'danger' 
-                            ? 'bg-red-600 hover:bg-red-500 shadow-red-900/20' 
-                            : `bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 shadow-indigo-900/20`
-                        }`}
-                    >
-                        {options.confirmText || t.common.confirm}
-                    </button>
-                </div>
+      {options && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-white mb-2">{options.title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{options.description}</p>
             </div>
+            <div className="bg-gray-950 p-4 flex justify-end gap-3 border-t border-gray-800">
+              <button
+                onClick={() => handleClose(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              >
+                {/* Usa la prop se esiste, altrimenti usa la traduzione reattiva */}
+                {options.cancelText || t.common.cancel}
+              </button>
+              <button
+                onClick={() => handleClose(true)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold text-white shadow-lg transition-transform active:scale-95 ${
+                  options.variant === 'danger' 
+                    ? 'bg-red-600 hover:bg-red-500 shadow-red-900/20' 
+                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/20'
+                }`}
+              >
+                {/* Usa la prop se esiste, altrimenti usa la traduzione reattiva */}
+                {options.confirmText || t.common.confirm}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </ConfirmContext.Provider>

@@ -18,6 +18,7 @@ export default {
     factor_type_vote: "Voto Utente",
     factor_weight: "Peso",
     add_factor_btn: "Aggiungi Fattore",
+    no_candidates_msg: "Nessun candidato aggiunto. Inizia ora!",
     start_voting_btn: "Avvia Votazione",
     settings_tab: {
         title: "Impostazioni Generali",

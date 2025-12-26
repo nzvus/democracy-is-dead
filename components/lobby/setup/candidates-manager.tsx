@@ -71,8 +71,12 @@ export default function CandidatesManager({ lobby }: { lobby: any }) {
 
         <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest pl-1">{t.setup.list_candidates} ({candidates.length})</h3>
-            {candidates.length === 0 && <div className="text-center p-8 border border-dashed border-gray-800 rounded-xl text-gray-600 italic">Nessun candidato aggiunto. Inizia ora!</div>}
-            {candidates.map((c) => (
+{candidates.length === 0 ? (
+    <div className="text-center py-10 bg-gray-800/50 rounded-xl border border-dashed border-gray-700">
+        <p className="text-gray-400 italic">{t.setup.no_candidates_msg}</p> 
+    </div>
+) : 
+           candidates.map((c) => (
                 <div key={c.id} className={`${UI.COLORS.BG_CARD} p-4 ${UI.LAYOUT.ROUNDED_MD} flex justify-between items-center border border-gray-800 hover:border-gray-700 transition-colors group`}>
                     <div className="flex items-center gap-4 overflow-hidden">
                         <CandidateTooltip candidate={c}>

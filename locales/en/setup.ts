@@ -19,6 +19,7 @@ export default {
     factor_weight: "Weight",
     add_factor_btn: "Add Factor",
     start_voting_btn: "Start Voting",
+    no_candidates_msg: "No candidates added yet. Start now!", 
     settings_tab: {
         title: "General Settings",
         scale_label: "Voting Scale (Max)",
