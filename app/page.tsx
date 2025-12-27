@@ -8,7 +8,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { ArrowRight, History, Vote } from 'lucide-react'
 
-// Helper definito fuori dal componente per evitare errori di purezza
+// Helper esterno per purezza
 const generateCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
@@ -22,7 +22,7 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState('')
   const [recentLobbies, setRecentLobbies] = useState<{code: string, date: string}[]>([])
 
-  // Carica cronologia da localStorage
+  // Carica cronologia
   useEffect(() => {
       const history = localStorage.getItem('did_history')
       if (history) {
@@ -30,7 +30,7 @@ export default function Home() {
               // eslint-disable-next-line react-hooks/set-state-in-effect
               setRecentLobbies(JSON.parse(history))
           } catch {
-              // Ignore corrupt data
+              // Ignore
           }
       }
   }, [])
@@ -39,7 +39,6 @@ export default function Home() {
     setIsCreating(true)
     const toastId = toast.loading(t.home.toast_init)
 
-    // 1. Get/Create Anonymous User
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     let userId = user?.id
 
@@ -55,9 +54,10 @@ export default function Home() {
 
     if (!userId) return
 
-    // 2. Create Lobby (Usa l'helper esterno)
     const code = generateCode()
     
+    // RIMOSSO 'as any' e il commento eslint inutile.
+    // Supabase dovrebbe accettare l'oggetto settings se la colonna è JSONB.
     const { error: lobbyError } = await supabase.from('lobbies').insert({
         code,
         host_id: userId,
@@ -96,12 +96,11 @@ export default function Home() {
       localStorage.setItem('did_history', JSON.stringify(newHistory))
   }
 
-  return (
-    <div className={`min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden`}>
-        
-        {/* Background Grid Decoration */}
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+  const gridBg = `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`
 
+  return (
+    <div className={`min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden`} style={{ backgroundImage: gridBg }}>
+        
         {/* Language Switcher */}
         <div className="absolute top-6 right-6 z-50">
             <button 

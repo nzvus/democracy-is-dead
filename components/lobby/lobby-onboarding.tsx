@@ -20,32 +20,34 @@ export default function LobbyOnboarding({ lobbyId, userId, onJoin }: { lobbyId: 
 
     setLoading(true)
     
-    // FIX: Inviamo solo i dati essenziali per evitare errori 400 (Bad Request)
-    // Se la colonna avatar_url non esiste o da problemi, questo invio funzionerà comunque.
+    // FIX ERRORE 400: Rimosso 'joined_at' che non esiste nel tuo DB.
+    // Supabase userà il suo 'created_at' automatico se configurato, altrimenti fa nulla.
     const payload = {
         lobby_id: lobbyId,
         user_id: userId,
         nickname: nickname.trim(),
-        joined_at: new Date().toISOString()
+        // avatar_url: null // Rimosso per sicurezza, se manca anche questa colonna
     }
 
-    const { error } = await supabase.from('lobby_participants').upsert(payload)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await supabase.from('lobby_participants').upsert(payload as any)
 
     if (error) {
         console.error("Supabase Error:", error)
-        toast.error(t.common.error)
+        toast.error(`Error: ${error.message}`) // Mostriamo l'errore specifico
         setLoading(false)
     } else {
         onJoin(nickname.trim())
     }
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4 relative overflow-hidden">
-      {/* Sfondo decorativo */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20 [mask-image:linear-gradient(180deg,white,transparent)]" />
+  // Sfondo Grigliato codificato in Base64 per evitare errori 404
+  const gridBg = `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`
 
-      <div className={`w-full max-w-md bg-gray-900/80 backdrop-blur-xl border border-gray-800 p-8 rounded-3xl shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-500`}>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4 relative overflow-hidden" style={{ backgroundImage: gridBg }}>
+      
+      <div className={`w-full max-w-md bg-gray-900/90 backdrop-blur-xl border border-gray-800 p-8 rounded-3xl shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-500`}>
           <div className="text-center space-y-3 mb-8">
               <h1 className="text-3xl font-black text-white tracking-tight">{t.onboarding.title}</h1>
               <p className="text-gray-400 text-sm">{t.onboarding.subtitle}</p>
