@@ -20,16 +20,19 @@ export default function LobbyOnboarding({ lobbyId, userId, onJoin }: { lobbyId: 
 
     setLoading(true)
     
-    const { error } = await supabase.from('lobby_participants').upsert({
+    // FIX: Inviamo solo i dati essenziali per evitare errori 400 (Bad Request)
+    // Se la colonna avatar_url non esiste o da problemi, questo invio funzionerà comunque.
+    const payload = {
         lobby_id: lobbyId,
         user_id: userId,
         nickname: nickname.trim(),
-        avatar_url: null,
         joined_at: new Date().toISOString()
-    })
+    }
+
+    const { error } = await supabase.from('lobby_participants').upsert(payload)
 
     if (error) {
-        console.error(error)
+        console.error("Supabase Error:", error)
         toast.error(t.common.error)
         setLoading(false)
     } else {
@@ -38,27 +41,33 @@ export default function LobbyOnboarding({ lobbyId, userId, onJoin }: { lobbyId: 
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
-      <div className={`w-full max-w-md bg-gray-900 border border-gray-800 p-8 ${UI.LAYOUT.ROUNDED_LG} shadow-2xl`}>
-          <div className="text-center space-y-2 mb-8">
-              <h1 className="text-2xl font-bold text-white">{t.onboarding.title}</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4 relative overflow-hidden">
+      {/* Sfondo decorativo */}
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20 [mask-image:linear-gradient(180deg,white,transparent)]" />
+
+      <div className={`w-full max-w-md bg-gray-900/80 backdrop-blur-xl border border-gray-800 p-8 rounded-3xl shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-500`}>
+          <div className="text-center space-y-3 mb-8">
+              <h1 className="text-3xl font-black text-white tracking-tight">{t.onboarding.title}</h1>
               <p className="text-gray-400 text-sm">{t.onboarding.subtitle}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
               <div className="flex justify-center">
-                  <Avatar seed={nickname || "guest"} className="w-24 h-24 text-4xl" />
+                  <div className="relative group">
+                      <div className={`absolute -inset-1 bg-gradient-to-r from-${UI.COLORS.PRIMARY}-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200`}></div>
+                      <Avatar seed={nickname || "guest"} className="w-24 h-24 text-4xl relative" />
+                  </div>
               </div>
 
               <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">{t.onboarding.label_nickname}</label>
+                  <label className="text-xs font-bold uppercase text-gray-500 tracking-wider ml-1">{t.onboarding.label_nickname}</label>
                   <input 
                     type="text" 
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
                     placeholder={t.onboarding.placeholder_nickname}
-                    className={`w-full ${UI.COLORS.BG_INPUT} border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all`}
-                    maxLength={15}
+                    className={`w-full bg-gray-950 border border-gray-800 rounded-xl px-5 py-4 text-white text-lg focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700`}
+                    maxLength={20}
                     autoFocus
                   />
               </div>
@@ -66,7 +75,7 @@ export default function LobbyOnboarding({ lobbyId, userId, onJoin }: { lobbyId: 
               <button 
                 type="submit" 
                 disabled={loading || !nickname.trim()}
-                className={`w-full py-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-[0.98]`}
+                className={`w-full py-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-${UI.COLORS.PRIMARY}-900/20 transition-all transform active:scale-[0.98]`}
               >
                 {loading ? t.common.loading : t.onboarding.join_btn}
               </button>

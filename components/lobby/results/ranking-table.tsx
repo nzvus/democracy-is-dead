@@ -3,6 +3,7 @@
 import { Candidate } from '@/types'
 import Avatar from '@/components/ui/avatar'
 import { Trophy, Medal } from 'lucide-react'
+import DescriptionTooltip from '@/components/ui/description-tooltip'
 
 interface RankingTableProps {
   results: Candidate[]
@@ -38,13 +39,16 @@ export default function RankingTable({ results, scores, system }: RankingTablePr
                          <span className="text-gray-600">#{index + 1}</span>}
                     </div>
 
-                    <Avatar seed={candidate.name} src={candidate.image_url} className="w-10 h-10 md:w-12 md:h-12" />
+                    {/* IMAGINE: Se c'è image_url usalo, altrimenti Avatar seed */}
+                    <Avatar seed={candidate.name} src={candidate.image_url} className="w-10 h-10 md:w-12 md:h-12 shadow-lg" />
                     
                     <div className="flex-1 min-w-0">
-                        <h4 className={`font-bold truncate ${isWinner ? 'text-yellow-500' : 'text-gray-200'}`}>
-                            {candidate.name}
-                        </h4>
-                        <p className="text-xs text-gray-500 truncate">{candidate.description}</p>
+                        {/* TOOLTIP DESCRIZIONE */}
+                        <DescriptionTooltip title={candidate.name} description={candidate.description}>
+                            <h4 className={`font-bold truncate cursor-help ${isWinner ? 'text-yellow-500' : 'text-gray-200'}`}>
+                                {candidate.name}
+                            </h4>
+                        </DescriptionTooltip>
                     </div>
 
                     <div className="text-right">

@@ -15,7 +15,6 @@ type Message = {
 
 export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId: string }) {
   const { t } = useLanguage()
-  // MEMO: Stabile tra i render
   const supabase = useMemo(() => createClient(), [])
   const { confirm } = useConfirm()
   
@@ -148,10 +147,13 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                         const isMe = msg.user_id === userId
                         const isSequence = index > 0 && messages[index - 1].user_id === msg.user_id
                         const isEditing = editingId === msg.id
+                        // FIX: Recupera immagine utente
+                        const author = participants.find(p => p.user_id === msg.user_id)
+                        
                         return (
                             <div key={msg.id} className={`flex gap-3 group ${isMe ? 'flex-row-reverse' : ''} ${isSequence ? 'mt-0.5' : 'mt-4'}`}>
                                 <div className="w-8 shrink-0 flex flex-col items-center">
-                                    {!isSequence && <Avatar src={participants.find(p=>p.user_id === msg.user_id)?.avatar_url} seed={msg.user_id} className="w-8 h-8" />}
+                                    {!isSequence && <Avatar src={author?.avatar_url} seed={msg.user_id} className="w-8 h-8" />}
                                 </div>
                                 <div className={`max-w-[85%] relative ${isMe ? `bg-${UI.COLORS.PRIMARY}-600 text-white rounded-2xl ${isSequence ? 'rounded-tr-md' : 'rounded-tr-none'}` : `bg-gray-800 text-gray-200 rounded-2xl border border-gray-700 ${isSequence ? 'rounded-tl-md' : 'rounded-tl-none'}`}`}>
                                     <div className="px-4 py-2">

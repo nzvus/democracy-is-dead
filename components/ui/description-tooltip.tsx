@@ -1,46 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { Info } from 'lucide-react'
+import { ReactNode } from 'react'
+import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 
 interface DescriptionTooltipProps {
-  title: string
-  description?: string // Opzionale perché in alcuni file potrebbe essere undefined
-  children?: React.ReactNode // I figli fungono da trigger
+    title: string
+    description?: string
+    children: ReactNode
 }
 
 export default function DescriptionTooltip({ title, description, children }: DescriptionTooltipProps) {
-  const [isVisible, setIsVisible] = useState(false)
+    if (!description) return <>{children}</>
 
-  // Se non c'è descrizione, mostriamo solo i figli senza tooltip
-  if (!description) {
-      return <>{children}</>
-  }
-
-  return (
-    <div className="relative inline-flex items-center group">
-      <div 
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => setIsVisible(false)}
-        className="cursor-help flex items-center"
-      >
-        {/* Se non vengono passati figli, usiamo l'icona di default */}
-        {children ? children : <Info size={14} className="text-gray-500 hover:text-indigo-400" />}
-      </div>
-
-      {/* Tooltip */}
-      <div className={`
-        absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 
-        bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50
-        transition-all duration-200 pointer-events-none
-        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
-      `}>
-        <h5 className="font-bold text-xs text-white mb-1">{title}</h5>
-        <p className="text-[10px] text-gray-400 leading-tight">{description}</p>
-        
-        {/* Freccetta */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
-      </div>
-    </div>
-  )
+    return (
+        <TooltipPrimitive.Provider delayDuration={200}>
+            <TooltipPrimitive.Root>
+                <TooltipPrimitive.Trigger asChild>
+                    <span className="cursor-help decoration-dotted underline-offset-2 hover:opacity-80 transition-opacity">
+                        {children}
+                    </span>
+                </TooltipPrimitive.Trigger>
+                <TooltipPrimitive.Portal>
+                    <TooltipPrimitive.Content 
+                        sideOffset={5} 
+                        className="max-w-xs bg-gray-900 border border-gray-700 text-white p-3 rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200"
+                    >
+                        <p className="font-bold text-sm mb-1 text-gray-200">{title}</p>
+                        <p className="text-xs text-gray-400 leading-relaxed">{description}</p>
+                        <TooltipPrimitive.Arrow className="fill-gray-900" />
+                    </TooltipPrimitive.Content>
+                </TooltipPrimitive.Portal>
+            </TooltipPrimitive.Root>
+        </TooltipPrimitive.Provider>
+    )
 }
