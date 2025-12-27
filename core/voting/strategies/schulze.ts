@@ -1,19 +1,20 @@
 import { VotingStrategy } from '../types';
-import { Election } from 'caritat';
+import { runSchulzeAlgo } from '../algorithms/schulze-logic';
 
 export const SchulzeStrategy: VotingStrategy = {
     name: 'schulze',
     calculate(candidates, votes, factors, options) {
         const maxScale = options?.maxScale || 10;
         
-        // 1. Preparazione Ballots (Preferenze)
+        // 1. Prepara i Ballots (Classifiche)
+        // Convertiamo i voti numerici in liste ordinate di preferenze
         const voterIds = Array.from(new Set(votes.map(v => v.voter_id)));
         const ballots: string[][] = [];
 
         voterIds.forEach(voterId => {
             const userVotes = candidates.map(cand => {
                 const vote = votes.find(v => v.voter_id === voterId && v.candidate_id === cand.id);
-                // Se non votato, diamo -1 (ultimo)
+                // Calcola punteggio pesato
                 let score = -1; 
                 if (vote) {
                     score = 0;
@@ -26,73 +27,50 @@ export const SchulzeStrategy: VotingStrategy = {
                 return { id: cand.id, score };
             });
 
-            // Crea classifica: [PrimoID, SecondoID, ...]
-            const ballot = userVotes
-                .sort((a, b) => b.score - a.score)
-                .map(u => u.id);
-            
-            ballots.push(ballot);
-        });
-
-        // 2. Calcolo Matrice dei Duelli (Pairwise Matrix)
-        // matrix[A][B] = Quanti preferiscono A rispetto a B
-        const matrix: Record<string, Record<string, number>> = {};
-        
-        // Inizializza
-        candidates.forEach(a => {
-            matrix[a.id] = {};
-            candidates.forEach(b => {
-                matrix[a.id][b.id] = 0;
-            });
-        });
-
-        // Popola
-        ballots.forEach(ballot => {
-            for (let i = 0; i < ballot.length; i++) {
-                for (let j = i + 1; j < ballot.length; j++) {
-                    const winner = ballot[i];
-                    const loser = ballot[j];
-                    if (matrix[winner] && matrix[winner][loser] !== undefined) {
-                        matrix[winner][loser]++;
-                    }
-                }
+            // Filtra solo quelli votati (score >= 0) e ordina
+            const validVotes = userVotes.filter(u => u.score >= 0);
+            if (validVotes.length > 0) {
+                // Ordina per score decrescente (il punteggio più alto è il preferito)
+                validVotes.sort((a, b) => b.score - a.score);
+                ballots.push(validVotes.map(u => u.id));
             }
         });
 
-        // 3. Esegui Schulze con Caritat
-        const election = new Election({ candidates: candidates.map(c => c.id) });
-        ballots.forEach(b => election.addBallot(b));
-        const winners = election.schulze();
+        // 2. Esegui algoritmo Schulze proprietario
+        const candidateIds = candidates.map(c => c.id);
+        const result = runSchulzeAlgo(candidateIds, ballots);
 
-        // 4. Costruisci il Ranking Finale
-        // Schulze puro restituisce solo il set di vincitori (spesso 1). 
-        // Per gli altri, usiamo il numero di vittorie pairwise come criterio di ordinamento secondario (Copeland score semplificato)
-        // o semplicemente mettiamo i vincitori Schulze in cima.
+        // 3. Costruisci il risultato finale
+        // Assegna punteggi fittizi per l'ordinamento visuale (numero di vittorie beatpath)
         const scores: Record<string, number> = {};
+        
+        // Calcoliamo un punteggio da 0 a 100 basato sulla forza della vittoria
         candidates.forEach(c => {
-            // Punteggio "Copeland" grezzo per ordinamento UI: quante sfide 1v1 vince?
-            let wins = 0;
-            candidates.forEach(opponent => {
-                if (c.id !== opponent.id) {
-                    if (matrix[c.id][opponent.id] > matrix[opponent.id][c.id]) wins++;
+            // Per UI: mostriamo quante persone ha battuto nel grafo beatpath
+            let beatCount = 0;
+            candidates.forEach(opp => {
+                if (c.id !== opp.id) {
+                    const pStrong = result.strongestPaths[c.id]?.[opp.id] || 0;
+                    const pWeak = result.strongestPaths[opp.id]?.[c.id] || 0;
+                    if (pStrong > pWeak) beatCount++;
                 }
             });
-            scores[c.id] = wins;
+            scores[c.id] = beatCount;
         });
 
-        // I vincitori Schulze devono stare sempre in cima, indipendentemente dal copeland score
-        const ranking = [...candidates].sort((a, b) => {
-            const aIsWinner = winners.includes(a.id);
-            const bIsWinner = winners.includes(b.id);
-            if (aIsWinner && !bIsWinner) return -1;
-            if (!aIsWinner && bIsWinner) return 1;
-            return scores[b.id] - scores[a.id]; // Fallback su vittorie dirette
-        });
+        // Riordina l'array candidates secondo il ranking calcolato
+        const ranking = result.ranking
+            .map(id => candidates.find(c => c.id === id))
+            .filter((c): c is typeof candidates[0] => !!c);
 
         return { 
             ranking, 
             scores, 
-            details: { matrix, winners }, 
+            details: { 
+                matrix: result.matrix, // Questa è la matrice pairwise reale (d)
+                strongestPaths: result.strongestPaths, 
+                winners: result.winners 
+            }, 
             stats: {} 
         };
     }
