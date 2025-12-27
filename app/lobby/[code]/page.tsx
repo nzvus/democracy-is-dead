@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useRef } from 'react'
 import { createClient } from '@/lib/client'
 import Link from 'next/link'
 import { useLanguage } from '@/components/providers/language-provider'
@@ -39,6 +39,9 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
   const [loading, setLoading] = useState(true)
   const [nickname, setNickname] = useState<string | null>(null)
   const [participantCount, setParticipantCount] = useState(0)
+  
+  // Ref per evitare doppi trigger dell'autosetup in Strict Mode
+  const autoSetupTriggered = useRef(false)
 
   useEffect(() => {
     const init = async () => {
@@ -128,12 +131,26 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
   const isHost = userId === lobby?.host_id
 
-  // AUTO-START SETUP
+  // -----------------------------------------------------------
+  // AUTO-START SETUP FIX
+  // -----------------------------------------------------------
   useEffect(() => {
-      if (lobby?.status === 'waiting' && isHost && nickname) {
-          supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobby.id)
+      const handleAutoSetup = async () => {
+          if (!lobby || !nickname || !isHost) return
+          
+          if (lobby.status === 'waiting' && !autoSetupTriggered.current) {
+              autoSetupTriggered.current = true
+              
+              // 1. Aggiornamento Ottimistico Locale (FIX INFINITE LOADING)
+              setLobby(prev => prev ? { ...prev, status: 'setup' } : null)
+
+              // 2. Aggiornamento DB
+              await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobby.id)
+          }
       }
-  }, [lobby?.status, isHost, nickname, lobby?.id, supabase])
+
+      handleAutoSetup()
+  }, [lobby?.status, isHost, nickname, lobby?.id, supabase, lobby])
 
 
   if (loading) {
@@ -148,9 +165,9 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white gap-6">
         <h1 className="text-4xl font-black text-red-500">404</h1>
-        <p className="text-gray-400">Lobby non trovata.</p>
+        <p className="text-gray-400">Lobby not found.</p>
         <Link href="/" className={`px-6 py-3 bg-${UI.COLORS.PRIMARY}-600 rounded-full font-bold hover:opacity-90`}>
-           Torna alla Home
+           Go Home
         </Link>
       </div>
     )
@@ -167,11 +184,11 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white p-6 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10" />
             
-            {/* Se sei Host, mostriamo un loader mentre il setup parte automaticamente */}
+            {/* Se sei Host, loader con testo da dizionario */}
             {isHost ? (
                 <div className="z-10 flex flex-col items-center gap-4 animate-in fade-in">
                     <Loader2 size={64} className="text-indigo-500 animate-spin" />
-                    <h2 className="text-xl font-bold">Avvio configurazione...</h2>
+                    <h2 className="text-xl font-bold">{t.lobby.loading_setup}</h2>
                 </div>
             ) : (
                 // GUEST VIEW
@@ -188,7 +205,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
                     <div className="bg-gray-900/50 px-6 py-3 rounded-full border border-gray-800 flex items-center gap-3">
                         <Users size={18} className="text-gray-400" />
                         <span className="font-mono font-bold text-lg">{participantCount}</span>
-                        <span className="text-xs text-gray-500 uppercase tracking-widest">Partecipanti</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-widest">{t.lobby.participants_tab}</span>
                     </div>
                 </div>
             )}
@@ -204,8 +221,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
                     <Crown size={32} className="text-gray-600" />
                 </div>
                 <h2 className="text-3xl font-bold text-center">{t.lobby.status_setup}</h2>
-                {/* FIX: L'host -> L&apos;host */}
-                <p className="text-gray-500 mt-4 text-center max-w-md">L&apos;host sta configurando i candidati e i criteri di voto...</p>
+                <p className="text-gray-500 mt-4 text-center max-w-md">{t.lobby.setup_desc}</p>
                 <LobbyChat lobbyId={lobby.id} userId={userId!} />
             </div>
          )

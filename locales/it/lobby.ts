@@ -41,6 +41,11 @@ const lobby = {
     }
   },
 
+  host_title: "Sei l'Host 👑",
+  host_desc: "I partecipanti stanno entrando. Configurazione automatica in corso...",
+  host_btn_config: "Configura Lobby 🚀",
+  loading_setup: "Avvio configurazione...",
+  setup_desc: "L'host sta configurando i candidati e i criteri di voto...",
   chat: {
     placeholder: "Scrivi un messaggio...",
     send: "Invia",
