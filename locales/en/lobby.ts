@@ -1,39 +1,50 @@
 export default {
-    status_label: "Lobby Status",
-    status_waiting: "Waiting for Host...",
-    status_setup: "Setup in progress",
-    status_voting: "Voting in progress",
-    status_ended: "Voting ended",
-    guest_title: "Lobby Configuration",
-    guest_desc: "The host is setting up candidates and voting criteria. Sit tight, voting will start soon!",
-    terminate_btn: "End Voting",
-    terminate_confirm: "Are you sure you want to end voting? This action cannot be undone.",
-    chat_title: "Room Chat",
-    chat_placeholder: "Type a message...",
-    chat_empty: "No messages yet. Break the ice!",
-    anon_user: "Anonymous",
-    no_description: "No description available.",
-    participants_tab: "Participants",
-    online_status: "Online",
-    hub_title: "Lobby Hub",
-    participant_role: "Participant",
-    voted_badge: "VOTED",
-    chat_tab: "Chat",
-    join_lobby: "Join Lobby", 
-    voting: {
-        title: "Ballot Paper",
-        subtitle: "Express your judgment on the candidates",
-        submit_btn: "Submit Votes",
-        submitted_msg: "Votes submitted! Waiting for others...",
-        trend_explanation: "How to vote this factor?",
-        trend_info_high: "HIGH value is positive (e.g. 10 = Best) ↗",
-        trend_info_low: "LOW value is positive (e.g. 10€ = Cheap) ↘",
-        static_factor_warning: "⚠️ Objective Data (set by admin)",
-        scan_to_join: "Scan to Join",
-        close: "Close",
-        click_details: "Click for details",
-        info_badge: "Info",
-        static_value_label: "Objective Value:",
-        no_description: "No description provided."
+  status_label: "Status",
+  status_waiting: "Waiting for Host",
+  status_setup: "Setup in Progress",
+  status_voting: "Voting Open",
+  status_ended: "Voting Ended",
+  
+  guest_title: "Welcome to the Lobby",
+  guest_desc: "Wait for the host to start the voting session.",
+  
+  terminate_btn: "End Voting",
+  terminate_confirm: "Are you sure you want to close the voting? Users will no longer be able to submit scores.",
+  join_lobby: "Join Lobby",
+  no_description: "No description available",
+
+  hub_title: "Lobby Hub",
+  chat_tab: "Chat",
+  participants_tab: "Participants",
+  chat_empty: "No messages yet. Break the ice!",
+  participant_role: "Role",
+  voted_badge: "Voted",
+  anon_user: "Anonymous User",
+  
+  voting: {
+    title: "Express Your Preference",
+    subtitle: "Rate each candidate for the different criteria.",
+    submit_btn: "Confirm Votes",
+    submitted_msg: "Votes Saved! (You can change them until the end)",
+    
+    trend_info_high: "HIGHER values are better (e.g. Taste)",
+    trend_info_low: "LOWER values are better (e.g. Price)",
+    static_value_label: "Declared Value:",
+    scan_to_join: "Scan to join",
+    click_details: "Click for details",
+
+    jolly_section: {
+      title: "Assign your Jolly 🃏",
+      subtitle: "You have only one special bonus. Choose your undisputed champion.",
+      no_selection: "No Jolly assigned",
+      selected: "Jolly Assigned to:"
     }
+  },
+
+  chat: {
+    placeholder: "Type a message...",
+    chat_placeholder: "Type a message...",
+    send: "Send",
+    title: "Lobby Chat"
+  }
 }

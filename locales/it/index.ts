@@ -1,15 +1,17 @@
-import common from './common'
 import home from './home'
 import lobby from './lobby'
-import setup from './setup'
 import onboarding from './onboarding'
+import setup from './setup'
 import results from './results'
+import common from './common'
+import encyclopedia from './encyclopedia' // <--- NUOVO
 
-export const it = {
-  common,
+export default {
   home,
   lobby,
-  setup,
   onboarding,
-  results
+  setup,
+  results,
+  common,
+  encyclopedia // <--- NUOVO
 }

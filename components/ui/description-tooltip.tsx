@@ -1,68 +1,46 @@
 'use client'
-import { useState, useRef, ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { useLanguage } from '@/components/providers/language-provider'
+
+import { useState } from 'react'
+import { Info } from 'lucide-react'
 
 interface DescriptionTooltipProps {
   title: string
-  description?: string | null
-  children: ReactNode
-  className?: string
+  description?: string // Opzionale perché in alcuni file potrebbe essere undefined
+  children?: React.ReactNode // I figli fungono da trigger
 }
 
-export default function DescriptionTooltip({ title, description, children, className = '' }: DescriptionTooltipProps) {
-  const { t } = useLanguage()
-  const [isOpen, setIsOpen] = useState(false)
-  const [coords, setCoords] = useState({ top: 0, left: 0 })
-  const triggerRef = useRef<HTMLDivElement>(null)
+export default function DescriptionTooltip({ title, description, children }: DescriptionTooltipProps) {
+  const [isVisible, setIsVisible] = useState(false)
 
-  const handleMouseEnter = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect()
-      
-      setCoords({ top: rect.top - 10, left: rect.left + rect.width / 2 })
-      setIsOpen(true)
-    }
+  // Se non c'è descrizione, mostriamo solo i figli senza tooltip
+  if (!description) {
+      return <>{children}</>
   }
 
   return (
-    <>
+    <div className="relative inline-flex items-center group">
       <div 
-        ref={triggerRef}
-        className={`relative inline-block ${className}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setIsOpen(false)}
-        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }} 
+        onMouseEnter={() => setIsVisible(true)}
+        onMouseLeave={() => setIsVisible(false)}
+        className="cursor-help flex items-center"
       >
-        {children}
+        {/* Se non vengono passati figli, usiamo l'icona di default */}
+        {children ? children : <Info size={14} className="text-gray-500 hover:text-indigo-400" />}
       </div>
 
-      {isOpen && (
-        <Portal>
-          <div 
-            className="fixed z-[9999] w-64 pointer-events-none transition-opacity duration-200 animate-in fade-in zoom-in-95"
-            style={{ top: coords.top, left: coords.left, transform: 'translate(-50%, -100%)' }}
-          >
-             <div className="bg-gray-950/95 backdrop-blur-xl border border-gray-700 p-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] relative">
-                {}
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-950 border-r border-b border-gray-700 rotate-45"></div>
-                
-                <div className="text-center relative z-10">
-                    <h4 className="font-bold text-white text-sm mb-1">{title}</h4>
-                    <div className="h-0.5 w-8 bg-indigo-500 mx-auto mb-2 rounded-full"></div>
-                    <p className="text-gray-300 text-xs leading-relaxed line-clamp-6 whitespace-pre-wrap">
-                        {description || <span className="italic text-gray-500">{t.lobby.no_description}</span>}
-                    </p>
-                </div>
-             </div>
-          </div>
-        </Portal>
-      )}
-    </>
+      {/* Tooltip */}
+      <div className={`
+        absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 
+        bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50
+        transition-all duration-200 pointer-events-none
+        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+      `}>
+        <h5 className="font-bold text-xs text-white mb-1">{title}</h5>
+        <p className="text-[10px] text-gray-400 leading-tight">{description}</p>
+        
+        {/* Freccetta */}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+      </div>
+    </div>
   )
-}
-
-const Portal = ({ children }: { children: ReactNode }) => {
-  if (typeof window === 'undefined') return null
-  return createPortal(children, document.body)
 }

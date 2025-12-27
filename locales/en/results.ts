@@ -1,73 +1,65 @@
 export default {
-    winner_title: "WINNER",
-    winner_subtitle: "Based on selected system",
-    
-    ranking_title: "Score Breakdown",
-    col_cand: "Candidate",
-    
-    
-    math_legend_title: "How is it calculated?",
-    math_legend_desc: "Votes are normalized to eliminate bias between strict and lenient judges. The final score depends on the voting system selected above.",
+  ranking_title: "Final Ranking",
+  matrix_title: "Detailed Vote Matrix",
+  matrix_subtitle: "Raw scores assigned by each participant.",
+  
+  reopen_btn: "Reopen Voting",
+  reopen_confirm: "Are you sure? This allows users to change their votes again.",
+  
+  math_legend_desc: "How scores are calculated based on the selected algorithm.",
+  
+  matrix_anon: "Anonymous User",
+  my_vote: "(You)",
 
-    
-    podium: {
-        gold: "Winner",
-        silver: "2nd Place",
-        bronze: "3rd Place"
+  systems: {
+    weighted: {
+      title: "Weighted Average",
+      desc: "Classic average of scores weighted by criteria importance."
     },
-
-    
-    systems: {
-        weighted: {
-            title: "Weighted Avg",
-            desc: "Calculates the mathematical average of votes, multiplied by factor weights.",
-            history: "The most intuitive method (e.g., school grades). Rewards consistent quality but is vulnerable to extreme votes (1 or 10) which can skew the result."
-        },
-        borda: {
-            title: "Borda Count",
-            desc: "Assigns fixed points based on ranking position (e.g., 1st = 10pts, 2nd = 9pts...).",
-            history: "Devised in 1770 by Jean-Charles de Borda. Used in Eurovision and F1. Rewards 'consensus': the winner is liked by everyone, even if not the absolute favorite, penalizing polarizing candidates."
-        },
-        median: {
-            title: "Median Judgment",
-            desc: "Takes the exact middle vote: half the judges gave more, half gave less.",
-            history: "Similar to 'Majority Judgment'. It is the most resistant to trolls or die-hard fans because it ignores outlying peaks. The winner is the one who convinces the 'silent majority'."
-        }
+    borda: {
+      title: "Borda Count",
+      desc: "Points assigned based on position in each user's ranking."
     },
-
-    
-    charts: {
-        radar: "Factor Radar",
-        distribution: "Distribution",
-        comparison: "System Comparison",
-        compare_title: "Ranking (Shorter bar = Better)",
-        radar_desc: "Visualizes the strengths and weaknesses of each candidate across criteria.",
-        compare_desc: "Compares how the ranking would change using different voting systems."
-    
-},
-
-    
-    matrix_title: "Voting Matrix",
-    matrix_subtitle: "See who voted what (Transparency)",
-    matrix_anon: "Secret Ballot",
-    matrix_anon_desc: "The host has set votes as anonymous.",
-    my_vote: "(You)",
-
-    
-    badges: {
-        hater: "The Hater",
-        lover: "The Lover",
-        hive_mind: "The Hive Mind",
-        maverick: "The Maverick"
+    schulze: {
+      title: "Schulze Method",
+      desc: "Condorcet method based on strongest paths in pairwise duels."
     },
-    badges_desc: {
-        hater: "Gave the lowest average scores",
-        lover: "Gave the highest average scores",
-        hive_mind: "Votes almost exactly like the group average",
-        maverick: "Often votes the opposite of the group"
-    },
+    median: {
+      title: "Median Rating",
+      desc: "The middle score, robust against extreme votes."
+    }
+  },
 
-    
-    reopen_btn: "Reopen Voting",
-    reopen_confirm: "Do you want to reopen voting? Users will be able to change their votes and results may change."
+  charts: {
+    radar: "Radar Analysis",
+    radar_desc: "Comparison of strengths across different criteria.",
+    comparison: "Algorithm Comparison",
+    compare_title: "Winners by System" ,// <--- AGGIUNTO
+    comparison_desc: "How the winner changes depending on the math used."
+  },
+
+  schulze_matrix: {
+    title: "Duel Matrix",
+    subtitle: "Pairwise Analysis: Read the row to see how many times that candidate beat the others (Row > Column).",
+    wins: "Wins",
+    loses: "Loses",
+    ties: "Ties"
+  },
+
+  badges: {
+    title: "Awards",
+    hater: "The Hater",
+    lover: "The Lover",
+    contrarian: "The Contrarian",
+    oracle: "The Oracle",
+    hive_mind: "Hive Mind"
+  },
+
+  badges_desc: {
+     hater: "Gave the lowest average scores.",
+     lover: "Gave the highest average scores.",
+     contrarian: "Often disagrees with the majority.",
+     oracle: "Predicted the winner perfectly.",
+     hive_mind: "Votes align closely with the group average."
+  }
 }

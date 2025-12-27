@@ -1,72 +1,65 @@
 export default {
-    winner_title: "VINCITORE",
-    winner_subtitle: "Basato sul sistema selezionato",
-    
-    ranking_title: "Dettaglio Punteggi",
-    col_cand: "Candidato",
-    
-    
-    math_legend_title: "Come funziona il calcolo?",
-    math_legend_desc: "I voti sono normalizzati per eliminare le differenze tra giudici severi e buoni. Il punteggio finale dipende dal sistema di voto selezionato in alto.",
+  ranking_title: "Classifica Finale",
+  matrix_title: "Matrice dei Voti",
+  matrix_subtitle: "I punteggi grezzi assegnati da ogni partecipante.",
+  
+  reopen_btn: "Riapri Voto",
+  reopen_confirm: "Sei sicuro? Questo permetterà agli utenti di cambiare i voti.",
+  
+  math_legend_desc: "Come vengono calcolati i punteggi in base all'algoritmo scelto.",
+  
+  matrix_anon: "Utente Anonimo",
+  my_vote: "(Tu)",
 
-    
-    podium: {
-        gold: "Vincitore",
-        silver: "2° Classificato",
-        bronze: "3° Classificato"
+  systems: {
+    weighted: {
+      title: "Media Pesata",
+      desc: "Media classica dei voti ponderata per l'importanza dei criteri."
     },
-
-    
-    systems: {
-        weighted: {
-            title: "Media Ponderata",
-            desc: "Calcola la media matematica dei voti, moltiplicata per il peso di ogni criterio.",
-            history: "È il metodo più intuitivo e comune (es. pagelle scolastiche). Premia la qualità costante e la media alta, ma è vulnerabile ai voti estremi (1 o 10) che possono falsare il risultato."
-        },
-        borda: {
-            title: "Metodo Borda",
-            desc: "Assegna punti fissi in base alla posizione in classifica (es. 1° = 10pt, 2° = 9pt...).",
-            history: "Ideato nel 1770 da Jean-Charles de Borda. Usato nell'Eurovision e in Formula 1. Premia il 'consenso': vince chi piace a tutti, anche se non è il preferito assoluto, penalizzando chi polarizza (odiato da alcuni, amato da altri)."
-        },
-        median: {
-            title: "Giudizio (Mediana)",
-            desc: "Prende il voto centrale esatto: metà dei giudici ha dato di più, metà di meno.",
-            history: "Simile al 'Majority Judgment'. È il sistema più resistente ai troll o ai fan accaniti, perché ignora completamente i picchi anomali. Vince chi convince la 'maggioranza silenziosa'."
-        }
+    borda: {
+      title: "Conteggio Borda",
+      desc: "Punti assegnati in base alla posizione nella classifica di ogni utente."
     },
-
-    
-    charts: {
-        radar: "Radar Fattori",
-        distribution: "Distribuzione",
-        comparison: "Confronto Sistemi",
-        compare_title: "Classifica (Barra più corta = Migliore)",
-        radar_desc: "Visualizza i punti di forza e debolezza di ogni candidato sui vari criteri.",
-        compare_desc: "Confronta come cambierebbe la classifica usando sistemi di voto diversi."
+    schulze: {
+      title: "Metodo Schulze",
+      desc: "Metodo di Condorcet basato sui percorsi più forti nei duelli a coppie."
     },
+    median: {
+      title: "Mediana",
+      desc: "Il valore centrale, robusto contro i voti estremi."
+    }
+  },
 
-    
-    matrix_title: "Matrice dei Voti",
-    matrix_subtitle: "Scopri chi ha votato cosa (Trasparenza)",
-    matrix_anon: "Voto Segreto",
-    matrix_anon_desc: "L'host ha impostato i voti come anonimi.",
-    my_vote: "(Tu)",
+  charts: {
+    radar: "Analisi Radar",
+    radar_desc: "Confronto delle forze su diversi criteri.",
+    comparison: "Confronto Algoritmi",
+    compare_title: "Vincitori per Sistema", // <--- AGGIUNTO
+    comparison_desc: "Come cambia il vincitore a seconda della matematica usata."
+  },
 
-    
-    badges: {
-        hater: "Il Critico",
-        lover: "L'Entusiasta",
-        hive_mind: "Il Conformista",
-        maverick: "Bastian Contrario"
-    },
-    badges_desc: {
-        hater: "Ha dato i voti più bassi in media",
-        lover: "Ha dato i voti più alti in media",
-        hive_mind: "Vota quasi identico alla media del gruppo",
-        maverick: "Vota spesso all'opposto del gruppo"
-    },
+  schulze_matrix: {
+    title: "Matrice dei Duelli",
+    subtitle: "Analisi Pairwise: Leggi la riga per vedere quante volte quel candidato ha battuto gli altri (Riga > Colonna).",
+    wins: "Vince",
+    loses: "Perde",
+    ties: "Pareggia"
+  },
 
-    
-    reopen_btn: "Riapri Votazione",
-    reopen_confirm: "Vuoi riaprire la votazione? Gli utenti potranno modificare i loro voti e i risultati potrebbero cambiare."
+  badges: {
+    title: "Titoli",
+    hater: "Il Critico Spietato",
+    lover: "L'Ottimista Incurabile",
+    contrarian: "Bastian Contrario",
+    oracle: "L'Oracolo",
+    hive_mind: "Mente Collettiva"
+  },
+  
+  badges_desc: {
+     hater: "Ha dato i voti medi più bassi.",
+     lover: "Ha dato i voti medi più alti.",
+     contrarian: "Spesso in disaccordo con la maggioranza.",
+     oracle: "I suoi gusti rispecchiano esattamente il vincitore.",
+     hive_mind: "Vota quasi sempre come la media del gruppo."
+  }
 }
