@@ -1,36 +1,69 @@
 'use client'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { Candidate } from '@/types'
-import { useLanguage } from '@/components/providers/language-provider' 
 
-export default function ComparisonChart({ allResults, candidates }: { allResults: any, candidates: Candidate[] }) {
-  const { t } = useLanguage() 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts'
+import { VotingResult } from '@/core/voting/types' // <--- FIX: Import Type corretto
+import { useLanguage } from '@/components/providers/language-provider'
 
-  if (!allResults) return null;
-  const data = candidates.map(c => {
-      const rankW = allResults.weighted?.findIndex((r: any) => r.id === c.id) + 1 || 0
-      const rankB = allResults.borda?.findIndex((r: any) => r.id === c.id) + 1 || 0
-      const rankM = allResults.median?.findIndex((r: any) => r.id === c.id) + 1 || 0
-      return { name: c.name, Weighted: rankW, Borda: rankB, Median: rankM }
+interface ComparisonChartProps {
+  weighted: VotingResult
+  borda: VotingResult
+  schulze: VotingResult
+}
+
+export default function ComparisonChart({ weighted, borda, schulze }: ComparisonChartProps) {
+  const { t } = useLanguage()
+
+  // Normalizziamo i dati per il grafico
+  // Prendiamo tutti i candidati univoci
+  const allCandidates = weighted.ranking.map(c => c.name)
+
+  const data = allCandidates.map(name => {
+    // Troviamo il ranking (posizione) in ogni sistema. 
+    // 1 = Primo posto.
+    const getRank = (res: VotingResult) => {
+      const idx = res.ranking.findIndex(c => c.name === name)
+      return idx === -1 ? 0 : idx + 1
+    }
+
+    return {
+      name,
+      Weighted: getRank(weighted),
+      Borda: getRank(borda),
+      Schulze: getRank(schulze),
+    }
   })
 
   return (
-    <div className="w-full h-[350px]">
-        {}
-        <h4 className="text-center text-xs text-gray-500 mb-4 font-mono uppercase">{t.results.charts.compare_title}</h4>
-        
-        <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
-                <XAxis type="number" domain={[0, 'dataMax']} tick={{ fill: '#9ca3af' }} hide />
-                <YAxis dataKey="name" type="category" tick={{ fill: '#e5e7eb', fontSize: 12, fontWeight: 'bold' }} width={80} />
-                <Tooltip cursor={{fill: '#1f2937'}} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff' }} />
-                <Legend />
-                <Bar dataKey="Weighted" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={8} name={t.results.systems.weighted.title} />
-                <Bar dataKey="Borda" fill="#eab308" radius={[0, 4, 4, 0]} barSize={8} name={t.results.systems.borda.title} />
-                <Bar dataKey="Median" fill="#ec4899" radius={[0, 4, 4, 0]} barSize={8} name={t.results.systems.median.title} />
-            </BarChart>
-        </ResponsiveContainer>
+    <div className="w-full h-[400px] bg-gray-900/50 rounded-xl p-4 border border-gray-800">
+      <h3 className="text-center font-bold text-gray-400 mb-4">{t.results.charts.compare_title}</h3>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey="name" stroke="#9CA3AF" />
+          {/* Invertiamo l'asse Y perché Rank 1 è meglio di Rank 10 */}
+          <YAxis stroke="#9CA3AF" reversed label={{ value: 'Rank (Lower is Better)', angle: -90, position: 'insideLeft', fill: '#6B7280' }} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#F3F4F6' }}
+            cursor={{ fill: '#1F2937' }}
+          />
+          <Legend />
+          <Bar dataKey="Weighted" fill="#8884d8" name={t.results.systems.weighted.title} />
+          <Bar dataKey="Borda" fill="#82ca9d" name={t.results.systems.borda.title} />
+          <Bar dataKey="Schulze" fill="#ffc658" name={t.results.systems.schulze.title} />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   )
 }

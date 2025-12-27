@@ -1,6 +1,5 @@
 import { Candidate, Factor } from '@/types';
 
-// Estendiamo il tipo Vote per includere il Jolly
 export interface VoteRecord {
     candidate_id: string;
     voter_id: string;
@@ -9,9 +8,9 @@ export interface VoteRecord {
 }
 
 export interface VotingResult {
-    ranking: Candidate[]; // Lista ordinata dal vincitore
-    scores: Record<string, number>; // ID Candidato -> Punteggio Finale
-    details: any; // Metadati specifici (es. Matrice Schulze)
+    ranking: Candidate[]; 
+    scores: Record<string, number>; 
+    details: Record<string, unknown> | null; // <--- FIX: unknown invece di any
     stats: {
         min?: number;
         max?: number;

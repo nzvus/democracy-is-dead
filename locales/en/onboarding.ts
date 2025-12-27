@@ -1,8 +1,9 @@
-export default {
-    title: "Welcome!",
-    subtitle: "Choose how you appear to others",
-    nick_placeholder: "Your Nickname",
-    join_btn: "Join Lobby",
-    error_nick: "Please enter a nickname!",
-    avatar_placeholder: "👤"
+const onboarding = {
+  title: "Welcome to the Lobby",
+  subtitle: "Choose how you will appear to other voters.",
+  label_nickname: "Nickname",
+  placeholder_nickname: "E.g. John Doe",
+  join_btn: "Join Lobby"
 }
+
+export default onboarding

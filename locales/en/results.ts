@@ -1,4 +1,4 @@
-export default {
+const results = {
   ranking_title: "Final Ranking",
   matrix_title: "Detailed Vote Matrix",
   matrix_subtitle: "Raw scores assigned by each participant.",
@@ -34,8 +34,8 @@ export default {
     radar: "Radar Analysis",
     radar_desc: "Comparison of strengths across different criteria.",
     comparison: "Algorithm Comparison",
-    compare_title: "Winners by System" ,// <--- AGGIUNTO
-    comparison_desc: "How the winner changes depending on the math used."
+    comparison_desc: "How the winner changes depending on the math used.",
+    compare_title: "Winners by System"
   },
 
   schulze_matrix: {
@@ -63,3 +63,5 @@ export default {
      hive_mind: "Votes align closely with the group average."
   }
 }
+
+export default results

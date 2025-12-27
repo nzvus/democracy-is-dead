@@ -1,7 +1,6 @@
 'use client'
 
 import { Candidate } from '@/types'
-import { useLanguage } from '@/components/providers/language-provider'
 import Avatar from '@/components/ui/avatar'
 import { Trophy, Medal } from 'lucide-react'
 
@@ -12,8 +11,7 @@ interface RankingTableProps {
 }
 
 export default function RankingTable({ results, scores, system }: RankingTableProps) {
-  const { t } = useLanguage()
-
+  
   const formatScore = (val: number) => {
       if (val === undefined) return "-"
       if (system === 'weighted') return val.toFixed(2)
@@ -40,7 +38,7 @@ export default function RankingTable({ results, scores, system }: RankingTablePr
                          <span className="text-gray-600">#{index + 1}</span>}
                     </div>
 
-                    <Avatar seed={candidate.name} className="w-10 h-10 md:w-12 md:h-12" />
+                    <Avatar seed={candidate.name} src={candidate.image_url} className="w-10 h-10 md:w-12 md:h-12" />
                     
                     <div className="flex-1 min-w-0">
                         <h4 className={`font-bold truncate ${isWinner ? 'text-yellow-500' : 'text-gray-200'}`}>

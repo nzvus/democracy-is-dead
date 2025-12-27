@@ -1,4 +1,4 @@
-export default {
+const lobby = {
   status_label: "Stato",
   status_waiting: "In attesa dell'Host",
   status_setup: "Setup in Corso",
@@ -10,10 +10,9 @@ export default {
   
   terminate_btn: "Termina Voto",
   terminate_confirm: "Sei sicuro di voler chiudere la votazione? Gli utenti non potranno più inviare voti.",
-  join_lobby: "Entra nella Lobby", // <--- MANCAVA
-  no_description: "Nessuna descrizione disponibile", // <--- MANCAVA
+  join_lobby: "Entra nella Lobby",
+  no_description: "Nessuna descrizione disponibile",
 
-  // Sezione Hub/Chat (TUTTE MANCANTI)
   hub_title: "Lobby Hub",
   chat_tab: "Chat",
   participants_tab: "Partecipanti",
@@ -28,7 +27,6 @@ export default {
     submit_btn: "Conferma Voti",
     submitted_msg: "Voti Salvati! (Puoi modificarli fino al termine)",
     
-    // Chiavi mancanti aggiunte
     trend_info_high: "Valori ALTI sono migliori (es. Gusto)",
     trend_info_low: "Valori BASSI sono migliori (es. Prezzo)",
     static_value_label: "Valore Dichiarato:",
@@ -45,8 +43,9 @@ export default {
 
   chat: {
     placeholder: "Scrivi un messaggio...",
-    chat_placeholder: "Scrivi un messaggio...", // Duplicate handle
     send: "Invia",
     title: "Chat Lobby"
   }
 }
+
+export default lobby

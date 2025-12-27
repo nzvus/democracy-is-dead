@@ -1,17 +1,19 @@
+import common from './common'
 import home from './home'
 import lobby from './lobby'
-import onboarding from './onboarding'
-import setup from './setup'
 import results from './results'
-import common from './common'
 import encyclopedia from './encyclopedia'
+import setup from './setup'       // <--- AGGIUNTO
+import onboarding from './onboarding' // <--- AGGIUNTO
 
-export default {
+const en = {
+  common,
   home,
   lobby,
-  onboarding,
-  setup,
   results,
-  common,
-  encyclopedia 
+  encyclopedia,
+  setup,         // <--- AGGIUNTO
+  onboarding     // <--- AGGIUNTO
 }
+
+export default en

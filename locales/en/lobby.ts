@@ -1,4 +1,4 @@
-export default {
+const lobby = {
   status_label: "Status",
   status_waiting: "Waiting for Host",
   status_setup: "Setup in Progress",
@@ -43,8 +43,9 @@ export default {
 
   chat: {
     placeholder: "Type a message...",
-    chat_placeholder: "Type a message...",
     send: "Send",
     title: "Lobby Chat"
   }
 }
+
+export default lobby

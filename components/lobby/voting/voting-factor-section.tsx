@@ -1,152 +1,107 @@
 'use client'
 
-import { UI } from '@/lib/constants'
 import { Factor, Candidate } from '@/types'
 import { useLanguage } from '@/components/providers/language-provider'
-import { getScoreColor } from '@/lib/lobby-utils'
 import DescriptionTooltip from '@/components/ui/description-tooltip'
+import Avatar from '@/components/ui/avatar'
+import { Info } from 'lucide-react'
 
 interface VotingFactorSectionProps {
-  factor: Factor
-  isActive: boolean
-  candidates: Candidate[]
-  votes: Record<string, Record<string, number>>
-  maxScale: number
-  step: number
-  isHost: boolean
-  onToggle: () => void
-  onVote: (candId: string, val: number) => void
-  onStaticUpdate: (candId: string, val: number) => void
+    factor: Factor
+    isActive: boolean
+    candidates: Candidate[]
+    votes: Record<string, Record<string, number>>
+    maxScale: number
+    step: number
+    isHost: boolean
+    onToggle: () => void
+    onVote: (candId: string, val: number) => void
+    onStaticUpdate: (candId: string, val: number) => void 
 }
 
-export default function VotingFactorSection({
-  factor,
-  isActive,
-  candidates,
-  votes,
-  maxScale,
-  step,
-  isHost,
-  onToggle,
-  onVote,
-  onStaticUpdate
-}: VotingFactorSectionProps) {
+export default function VotingFactorSection({ factor, isActive, candidates, votes, maxScale, step, onToggle, onVote }: VotingFactorSectionProps) {
   const { t } = useLanguage()
-  const isLowerBetter = factor.trend === 'lower_better'
-  const isStatic = factor.type === 'static'
 
-  const borderColor = isActive 
-      ? (isLowerBetter ? 'border-amber-500/50' : `border-${UI.COLORS.PRIMARY}-500/50`) 
-      : 'border-gray-800'
-  
-  const bgStyle = isActive
-      ? (isLowerBetter ? 'bg-amber-950/10' : 'bg-indigo-950/10')
-      : 'bg-gray-900/40'
+  // Helper per colore barra
+  const getBarColor = (val: number) => {
+      const p = val / maxScale
+      if (p < 0.3) return 'bg-red-500'
+      if (p < 0.6) return 'bg-yellow-500'
+      return 'bg-green-500'
+  }
 
   return (
-    <div className={`border ${UI.LAYOUT.ROUNDED_LG} overflow-hidden transition-all duration-300 ${borderColor} ${bgStyle}`}>
+    <div className={`rounded-2xl transition-all duration-300 border ${isActive ? 'bg-gray-900/80 border-indigo-500/50 shadow-2xl' : 'bg-gray-900/30 border-gray-800 hover:bg-gray-900/50'}`}>
         
-        {}
-        <div className="p-5">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-left w-full">
-                    
-                    {}
-                    <DescriptionTooltip title={factor.name} description={factor.description}>
-                        <div className="w-12 h-12 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden shrink-0 cursor-help hover:border-white transition-colors relative z-20 shadow-lg">
-                            {factor.image_url ? <img src={factor.image_url} className="w-full h-full object-cover" /> : <span className="text-xl">📊</span>}
-                        </div>
-                    </DescriptionTooltip>
-
-                    {}
-                    <button onClick={onToggle} className="flex-1 flex items-center justify-between outline-none text-left pl-2">
-                        <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xl font-black">{factor.name}</span>
-                                {isLowerBetter ? (
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_LOW}`}>↘ LOW</span>
-                                ) : (
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${UI.COLORS.TREND_HIGH}`}>↗ HIGH</span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 font-mono mt-1">
-                                <span>x{factor.weight}</span>
-                                {isStatic && <span className="text-amber-500"> • {t.setup.factor_type_static}</span>}
-                            </div>
-                        </div>
-                        <div className={`text-xl transition-transform ${isActive ? 'rotate-180' : ''}`}>▼</div>
-                    </button>
+        {/* HEADER */}
+        <div onClick={onToggle} className="p-4 flex items-center justify-between cursor-pointer group">
+            <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                    {factor.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={factor.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                        <span className="font-bold text-lg">{factor.name.charAt(0)}</span>
+                    )}
                 </div>
-            </div>
-            
-            {}
-            {isActive && (
-                <div className="mt-2 pl-[4rem]">
-                    <div className="text-[10px] text-gray-400 italic">
-                        {isLowerBetter ? t.lobby.voting.trend_info_low : t.lobby.voting.trend_info_high}
+                <div>
+                    <h3 className={`font-bold text-lg ${isActive ? 'text-white' : 'text-gray-300'}`}>{factor.name}</h3>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="bg-gray-800 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider">Weight: {factor.weight}</span>
+                        {factor.description && <Info size={12} />}
                     </div>
                 </div>
-            )}
+            </div>
+            <div className={`transform transition-transform ${isActive ? 'rotate-180 text-indigo-400' : 'text-gray-600'}`}>▼</div>
         </div>
 
-        {}
+        {/* CONTENT */}
         {isActive && (
-            <div className="px-5 pb-8 space-y-8 border-t border-gray-800/50 pt-6 animate-in slide-in-from-top-2">
-                {candidates.map((candidate) => {
-                    const score = votes[candidate.id]?.[factor.id] || 0
-                    const staticVal = candidate.static_values?.[factor.id] ?? 0
-                    const barColor = getScoreColor(score, maxScale, isLowerBetter)
+            <div className="p-4 pt-0 space-y-6 animate-in slide-in-from-top-2">
+                {factor.description && (
+                    <div className="bg-indigo-900/20 p-3 rounded-lg text-xs text-indigo-200 border border-indigo-500/20">
+                        {factor.description}
+                        <div className="mt-1 opacity-70 font-mono text-[10px]">
+                            {factor.trend === 'higher_better' ? `↑ ${t.lobby.voting.trend_info_high}` : `↓ ${t.lobby.voting.trend_info_low}`}
+                        </div>
+                    </div>
+                )}
 
-                    return (
-                        <div key={candidate.id} className="group">
-                            <div className="flex justify-between items-end mb-4">
-                                {}
-                                <div className="flex items-center gap-3">
-                                    <DescriptionTooltip title={candidate.name} description={candidate.description}>
-                                        <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden shrink-0 border border-gray-700 relative group-hover:ring-2 ring-indigo-500 cursor-help transition-all">
-                                            {candidate.image_url ? <img src={candidate.image_url} className="w-full h-full object-cover"/> : <span className="flex items-center justify-center h-full">👤</span>}
-                                        </div>
-                                    </DescriptionTooltip>
-                                    <span className="font-bold text-lg leading-none">{candidate.name}</span>
+                <div className="grid gap-6">
+                    {candidates.map(cand => {
+                        const currentVal = votes[cand.id]?.[factor.id] ?? 0
+                        return (
+                            <div key={cand.id} className="space-y-2">
+                                <div className="flex justify-between items-end">
+                                    <div className="flex items-center gap-2">
+                                        <Avatar seed={cand.name} src={cand.image_url} className="w-6 h-6" />
+                                        <span className="font-bold text-sm text-gray-300">{cand.name}</span>
+                                        {cand.description && <DescriptionTooltip title={cand.name} description={cand.description}><Info size={12} className="text-gray-600" /></DescriptionTooltip>}
+                                    </div>
+                                    <span className="font-mono text-xl font-bold text-white">{currentVal}</span>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <input 
+                                        type="range"
+                                        min={0} max={maxScale} step={step}
+                                        value={currentVal}
+                                        onChange={(e) => onVote(cand.id, parseFloat(e.target.value))}
+                                        className="flex-1 h-8 accent-indigo-500 cursor-pointer"
+                                    />
                                 </div>
                                 
-                                {!isStatic && (
-                                    <div className={`w-12 h-10 flex items-center justify-center rounded-lg text-lg font-bold font-mono transition-colors text-white ${barColor}`}>
-                                        {score}
-                                    </div>
-                                )}
-                            </div>
-
-                            {}
-                            {isStatic ? (
-                                <div className="bg-black/20 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
-                                    <span className="text-xs text-gray-500 font-bold uppercase">{t.lobby.voting.static_value_label}</span>
-                                    {isHost ? (
-                                        <input 
-                                            type="number" 
-                                            value={staticVal}
-                                            onChange={(e) => onStaticUpdate(candidate.id, Number(e.target.value))}
-                                            className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-right font-mono font-bold focus:border-indigo-500 outline-none transition-all"
-                                        />
-                                    ) : (
-                                        <span className="font-mono font-bold text-lg">{staticVal}</span>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="relative">
-                                    <input 
-                                        type="range" min="0" max={maxScale} step={step} value={score}
-                                        onChange={(e) => onVote(candidate.id, Number(e.target.value))}
-                                        className={`w-full h-10 bg-gray-800 rounded-xl appearance-none cursor-pointer touch-none shadow-inner accent-${isLowerBetter ? 'amber' : 'indigo'}-500`}
+                                {/* Progress Bar Visual */}
+                                <div className="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-300 ${getBarColor(currentVal)}`} 
+                                        style={{ width: `${(currentVal / maxScale) * 100}%` }}
                                     />
-                                    <div className="flex justify-between px-1 mt-1 text-[9px] text-gray-600 font-bold uppercase tracking-widest">
-                                        <span>0</span><span>{maxScale}</span>
-                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    )
-                })}
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
         )}
     </div>

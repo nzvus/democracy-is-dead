@@ -1,41 +1,45 @@
-export default {
+const setup = {
+  header: {
     title: "Lobby Setup",
-    subtitle: "Define what to vote and how",
-    tabs: { 
-        candidates: "Candidates", 
-        factors: "Voting Factors", 
-        settings: "Settings" 
-    },
-    add_candidate_title: "Add Candidate",
-    remove_candidate_title: "Remove Candidate", 
-    remove_candidate_confirm: "Do you really want to remove this candidate?", 
-    candidate_removed: "Candidate removed", 
-    candidate_name_ph: "Name (e.g. Pizza Margherita)",
-    candidate_desc_ph: "Description (optional)",
-    no_description: "No description", 
-    upload_photo: "Upload Photo",
-    list_candidates: "Candidates List",
-    static_data_label: "Objective Data",
-    trend_high: "Higher is Better",
-    trend_low: "Lower is Better",
-    factor_name_label: "Factor Name", 
-    factor_name_ph: "E.g. Price, Aesthetics...", 
-    factor_weight: "Weight",
-    factor_type_label: "Type", 
-    factor_trend_label: "Trend", 
-    factor_type_static: "Static Data",
-    factor_type_vote: "User Vote",
-    add_factor_btn: "Add Factor",
-    min_one_factor: "You must have at least one voting factor!", 
-    start_voting_btn: "Start Voting",
-    no_candidates_msg: "No candidates added yet. Start now!", 
-    settings_tab: {
-        title: "General Settings",
-        scale_label: "Voting Scale (Max)",
-        decimals_label: "Allow Decimals",
-        danger_zone: "Danger Zone",
-        reset_votes_btn: "Reset All Votes",
-        reset_confirm: "ARE YOU SURE? This will delete all cast votes.",
-        reset_success: "Votes reset successfully."
-    }
+    step_1: "General Settings",
+    step_2: "Candidates",
+    step_3: "Criteria"
+  },
+  settings: {
+    title: "Voting Scale",
+    min: "Minimum",
+    max: "Maximum",
+    desc: "The scale defines the voting range (e.g. 0-10). Minimum is currently fixed at 0."
+  },
+  candidates: {
+    title: "Candidate Management",
+    add_btn: "Add",
+    update_btn: "Update",
+    cancel_btn: "Cancel",
+    placeholder_name: "Candidate Name (e.g. Pizza)",
+    placeholder_desc: "Description / Ingredients",
+    placeholder_url: "Image URL (optional)",
+    empty_list: "No candidates yet. Add one!"
+  },
+  factors: {
+    title: "Criteria Management",
+    new_title: "New Criterion",
+    add_btn: "Add",
+    placeholder_name: "Name (e.g. Taste)",
+    placeholder_desc: "Description (optional)",
+    placeholder_url: "Icon/Image URL (optional)",
+    label_weight: "Weight (1-10)",
+    label_trend: "Trend",
+    trend_high: "Higher is better",
+    trend_low: "Lower is better",
+    empty_list: "No criteria added."
+  },
+  buttons: {
+    back: "Back",
+    next: "Next",
+    saving: "Saving...",
+    start: "Start Voting 🚀"
+  }
 }
+
+export default setup

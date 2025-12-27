@@ -4,7 +4,7 @@ import Modal from './modal'
 import { useLanguage } from '@/components/providers/language-provider'
 import { BookOpen, History, Cog, ThumbsUp, AlertTriangle } from 'lucide-react'
 
-type EncyclopediaKey = 'schulze' | 'borda' | 'weighted' | 'z_score' | 'jolly'
+// Rimossa EncyclopediaKey inutilizzata
 
 interface EncyclopediaModalProps {
     topicKey: string
@@ -15,8 +15,8 @@ interface EncyclopediaModalProps {
 export default function EncyclopediaModal({ topicKey, isOpen, onClose }: EncyclopediaModalProps) {
     const { t } = useLanguage()
     
-    // Fallback sicuro se la chiave non esiste
-    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     const data = t.encyclopedia?.[topicKey]
 
     if (!data) return null
@@ -24,17 +24,13 @@ export default function EncyclopediaModal({ topicKey, isOpen, onClose }: Encyclo
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={data.title}>
             <div className="space-y-8">
-                {/* Sottotitolo */}
                 <div className="bg-indigo-900/20 border-l-4 border-indigo-500 p-4 rounded-r-lg">
                     <p className="text-indigo-200 font-medium italic text-lg">
-                        "{data.subtitle}"
+                        &quot;{data.subtitle}&quot;
                     </p>
                 </div>
 
-                {/* Sezioni */}
                 <div className="grid gap-6 md:grid-cols-2">
-                    
-                    {/* Storia */}
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 text-yellow-500 font-bold uppercase text-xs tracking-widest">
                             <History size={16} /> Storia
@@ -42,7 +38,6 @@ export default function EncyclopediaModal({ topicKey, isOpen, onClose }: Encyclo
                         <p className="text-sm md:text-base">{data.history}</p>
                     </div>
 
-                    {/* Meccanismo */}
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 text-cyan-500 font-bold uppercase text-xs tracking-widest">
                             <Cog size={16} /> Come Funziona
@@ -53,7 +48,6 @@ export default function EncyclopediaModal({ topicKey, isOpen, onClose }: Encyclo
 
                 <hr className="border-gray-800" />
 
-                {/* Pros & Cons */}
                 <div className="grid gap-4 sm:grid-cols-2">
                     <div className="bg-green-900/10 border border-green-900/30 p-4 rounded-xl">
                         <div className="flex items-center gap-2 text-green-400 font-bold mb-2">
@@ -70,7 +64,6 @@ export default function EncyclopediaModal({ topicKey, isOpen, onClose }: Encyclo
                     </div>
                 </div>
 
-                {/* Footer Decorativo */}
                 <div className="flex justify-center pt-4 opacity-30">
                      <BookOpen size={48} />
                 </div>

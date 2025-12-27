@@ -1,124 +1,119 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/client'
-import { toast } from 'sonner'
-import { useLanguage } from '@/components/providers/language-provider'
+import { useState } from 'react'
 import { Candidate } from '@/types'
+import { Trash2, Edit2 } from 'lucide-react'
+import Avatar from '@/components/ui/avatar'
 import { UI } from '@/lib/constants'
-import DescriptionTooltip from '@/components/ui/description-tooltip'
-import { useConfirm } from '@/components/providers/confirm-provider'
-import ImagePicker from '@/components/ui/image-picker'
+import { useLanguage } from '@/components/providers/language-provider'
 
-export default function CandidatesManager({ lobby }: { lobby: any }) {
+interface CandidatesManagerProps {
+  candidates: Candidate[]
+  setCandidates: (c: Candidate[]) => void
+}
+
+export default function CandidatesManager({ candidates, setCandidates }: CandidatesManagerProps) {
   const { t } = useLanguage()
-  const supabase = createClient()
-  const { confirm } = useConfirm()
+  const [isEditing, setIsEditing] = useState<string | null>(null)
   
-  const [candidates, setCandidates] = useState<Candidate[]>([])
-  const [newName, setNewName] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [newImage, setNewImage] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [name, setName] = useState('')
+  const [desc, setDesc] = useState('')
+  const [img, setImg] = useState('') 
 
-  useEffect(() => {
-    const fetchCandidates = async () => {
-        const { data } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id).order('created_at', { ascending: true })
-        if (data) setCandidates(data)
+  const handleAdd = () => {
+    if (!name.trim()) return
+    const newCand: Candidate = {
+        id: crypto.randomUUID(),
+        name,
+        description: desc,
+        image_url: img || null,
+        lobby_id: '' 
     }
-    fetchCandidates()
-    const channel = supabase.channel('candidates_setup')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates', filter: `lobby_id=eq.${lobby.id}` }, 
-        (payload) => {
-            if (payload.eventType === 'INSERT') setCandidates(prev => [...prev, payload.new as Candidate])
-            else if (payload.eventType === 'DELETE') setCandidates(prev => prev.filter(c => c.id !== payload.old.id))
-            else if (payload.eventType === 'UPDATE') setCandidates(prev => prev.map(c => c.id === payload.new.id ? payload.new as Candidate : c))
-        })
-        .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [lobby.id, supabase])
-
-  const addCandidate = async () => {
-    if (!newName.trim()) return
-    setLoading(true)
-    const { error } = await supabase.from('candidates').insert({ 
-        lobby_id: lobby.id, 
-        name: newName, 
-        description: newDesc,
-        image_url: newImage 
-    })
-    if (error) toast.error(t.common.error)
-    else { 
-        toast.success(t.common.saved); 
-        setNewName(''); setNewDesc(''); setNewImage(null) 
-    }
-    setLoading(false)
+    setCandidates([...candidates, newCand])
+    resetForm()
   }
 
-  const removeCandidate = async (id: string) => {
-    const isConfirmed = await confirm({
-        title: t.setup.remove_candidate_title,
-        description: t.setup.remove_candidate_confirm,
-        confirmText: t.common.delete,
-        variant: 'danger'
-    })
-    if (!isConfirmed) return
-    const { error } = await supabase.from('candidates').delete().eq('id', id)
-    if (error) toast.error(t.common.error)
-    else toast.success(t.setup.candidate_removed)
+  const handleUpdate = () => {
+    if (!name.trim() || !isEditing) return
+    setCandidates(candidates.map(c => c.id === isEditing ? { ...c, name, description: desc, image_url: img || null } : c))
+    resetForm()
+    setIsEditing(null)
+  }
+
+  const resetForm = () => {
+      setName('')
+      setDesc('')
+      setImg('')
+  }
+
+  const startEdit = (c: Candidate) => {
+      setIsEditing(c.id)
+      setName(c.name)
+      setDesc(c.description || '')
+      setImg(c.image_url || '')
   }
 
   return (
-    <div className={`space-y-8 animate-in fade-in mx-auto ${UI.LAYOUT.MAX_WIDTH_CONTAINER}`}>
-        <div className={`${UI.COLORS.BG_CARD} ${UI.LAYOUT.PADDING_X} ${UI.LAYOUT.PADDING_Y} ${UI.LAYOUT.ROUNDED_LG} space-y-4 border border-gray-800`}>
-            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest text-center">{t.setup.add_candidate_title}</h3>
-            
-            <div className="space-y-4">
-                {}
-                <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t.setup.candidate_name_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all font-bold`} onKeyDown={(e) => e.key === 'Enter' && addCandidate()} />
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                    {}
-                    <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 pl-1">{t.common.description_label}</label>
-                        <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t.common.description_ph} className={`w-full ${UI.COLORS.BG_INPUT} ${UI.LAYOUT.ROUNDED_MD} p-3 outline-none focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 transition-all min-h-[100px] resize-none text-sm`} />
-                    </div>
+    <div className="space-y-6">
+        <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+             <div className="flex gap-4">
+                 <div className="w-16 h-16 bg-gray-800 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-700">
+                     {img ? (
+                         <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                     ) : (
+                         <Avatar seed={name || "?"} className="w-full h-full text-2xl" />
+                     )}
+                 </div>
+                 <div className="flex-1 space-y-2">
+                     <input 
+                        value={name} onChange={e => setName(e.target.value)}
+                        placeholder={t.setup.candidates.placeholder_name}
+                        className={`w-full ${UI.COLORS.BG_INPUT} p-2 rounded border border-gray-700 font-bold`}
+                     />
+                     <input 
+                        value={desc} onChange={e => setDesc(e.target.value)}
+                        placeholder={t.setup.candidates.placeholder_desc}
+                        className={`w-full ${UI.COLORS.BG_INPUT} p-2 rounded border border-gray-700 text-sm`}
+                     />
+                 </div>
+             </div>
+             
+             <input 
+                value={img} onChange={e => setImg(e.target.value)}
+                placeholder={t.setup.candidates.placeholder_url}
+                className={`w-full ${UI.COLORS.BG_INPUT} p-2 rounded border border-gray-700 text-xs font-mono`}
+             />
 
-                    {}
-                    <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 pl-1">{t.common.image_label}</label>
-                        <ImagePicker value={newImage} onChange={setNewImage} />
-                    </div>
-                </div>
-            </div>
-
-            <button onClick={addCandidate} disabled={loading || !newName} className={`w-full bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white font-bold py-3 ${UI.LAYOUT.ROUNDED_MD} transition-all shadow-lg active:scale-[0.98]`}>{loading ? t.common.loading : '+ ' + t.common.save}</button>
+             <div className="flex justify-end gap-2">
+                 {isEditing && <button onClick={() => { setIsEditing(null); resetForm() }} className="text-sm text-gray-500 hover:text-white px-3">{t.setup.candidates.cancel_btn}</button>}
+                 <button 
+                    onClick={isEditing ? handleUpdate : handleAdd}
+                    disabled={!name.trim()}
+                    className={`px-6 py-2 bg-${UI.COLORS.PRIMARY}-600 rounded font-bold hover:opacity-90 disabled:opacity-50`}
+                 >
+                    {isEditing ? t.setup.candidates.update_btn : t.setup.candidates.add_btn}
+                 </button>
+             </div>
         </div>
 
-        {}
-        <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-widest pl-1">{t.setup.list_candidates} ({candidates.length})</h3>
-{candidates.length === 0 ? (
-    <div className="text-center py-10 bg-gray-800/50 rounded-xl border border-dashed border-gray-700">
-        <p className="text-gray-400 italic">{t.setup.no_candidates_msg}</p> 
-    </div>
-) : 
-           candidates.map((c) => (
-                <div key={c.id} className={`${UI.COLORS.BG_CARD} p-4 ${UI.LAYOUT.ROUNDED_MD} flex justify-between items-center border border-gray-800 hover:border-gray-700 transition-colors group`}>
-                    <div className="flex items-center gap-4 overflow-hidden">
-                        <DescriptionTooltip title={c.name} description={c.description}>
-                            <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center text-xl overflow-hidden border border-gray-700 cursor-help group-hover:border-indigo-500 transition-colors shrink-0">
-                                {c.image_url ? <img src={c.image_url} className="w-full h-full object-cover"/> : <span>👤</span>}
-                            </div>
-                        </DescriptionTooltip>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {candidates.map(c => (
+                <div key={c.id} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex items-center justify-between group hover:border-gray-500 transition-colors">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <Avatar seed={c.name} src={c.image_url} className="w-10 h-10 flex-shrink-0" />
                         <div className="min-w-0">
-                            <p className="font-bold truncate text-white">{c.name}</p>
-                            {c.description ? <p className="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md">{c.description}</p> : <p className="text-[10px] text-gray-600 italic">{t.setup.no_description}</p>}
+                            <p className="font-bold truncate">{c.name}</p>
+                            <p className="text-xs text-gray-400 truncate">{c.description}</p>
                         </div>
                     </div>
-                    <button onClick={() => removeCandidate(c.id)} className="text-gray-600 hover:text-red-400 p-2 rounded-full hover:bg-gray-800 transition-all" title={t.common.delete}>🗑</button>
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => startEdit(c)} className="p-2 text-indigo-400 hover:bg-gray-700 rounded"><Edit2 size={16}/></button>
+                        <button onClick={() => setCandidates(candidates.filter(x => x.id !== c.id))} className="p-2 text-red-400 hover:bg-gray-700 rounded"><Trash2 size={16}/></button>
+                    </div>
                 </div>
             ))}
+            {candidates.length === 0 && <p className="col-span-full text-center text-gray-500 py-8">{t.setup.candidates.empty_list}</p>}
         </div>
     </div>
   )

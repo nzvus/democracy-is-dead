@@ -1,41 +1,45 @@
-export default {
+const setup = {
+  header: {
     title: "Configurazione Lobby",
-    subtitle: "Definisci cosa votare e come",
-    tabs: { 
-        candidates: "Candidati", 
-        factors: "Fattori di Voto", 
-        settings: "Impostazioni" 
-    },
-    add_candidate_title: "Aggiungi Candidato",
-    remove_candidate_title: "Rimuovi Candidato", 
-    remove_candidate_confirm: "Vuoi davvero rimuovere questo candidato dalla lista?", 
-    candidate_removed: "Candidato rimosso", 
-    candidate_name_ph: "Nome (es. Pizza Margherita)",
-    candidate_desc_ph: "Descrizione (opzionale)",
-    no_description: "Nessuna descrizione", 
-    upload_photo: "Carica Foto",
-    list_candidates: "Lista Candidati",
-    static_data_label: "Dati Oggettivi",
+    step_1: "Impostazioni Generali",
+    step_2: "Candidati",
+    step_3: "Criteri"
+  },
+  settings: {
+    title: "Scala di Voto",
+    min: "Minimo",
+    max: "Massimo",
+    desc: "La scala definisce il range di voti (es. 0-10). Attualmente il minimo è fisso a 0."
+  },
+  candidates: {
+    title: "Gestione Candidati",
+    add_btn: "Aggiungi",
+    update_btn: "Aggiorna",
+    cancel_btn: "Annulla",
+    placeholder_name: "Nome Candidato (es. Pizza)",
+    placeholder_desc: "Descrizione / Ingredienti",
+    placeholder_url: "URL Immagine (opzionale)",
+    empty_list: "Nessun candidato. Aggiungine uno!"
+  },
+  factors: {
+    title: "Gestione Criteri",
+    new_title: "Nuovo Criterio",
+    add_btn: "Aggiungi",
+    placeholder_name: "Nome (es. Gusto)",
+    placeholder_desc: "Descrizione (opzionale)",
+    placeholder_url: "URL Icona/Immagine (opzionale)",
+    label_weight: "Peso (1-10)",
+    label_trend: "Trend",
     trend_high: "Alto è meglio",
     trend_low: "Basso è meglio",
-    factor_name_label: "Nome Fattore", 
-    factor_name_ph: "Es. Prezzo, Estetica...", 
-    factor_weight: "Peso",
-    factor_type_label: "Tipo", 
-    factor_trend_label: "Trend", 
-    factor_type_static: "Statico",
-    factor_type_vote: "Voto Utente",
-    add_factor_btn: "Aggiungi Fattore",
-    min_one_factor: "Devi avere almeno un fattore di voto!", 
-    no_candidates_msg: "Nessun candidato aggiunto. Inizia ora!",
-    start_voting_btn: "Avvia Votazione",
-    settings_tab: {
-        title: "Impostazioni Generali",
-        scale_label: "Scala di Voto (Max)",
-        decimals_label: "Consenti Decimali",
-        danger_zone: "Zona Pericolo",
-        reset_votes_btn: "Resetta Tutti i Voti",
-        reset_confirm: "SEI SICURO? Cancellerà tutti i voti ricevuti finora.",
-        reset_success: "Voti resettati con successo."
-    }
+    empty_list: "Nessun criterio aggiunto."
+  },
+  buttons: {
+    back: "Indietro",
+    next: "Avanti",
+    saving: "Salvataggio...",
+    start: "Avvia Voto 🚀"
+  }
 }
+
+export default setup

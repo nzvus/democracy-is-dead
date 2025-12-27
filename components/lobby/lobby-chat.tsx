@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/client'
 import { useLanguage } from '@/components/providers/language-provider'
 import Avatar from '@/components/ui/avatar' 
@@ -15,7 +15,8 @@ type Message = {
 
 export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId: string }) {
   const { t } = useLanguage()
-  const supabase = createClient()
+  // MEMO: Stabile tra i render
+  const supabase = useMemo(() => createClient(), [])
   const { confirm } = useConfirm()
   
   const [isOpen, setIsOpen] = useState(false) 
@@ -51,6 +52,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isOpen, toggleChat])
 
+  // FIX: Aggiunto supabase alle dipendenze
   useEffect(() => {
     const init = async () => {
         const { data: userData } = await supabase.from('lobby_participants').select('nickname').eq('lobby_id', lobbyId).eq('user_id', userId).maybeSingle()
@@ -83,7 +85,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         })
       .subscribe()
     return () => { supabase.removeChannel(chatChannel); supabase.removeChannel(partsChannel) }
-  }, [lobbyId, isOpen, userId])
+  }, [lobbyId, isOpen, userId, supabase]) // <--- Dipendenza corretta
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -202,7 +204,6 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         {activeTab === 'chat' && (
             <form onSubmit={sendMessage} className="p-4 border-t border-gray-800 bg-gray-900 pb-8 md:pb-4">
                 <div className="flex gap-2">
-                    {/* CORREZIONE QUI SOTTO: t.lobby.chat.placeholder */}
                     <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={t.lobby.chat.placeholder} className={`flex-1 ${UI.COLORS.BG_INPUT} rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all`} />
                     <button type="submit" disabled={!newMessage.trim()} className={`bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center transition-all shadow-lg`}>➤</button>
                 </div>

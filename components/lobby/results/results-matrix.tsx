@@ -1,16 +1,16 @@
 'use client'
 
-import { useState } from 'react'
 import { Candidate, Participant } from '@/types'
 import { useLanguage } from '@/components/providers/language-provider'
 import Avatar from '@/components/ui/avatar'
 import DescriptionTooltip from '@/components/ui/description-tooltip' 
-import { BadgeType, getBadgeIcon } from '@/core/gamification/awards' 
+import { BadgeType, getBadgeIcon } from '@/core/gamification/awards'
+import { VoteRecord } from '@/core/voting/types'
 
 interface ResultsMatrixProps {
   candidates: Candidate[]
   participants: Participant[]
-  votes: any[]
+  votes: VoteRecord[] // <--- FIX: Type corretto
   currentUserId: string
   badges: Record<string, BadgeType[]>
 }
@@ -18,7 +18,6 @@ interface ResultsMatrixProps {
 export default function ResultsMatrix({ candidates, participants, votes, currentUserId, badges }: ResultsMatrixProps) {
   const { t } = useLanguage()
 
-  // Filtra solo chi ha votato
   const activeParticipants = participants.filter(p => p.has_voted)
 
   return (
@@ -46,7 +45,6 @@ export default function ResultsMatrix({ candidates, participants, votes, current
 
              return (
                <tr key={p.id} className={`border-t border-gray-800 ${isMe ? 'bg-indigo-900/10' : ''}`}>
-                 {/* Colonna Utente */}
                  <td className="p-3 bg-gray-900/80 sticky left-0 z-10 font-bold text-gray-300 flex flex-col justify-center min-w-[140px]">
                     <div className="flex items-center gap-2">
                         <Avatar seed={p.nickname || "Anon"} className="w-6 h-6" />
@@ -54,7 +52,6 @@ export default function ResultsMatrix({ candidates, participants, votes, current
                             {p.nickname || t.results.matrix_anon} {isMe && t.results.my_vote}
                         </span>
                     </div>
-                    {/* Badges */}
                     {userBadges.length > 0 && (
                         <div className="flex gap-1 mt-1 ml-8">
                             {userBadges.map(b => (
@@ -70,10 +67,8 @@ export default function ResultsMatrix({ candidates, participants, votes, current
                     )}
                  </td>
 
-                 {/* Celle Voti */}
                  {candidates.map(c => {
                     const vote = votes.find(v => v.voter_id === p.user_id && v.candidate_id === c.id)
-                    // Media semplice dei fattori per visualizzazione rapida
                     let avg = 0
                     if (vote && vote.scores) {
                         const vals = Object.values(vote.scores) as number[]

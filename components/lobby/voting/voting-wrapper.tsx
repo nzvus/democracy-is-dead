@@ -8,41 +8,53 @@ import { UI } from '@/lib/constants'
 import { Factor, Candidate } from '@/types'
 import ShareLobby from '@/components/lobby/share-lobby'
 import VotingFactorSection from './voting-factor-section'
-import JollySelector from './jolly-selector' // <--- NUOVO
+import JollySelector from './jolly-selector'
 import { useConfirm } from '@/components/providers/confirm-provider'
 
-export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, userId: string, isHost: boolean }) {
+interface VotingWrapperProps {
+    lobby: {
+        id: string;
+        code: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        settings: any; 
+    }
+    userId: string
+    isHost: boolean
+}
+
+export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperProps) {
   const { t } = useLanguage()
   const supabase = createClient()
   const { confirm } = useConfirm()
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [votes, setVotes] = useState<Record<string, Record<string, number>>>({})
-  const [jollyId, setJollyId] = useState<string | null>(null) // <--- STATO JOLLY
+  const [jollyId, setJollyId] = useState<string | null>(null)
   
   const [loading, setLoading] = useState(false)
   const [hasSubmitted, setHasSubmitted] = useState(false)
+  
+  const factors: Factor[] = lobby.settings.factors || []
+  
   const [activeFactorId, setActiveFactorId] = useState<string | null>(null)
 
-  const factors: Factor[] = lobby.settings.factors || []
   const maxScale = lobby.settings.voting_scale?.max || 10
   const step = lobby.settings.allow_decimals ? 0.1 : 1
 
   useEffect(() => {
     const init = async () => {
-        // Fetch candidati
         const { data: cands } = await supabase.from('candidates').select('*').eq('lobby_id', lobby.id).order('name')
         if (cands) setCandidates(cands)
 
-        // Fetch voti esistenti (recupero sessione)
         const { data: existingVotes } = await supabase.from('votes').select('*').eq('lobby_id', lobby.id).eq('voter_id', userId)
         if (existingVotes && existingVotes.length > 0) {
-            const voteMap: any = {}
+            const voteMap: Record<string, Record<string, number>> = {}
             let savedJolly: string | null = null
             
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             existingVotes.forEach((v: any) => { 
                 voteMap[v.candidate_id] = v.scores
-                if (v.is_jolly) savedJolly = v.candidate_id // Recupera Jolly
+                if (v.is_jolly) savedJolly = v.candidate_id 
             })
             
             setVotes(voteMap)
@@ -53,8 +65,8 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
     }
     init()
     
-    // ... Realtime listeners (omessi per brevità, uguali a prima) ...
-  }, [lobby.id, userId, factors])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lobby.id, userId, supabase]) 
 
   const handleVote = (candId: string, factId: string, val: number) => {
     const safeVal = Math.min(Math.max(val, 0), maxScale)
@@ -62,7 +74,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
     setHasSubmitted(false) 
   }
 
-  // Submit aggiornato con is_jolly
   const submitAll = async () => {
     setLoading(true)
     const payload = candidates.map(c => ({
@@ -70,7 +81,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
         voter_id: userId,
         candidate_id: c.id,
         scores: votes[c.id] || {},
-        is_jolly: c.id === jollyId, // <--- SALVATAGGIO JOLLY
+        is_jolly: c.id === jollyId, 
         updated_at: new Date().toISOString()
     }))
     
@@ -104,7 +115,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
         </header>
 
         <div className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} space-y-12`}>
-            {/* Sezione Fattori */}
             <div className="space-y-6">
                 {factors.map((factor) => (
                     <VotingFactorSection 
@@ -118,14 +128,13 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
                         isHost={isHost}
                         onToggle={() => setActiveFactorId(activeFactorId === factor.id ? null : factor.id)}
                         onVote={(candId, val) => handleVote(candId, factor.id, val)}
-                        onStaticUpdate={() => {}} // Omesso per brevità
+                        onStaticUpdate={() => {}} 
                     />
                 ))}
             </div>
 
             <hr className="border-gray-800" />
 
-            {/* Sezione Jolly */}
             <JollySelector 
                 candidates={candidates} 
                 selectedId={jollyId} 
@@ -133,7 +142,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: { lobby: any, u
             />
         </div>
 
-        {/* Footer Actions */}
         <div className={`fixed bottom-0 left-0 w-full p-6 bg-gray-950/95 backdrop-blur-xl border-t border-gray-800 z-50 flex flex-col gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]`}>
             <button onClick={submitAll} disabled={loading} className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mx-auto py-4 ${UI.LAYOUT.ROUNDED_MD} font-black text-lg shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${hasSubmitted ? 'bg-gray-800 text-green-400 border border-green-900/50' : `bg-gradient-to-r from-${UI.COLORS.PRIMARY}-600 to-${UI.COLORS.PRIMARY}-700 text-white shadow-${UI.COLORS.PRIMARY}-900/30`}`}>
                 {loading ? t.common.loading : (hasSubmitted ? t.lobby.voting.submitted_msg : t.lobby.voting.submit_btn)}

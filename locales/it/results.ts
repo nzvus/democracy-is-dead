@@ -1,4 +1,4 @@
-export default {
+const results = {
   ranking_title: "Classifica Finale",
   matrix_title: "Matrice dei Voti",
   matrix_subtitle: "I punteggi grezzi assegnati da ogni partecipante.",
@@ -34,8 +34,8 @@ export default {
     radar: "Analisi Radar",
     radar_desc: "Confronto delle forze su diversi criteri.",
     comparison: "Confronto Algoritmi",
-    compare_title: "Vincitori per Sistema", // <--- AGGIUNTO
-    comparison_desc: "Come cambia il vincitore a seconda della matematica usata."
+    comparison_desc: "Come cambia il vincitore a seconda della matematica usata.",
+    compare_title: "Vincitori per Sistema"
   },
 
   schulze_matrix: {
@@ -63,3 +63,5 @@ export default {
      hive_mind: "Vota quasi sempre come la media del gruppo."
   }
 }
+
+export default results

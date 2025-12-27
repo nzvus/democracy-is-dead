@@ -1,138 +1,194 @@
 'use client'
 
-import { createClient } from '@/lib/client'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { createClient } from '@/lib/client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
+import { ArrowRight, History, Vote } from 'lucide-react'
+
+// Helper definito fuori dal componente per evitare errori di purezza
+const generateCode = () => {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
 
 export default function Home() {
-  const { t } = useLanguage()
+  const { t, language, setLanguage } = useLanguage()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [joinCode, setJoinCode] = useState('')
   const supabase = createClient()
+  
+  const [isCreating, setIsCreating] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [recentLobbies, setRecentLobbies] = useState<{code: string, date: string}[]>([])
 
-  const ensureAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) return user.id
-    const { data, error } = await supabase.auth.signInAnonymously()
-    if (error) throw error
-    return data.user?.id
-  }
+  // Carica cronologia da localStorage
+  useEffect(() => {
+      const history = localStorage.getItem('did_history')
+      if (history) {
+          try {
+              // eslint-disable-next-line react-hooks/set-state-in-effect
+              setRecentLobbies(JSON.parse(history))
+          } catch {
+              // Ignore corrupt data
+          }
+      }
+  }, [])
 
   const createLobby = async () => {
-    setLoading(true)
+    setIsCreating(true)
     const toastId = toast.loading(t.home.toast_init)
 
-    try {
-      const userId = await ensureAuth()
-      const code = Math.floor(1000 + Math.random() * 9000).toString()
+    // 1. Get/Create Anonymous User
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let userId = user?.id
 
-      const { data, error } = await supabase
-        .from('lobbies')
-        .insert([{ 
-            code, 
-            host_id: userId,
-            status: 'setup',
-            settings: { 
-                privacy: 'private', 
-                voting_scale: { max: 10 }, 
-                factors: [{ id: "general", name: "General Vote", weight: 1.0, type: 'vote', trend: 'higher_better' }]
-            } 
-          }])
-        .select().single()
-
-      if (error) throw error
-
-      toast.dismiss(toastId)
-      toast.success(t.home.toast_success)
-      router.push(`/lobby/${data.code}`)
-
-    } catch (err: any) {
-      console.error(err)
-      toast.dismiss(toastId)
-      toast.error(t.home.toast_error + err.message)
-    } finally {
-      setLoading(false)
+    if (authError || !userId) {
+        const { data: anonUser, error: anonError } = await supabase.auth.signInAnonymously()
+        if (anonError) {
+            toast.error(t.home.toast_error, { id: toastId })
+            setIsCreating(false)
+            return
+        }
+        userId = anonUser.user?.id
     }
+
+    if (!userId) return
+
+    // 2. Create Lobby (Usa l'helper esterno)
+    const code = generateCode()
+    
+    const { error: lobbyError } = await supabase.from('lobbies').insert({
+        code,
+        host_id: userId,
+        status: 'waiting',
+        settings: { factors: [] }
+    })
+
+    if (lobbyError) {
+        toast.error(t.home.toast_error, { id: toastId })
+    } else {
+        toast.success(t.home.toast_success, { id: toastId })
+        saveToHistory(code)
+        router.push(`/lobby/${code}`)
+    }
+    setIsCreating(false)
   }
 
-  const joinLobby = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!joinCode || joinCode.length < 4) return toast.error(t.home.error_code_short)
-    
-    setLoading(true)
-    try {
-        await ensureAuth()
-        const { data, error } = await supabase.from('lobbies').select('code').eq('code', joinCode).single()
-        if (error || !data) throw new Error("Not found")
-        router.push(`/lobby/${joinCode}`)
-    } catch (error) {
-        toast.error(t.home.error_lobby_not_found)
-    } finally {
-        setLoading(false)
-    }
+  const joinLobby = async () => {
+      if (joinCode.length < 6) {
+          toast.error(t.home.error_code_short)
+          return
+      }
+
+      const { data, error } = await supabase.from('lobbies').select('id').eq('code', joinCode.toUpperCase()).single()
+      
+      if (error || !data) {
+          toast.error(t.home.error_lobby_not_found)
+      } else {
+          saveToHistory(joinCode.toUpperCase())
+          router.push(`/lobby/${joinCode.toUpperCase()}`)
+      }
+  }
+
+  const saveToHistory = (code: string) => {
+      const newHistory = [{ code, date: new Date().toISOString() }, ...recentLobbies.filter(l => l.code !== code)].slice(0, 5)
+      localStorage.setItem('did_history', JSON.stringify(newHistory))
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-950 text-white relative overflow-hidden">
-      
-      {}
-      <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-${UI.COLORS.PRIMARY}-900/20 via-gray-950 to-gray-950 z-0 pointer-events-none`}></div>
+    <div className={`min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden`}>
+        
+        {/* Background Grid Decoration */}
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
 
-      <div className="z-10 w-full max-w-md md:max-w-2xl text-center space-y-10 md:space-y-16 animate-in fade-in zoom-in-95 duration-700">
-        
-        {}
-        <div className="space-y-6">
-            <h1 className="text-5xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 whitespace-pre-line leading-tight drop-shadow-2xl">
-                {t.home.title}
-            </h1>
-            <p className="text-gray-400 text-sm md:text-xl font-mono px-4">
-                {t.home.subtitle}
-            </p>
-        </div>
-        
-        {}
-        <div className={`flex flex-col items-center gap-6 w-full px-4 ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mx-auto`}>
-            
-            <button
-                onClick={createLobby}
-                disabled={loading}
-                className="w-full py-5 bg-white text-black font-black text-lg md:text-xl rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_50px_-15px_rgba(255,255,255,0.4)] disabled:opacity-50"
+        {/* Language Switcher */}
+        <div className="absolute top-6 right-6 z-50">
+            <button 
+                onClick={() => setLanguage(language === 'it' ? 'en' : 'it')}
+                className="bg-gray-900 border border-gray-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
             >
-                {loading ? t.home.cta_loading : t.home.cta_button}
+                {language === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}
             </button>
+        </div>
 
-            <div className="flex items-center w-full gap-4 opacity-40">
-                <div className="h-px bg-gray-600 flex-1"></div>
-                <span className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">{t.home.or_divider}</span>
-                <div className="h-px bg-gray-600 flex-1"></div>
+        <main className="w-full max-w-md relative z-10 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            
+            {/* Header */}
+            <div className="text-center space-y-4">
+                <div className="mx-auto w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-3xl rotate-3 flex items-center justify-center shadow-2xl shadow-indigo-500/20 mb-6">
+                    <Vote size={40} className="text-white -rotate-3" />
+                </div>
+                <h1 className="text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-500">
+                    {t.home.title}
+                </h1>
+                <p className="text-gray-400 text-lg leading-relaxed">
+                    {t.home.subtitle}
+                </p>
             </div>
 
-            <form onSubmit={joinLobby} className="w-full flex flex-col md:flex-row gap-3">
-                <input 
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value)}
-                    placeholder={t.home.join_placeholder}
-                    className={`flex-1 bg-gray-900 border border-gray-800 ${UI.LAYOUT.ROUNDED_MD} px-4 py-4 text-center font-mono text-lg focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all placeholder:text-gray-700`}
-                    maxLength={5}
-                />
+            {/* Actions Card */}
+            <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-6 rounded-3xl shadow-2xl space-y-6">
+                
                 <button 
-                    type="submit"
-                    disabled={loading || joinCode.length < 4}
-                    className={`bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 text-white font-bold px-8 py-4 ${UI.LAYOUT.ROUNDED_MD} transition-all active:scale-[0.98]`}
+                    onClick={createLobby}
+                    disabled={isCreating}
+                    className={`w-full py-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 group`}
                 >
-                    {t.home.join_btn}
+                    {isCreating ? t.home.cta_loading : t.home.cta_button}
+                    {!isCreating && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
                 </button>
-            </form>
 
-            <p className="text-[10px] md:text-xs text-gray-600 uppercase tracking-widest font-bold mt-4">
-                {t.home.no_registration}
-            </p>
-        </div>
-      </div>
-    </main>
+                <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-gray-800"></div>
+                    <span className="flex-shrink-0 mx-4 text-gray-600 text-xs font-bold uppercase tracking-widest">{t.home.or_divider}</span>
+                    <div className="flex-grow border-t border-gray-800"></div>
+                </div>
+
+                <div className="flex gap-2">
+                    <input 
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                        placeholder={t.home.join_placeholder}
+                        maxLength={6}
+                        className={`flex-1 ${UI.COLORS.BG_INPUT} border border-gray-800 rounded-xl px-4 py-3 text-center font-mono text-lg uppercase tracking-widest focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all`}
+                    />
+                    <button 
+                        onClick={joinLobby}
+                        disabled={!joinCode}
+                        className="px-6 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                    >
+                        {t.home.join_btn}
+                    </button>
+                </div>
+
+                <p className="text-center text-xs text-gray-600 flex items-center justify-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    {t.home.no_registration}
+                </p>
+            </div>
+
+            {/* History */}
+            {recentLobbies.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-gray-900/50">
+                    <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                        <History size={14} /> {t.home.history}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                        {recentLobbies.map((l) => (
+                            <button 
+                                key={l.code}
+                                onClick={() => router.push(`/lobby/${l.code}`)}
+                                className="bg-gray-900/50 hover:bg-gray-800 border border-gray-800 px-3 py-1.5 rounded-lg text-xs font-mono text-gray-300 transition-colors"
+                            >
+                                {l.code}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+        </main>
+    </div>
   )
 }

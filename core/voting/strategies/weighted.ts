@@ -1,7 +1,6 @@
-import { VotingStrategy, VotingResult } from '../types';
+import { VotingStrategy } from '../types'; // Removed VotingResult
 import { calculateMean } from '../../math/statistics';
 
-// Quanto vale un Jolly? Es. aumenta il peso del voto del 25%
 const JOLLY_MULTIPLIER = 1.25; 
 
 export const WeightedStrategy: VotingStrategy = {
@@ -20,17 +19,14 @@ export const WeightedStrategy: VotingStrategy = {
 
                 factors.forEach(factor => {
                     let val = vote.scores[factor.id] || 0;
-                    // Inverti se "lower_better" (es. prezzo basso è meglio)
                     if (factor.trend === 'lower_better') val = maxScale - val;
                     
                     voteTotal += val * factor.weight;
                     totalWeight += factor.weight;
                 });
 
-                // Normalizza il voto singolo (media pesata dei fattori)
                 let finalVoteValue = totalWeight > 0 ? voteTotal / totalWeight : 0;
 
-                // APPLICA IL JOLLY
                 if (vote.is_jolly) {
                     finalVoteValue *= JOLLY_MULTIPLIER;
                 }
@@ -38,13 +34,12 @@ export const WeightedStrategy: VotingStrategy = {
                 weightedSum.push(finalVoteValue);
             });
             
-            // Punteggio finale candidato = Media di tutti i voti ricevuti
             scores[cand.id] = calculateMean(weightedSum);
         });
 
-        // Ordina
         const ranking = [...candidates].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
 
+        // Fix: 'details' must be object or null, not undefined implicitly
         return { ranking, scores, details: null, stats: {} };
     }
 };

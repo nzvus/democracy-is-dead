@@ -1,42 +1,28 @@
-export default {
-  schulze: {
-    title: "Schulze Method (Condorcet Winner)",
-    subtitle: "The system of choice for Debian, Ubuntu, and the Pirate Party.",
-    history: "Developed in 1997 by Markus Schulze, this method is designed to satisfy the Condorcet criterion: if there is a candidate who would beat every other candidate in a head-to-head challenge, that candidate must win.",
-    mechanism: "The system imagines a 'round-robin' tournament. If voters prefer A over B, an arrow is drawn from A to B. The algorithm then calculates the 'strongest paths' (beatpaths) in the resulting graph to determine the undisputed winner, elegantly solving cyclic paradoxes (Rock-Paper-Scissors).",
-    pros: "Immune to 'clone' candidates and highly resistant to strategic voting.",
-    cons: "Complex to calculate manually without a computer."
+const encyclopedia = {
+  weighted: {
+    title: "Weighted Average",
+    subtitle: "The democratic classic with a touch of precision.",
+    history: "Derived from the arithmetic mean, used since the Pythagoreans. Adding 'weights' allows prioritizing certain criteria over others.",
+    mechanism: "Each voter rates candidates on various criteria. The final score is the sum of ratings multiplied by criteria weights.",
+    pros: "Easy to understand; captures nuances across multiple dimensions.",
+    cons: "Vulnerable to tactical voting (giving extreme scores); doesn't guarantee a majority winner."
   },
   borda: {
     title: "Borda Count",
-    subtitle: "The search for maximum average consensus.",
-    history: "Proposed in 1770 by mathematician Jean-Charles de Borda for the French Academy of Sciences as an alternative to simple majority voting.",
-    mechanism: "It is a positional scoring system. In an election with N candidates, your first choice receives N-1 points, the second N-2, and so on. The candidate with the most total points wins.",
-    pros: "Rewards candidates who are broadly accepted, even if they aren't anyone's absolute first choice (compromise candidates).",
-    cons: "Vulnerable to 'tactical voting': one can bury a rival by intentionally placing them last."
+    subtitle: "Rewards consensus, not just popularity.",
+    history: "Proposed by Jean-Charles de Borda in 1770 for the French Academy of Sciences as an alternative to simple majority voting.",
+    mechanism: "If there are 5 candidates, your 1st choice gets 4 points, 2nd gets 3, etc. Points from all voters are summed.",
+    pros: "Selects broadly acceptable candidates; reduces the impact of polarizing figures.",
+    cons: "Can be manipulated by introducing 'clone' candidates to split opponents' votes."
   },
-  weighted: {
-    title: "Weighted Average (Score Voting)",
-    subtitle: "The classic method, powered by weights.",
-    history: "The most intuitive form of evaluation, used everywhere from Amazon reviews to the Olympics.",
-    mechanism: "Each user assigns a numerical score (e.g., 0-10) to each candidate for various criteria. The system calculates the weighted average based on the importance (weight) of each criterion.",
-    pros: "Extremely easy to understand. Allows expressing the intensity of preference (a 10 is very different from a 6).",
-    cons: "Subject to personal scale bias (voters who always rate high vs. those who always rate low)."
-  },
-  z_score: {
-    title: "Z-Score Normalization",
-    subtitle: "Mathematics for judgment fairness.",
-    history: "A fundamental concept of statistics (Standard Score) applied to social voting.",
-    mechanism: "Instead of using the raw vote, we calculate how much your vote deviates from YOUR personal average. Formula: (Vote - UserMean) / StdDev. If you always vote between 4 and 6, a 7 becomes an exceptional score!",
-    pros: "Makes the vote of a 'harsh' judge mathematically equivalent to that of a 'generous' judge.",
-    cons: "Intermediate results (e.g., +1.5 or -0.8) are unintuitive for non-experts."
-  },
-  jolly: {
-    title: "The Jolly Vote (Golden Vote)",
-    subtitle: "When logic isn't enough.",
-    history: "A 'game design' mechanic introduced to capture the emotional aspect of choice.",
-    mechanism: "Each user has exactly ONE Jolly available for the entire lobby. By using it on a candidate, the weight of their vote for that candidate is amplified (e.g., +25%).",
-    pros: "Allows expressing a visceral preference ('It's my favorite pizza!') that goes beyond individual technical criteria.",
-    cons: "Can slightly alter the objectivity of the technical analysis."
+  schulze: {
+    title: "Schulze Method (Beatpath)",
+    subtitle: "The King of Condorcet methods. Mathematically superior.",
+    history: "Developed by Markus Schulze in 1997. Used by Debian, Ubuntu, and Pirate Parties for its robustness.",
+    mechanism: "Compares every candidate against every other (duels). If A beats B more often than B beats A, a path is formed. The winner is the one who beats everyone else on the strongest paths.",
+    pros: "Satisfies the Condorcet criterion; immune to many manipulative strategies.",
+    cons: "Complex to calculate manually and hard to explain intuitively."
   }
 }
+
+export default encyclopedia
