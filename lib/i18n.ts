@@ -1,10 +1,9 @@
-import { it } from '@/locales/it'
-import { en } from '@/locales/en' 
+import it from '@/locales/it'
+import en from '@/locales/en'
 
 export const dictionaries = {
-  it: it,
-  en: en
+  it,
+  en
 }
 
-export type Dictionary = typeof dictionaries.it
-export type Language = keyof typeof dictionaries
+export type Locale = keyof typeof dictionaries
