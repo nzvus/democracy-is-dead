@@ -42,7 +42,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     })
   }, [])
 
-  
+  // Chiusura con ESC
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
         if (event.key === 'Escape' && isOpen) toggleChat()
@@ -51,7 +51,6 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isOpen, toggleChat])
 
-  
   useEffect(() => {
     const init = async () => {
         const { data: userData } = await supabase.from('lobby_participants').select('nickname').eq('lobby_id', lobbyId).eq('user_id', userId).maybeSingle()
@@ -99,7 +98,6 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
       const isConfirmed = await confirm({
           title: t.common.delete_msg_title,
           description: t.common.delete_msg_desc,
-          
           variant: 'danger'
       })
       if (!isConfirmed) return
@@ -116,18 +114,13 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
 
   return (
     <>
-      {}
       <button onClick={toggleChat} className={`fixed bottom-28 md:bottom-8 right-4 z-[90] p-4 bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 rounded-full shadow-2xl transition-all hover:scale-110 group border-2 border-white/10`}>
         <span className="text-2xl">💬</span>
         {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full animate-bounce">{unreadCount}</span>}
       </button>
 
-      {}
-      {}
-      {}
       <div className={`fixed inset-y-0 right-0 w-[85vw] md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-[100] flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
-        {}
         <div className="p-4 border-b border-gray-800 bg-gray-950 flex flex-col gap-4">
             <div className="flex justify-between items-center">
                  <h2 className="font-bold text-lg flex items-center gap-2">{t.lobby.hub_title}</h2>
@@ -209,14 +202,14 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         {activeTab === 'chat' && (
             <form onSubmit={sendMessage} className="p-4 border-t border-gray-800 bg-gray-900 pb-8 md:pb-4">
                 <div className="flex gap-2">
-                    <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={t.lobby.chat_placeholder} className={`flex-1 ${UI.COLORS.BG_INPUT} rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all`} />
+                    {/* CORREZIONE QUI SOTTO: t.lobby.chat.placeholder */}
+                    <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={t.lobby.chat.placeholder} className={`flex-1 ${UI.COLORS.BG_INPUT} rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-${UI.COLORS.PRIMARY}-500 outline-none transition-all`} />
                     <button type="submit" disabled={!newMessage.trim()} className={`bg-${UI.COLORS.PRIMARY}-600 hover:bg-${UI.COLORS.PRIMARY}-500 disabled:opacity-50 text-white rounded-full w-12 h-12 flex items-center justify-center transition-all shadow-lg`}>➤</button>
                 </div>
             </form>
         )}
       </div>
 
-      {}
       {isOpen && <div onClick={toggleChat} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[95]" />}
     </>
   )
