@@ -18,7 +18,7 @@ export default function DescriptionTooltip({ title, description, children }: Des
                 <TooltipPrimitive.Trigger asChild>
                     <span className="cursor-help decoration-dotted underline-offset-2 hover:opacity-80 transition-opacity">
                         {children}
-                    </span>
+                    </span> 
                 </TooltipPrimitive.Trigger>
                 <TooltipPrimitive.Portal>
                     <TooltipPrimitive.Content 

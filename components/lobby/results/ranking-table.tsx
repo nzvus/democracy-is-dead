@@ -39,11 +39,11 @@ export default function RankingTable({ results, scores, system }: RankingTablePr
                          <span className="text-gray-600">#{index + 1}</span>}
                     </div>
 
-                    {/* IMAGINE: Se c'è image_url usalo, altrimenti Avatar seed */}
+                    {}
                     <Avatar seed={candidate.name} src={candidate.image_url} className="w-10 h-10 md:w-12 md:h-12 shadow-lg" />
                     
                     <div className="flex-1 min-w-0">
-                        {/* TOOLTIP DESCRIZIONE */}
+                        {}
                         <DescriptionTooltip title={candidate.name} description={candidate.description}>
                             <h4 className={`font-bold truncate cursor-help ${isWinner ? 'text-yellow-500' : 'text-gray-200'}`}>
                                 {candidate.name}
@@ -64,4 +64,4 @@ export default function RankingTable({ results, scores, system }: RankingTablePr
         })}
     </div>
   )
-}
+} 

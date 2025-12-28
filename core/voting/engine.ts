@@ -21,9 +21,7 @@ export const calculateResults = (
     return strategy.calculate(candidates, votes, factors, { maxScale });
 };
 
-/**
- * Calcola tutti i sistemi in parallelo (per la dashboard)
- */
+
 export const calculateAllSystems = (
     candidates: Candidate[],
     votes: VoteRecord[],
@@ -35,4 +33,4 @@ export const calculateAllSystems = (
         borda: strategies.borda.calculate(candidates, votes, factors, { maxScale }),
         schulze: strategies.schulze.calculate(candidates, votes, factors, { maxScale }),
     };
-};
+}; 

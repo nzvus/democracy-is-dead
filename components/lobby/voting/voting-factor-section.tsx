@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+
 'use client'
 
 import { Factor, Candidate } from '@/types'
@@ -11,7 +11,7 @@ interface VotingFactorSectionProps {
     factor: Factor
     isActive: boolean
     candidates: Candidate[]
-    votes: Record<string, Record<string, number>>
+    votes: Record<string, Record<string, number>> 
     maxScale: number
     step: number
     isHost: boolean
@@ -23,7 +23,7 @@ interface VotingFactorSectionProps {
 export default function VotingFactorSection({ factor, isActive, candidates, votes, maxScale, step, onToggle, onVote }: VotingFactorSectionProps) {
   const { t } = useLanguage()
 
-  // Calcola statistiche
+  
   const votedCount = candidates.filter(c => (votes[c.id]?.[factor.id] ?? -1) >= 0).length
   const isComplete = votedCount === candidates.length && candidates.length > 0
 
@@ -45,10 +45,10 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
         }}
         className={`rounded-3xl border backdrop-blur-md transition-all duration-500 shadow-xl overflow-hidden`}
     >
-        {/* HEADER */}
+        {}
         <div onClick={onToggle} className="p-5 flex items-center justify-between cursor-pointer group hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-4">
-                {/* Icona */}
+                {}
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors duration-300 ${isActive ? 'bg-indigo-600 text-white shadow-indigo-500/40' : 'bg-gray-800 text-gray-400'}`}>
                     {factor.image_url ? (
                         <img src={factor.image_url} alt="" className="w-full h-full object-cover rounded-2xl" />
@@ -80,7 +80,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
             </div>
         </div>
 
-        {/* BODY */}
+        {}
         <AnimatePresence>
             {isActive && (
                 <motion.div 
@@ -92,7 +92,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                 >
                     <div className="p-5 pt-4 space-y-8">
                         
-                        {/* Info Box */}
+                        {}
                         <div className="bg-gradient-to-r from-blue-950/40 to-indigo-950/40 border border-indigo-500/20 p-4 rounded-xl flex gap-3 items-start">
                             <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-300">
                                 <Info size={18} />
@@ -107,7 +107,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                             </div>
                         </div>
 
-                        {/* Candidates Grid */}
+                        {}
                         <div className="grid gap-6 md:grid-cols-2">
                             {candidates.map(cand => {
                                 const currentVal = votes[cand.id]?.[factor.id] ?? 0
@@ -116,7 +116,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                 return (
                                     <div key={cand.id} className="bg-gray-900/60 rounded-2xl p-5 border border-gray-800 hover:border-gray-600 transition-all duration-300 relative overflow-hidden group">
                                         
-                                        {/* Background Progress Bar */}
+                                        {}
                                         <div className="absolute bottom-0 left-0 h-1.5 w-full bg-gray-800/50">
                                             <div 
                                                 className={`h-full bg-gradient-to-r ${getBarColor(currentVal)} transition-all duration-500`} 
@@ -138,10 +138,10 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                                     {currentVal}
                                                 </span>
                                                 <span className="text-[10px] text-gray-600 font-bold uppercase block -mt-1">su {maxScale}</span>
-                                            </div>
+                                            </div> 
                                         </div>
 
-                                        {/* Slider Container */}
+                                        {}
                                         <div className="relative h-10 flex items-center w-full z-20">
                                             <input 
                                                 type="range"
@@ -151,7 +151,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                                 className="absolute w-full h-full opacity-0 cursor-pointer z-30"
                                             />
                                             
-                                            {/* Visual Track */}
+                                            {}
                                             <div className="w-full h-3 bg-gray-950 rounded-full overflow-hidden relative shadow-inner border border-gray-800/50">
                                                 <div 
                                                     className={`absolute top-0 left-0 h-full bg-gradient-to-r ${getBarColor(currentVal)} opacity-50`} 
@@ -159,7 +159,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                                 />
                                             </div>
                                             
-                                            {/* Thumb (Fake Visual) */}
+                                            {}
                                             <div 
                                                 className="absolute h-6 w-6 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] border-4 border-gray-900 pointer-events-none transition-all duration-75 ease-out flex items-center justify-center"
                                                 style={{ left: `calc(${percentage}% - 12px)` }}

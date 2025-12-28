@@ -20,28 +20,27 @@ export default function LobbyOnboarding({ lobbyId, userId, onJoin }: { lobbyId: 
 
     setLoading(true)
     
-    // FIX ERRORE 400: Rimosso 'joined_at' che non esiste nel tuo DB.
-    // Supabase userà il suo 'created_at' automatico se configurato, altrimenti fa nulla.
+    
+    
     const payload = {
         lobby_id: lobbyId,
         user_id: userId,
         nickname: nickname.trim(),
-        // avatar_url: null // Rimosso per sicurezza, se manca anche questa colonna
+        
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('lobby_participants').upsert(payload as any)
 
     if (error) {
         console.error("Supabase Error:", error)
-        toast.error(`Error: ${error.message}`) // Mostriamo l'errore specifico
+        toast.error(`Error: ${error.message}`) 
         setLoading(false)
     } else {
         onJoin(nickname.trim())
     }
   }
 
-  // Sfondo Grigliato codificato in Base64 per evitare errori 404
+  
   const gridBg = `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`
 
   return (

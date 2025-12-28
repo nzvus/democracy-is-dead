@@ -7,7 +7,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Crown, Users, Loader2 } from 'lucide-react'
 
-// Components
+
 import LobbyOnboarding from '@/components/lobby/lobby-onboarding'
 import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
 import VotingWrapper from '@/components/lobby/voting/voting-wrapper'
@@ -40,12 +40,12 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
   const [nickname, setNickname] = useState<string | null>(null)
   const [participantCount, setParticipantCount] = useState(0)
   
-  // Ref per evitare doppi trigger dell'autosetup in Strict Mode
+  
   const autoSetupTriggered = useRef(false)
 
   useEffect(() => {
     const init = async () => {
-      // 1. Get User
+      
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       let currentUserId = user?.id
 
@@ -57,7 +57,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
       if (!currentUserId) return
 
-      // 2. Get Lobby
+      
       const { data: lobbyData, error: lobbyError } = await supabase
         .from('lobbies')
         .select('*')
@@ -80,7 +80,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
       setLobby(safeLobby)
 
-      // 3. Check Participant & Count
+      
       const { data: participants } = await supabase
         .from('lobby_participants')
         .select('nickname, user_id')
@@ -98,7 +98,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
     init()
   }, [code, supabase])
 
-  // Realtime Subscription
+  
   useEffect(() => {
     if (!lobby) return
 
@@ -131,9 +131,9 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
   const isHost = userId === lobby?.host_id
 
-  // -----------------------------------------------------------
-  // AUTO-START SETUP FIX
-  // -----------------------------------------------------------
+  
+  
+  
   useEffect(() => {
       const handleAutoSetup = async () => {
           if (!lobby || !nickname || !isHost) return
@@ -141,10 +141,10 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
           if (lobby.status === 'waiting' && !autoSetupTriggered.current) {
               autoSetupTriggered.current = true
               
-              // 1. Aggiornamento Ottimistico Locale (FIX INFINITE LOADING)
+              
               setLobby(prev => prev ? { ...prev, status: 'setup' } : null)
 
-              // 2. Aggiornamento DB
+              
               await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobby.id)
           }
       }
@@ -173,7 +173,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
     )
   }
 
-  // ONBOARDING
+  
   if (!nickname) {
     return <LobbyOnboarding lobbyId={lobby.id} userId={userId!} onJoin={(nick: string) => setNickname(nick)} />
   }
@@ -184,14 +184,14 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white p-6 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10" />
             
-            {/* Se sei Host, loader con testo da dizionario */}
+            {}
             {isHost ? (
                 <div className="z-10 flex flex-col items-center gap-4 animate-in fade-in">
                     <Loader2 size={64} className="text-indigo-500 animate-spin" />
                     <h2 className="text-xl font-bold">{t.lobby.loading_setup}</h2>
                 </div>
             ) : (
-                // GUEST VIEW
+                
                 <div className="relative z-10 flex flex-col items-center text-center space-y-8 max-w-lg">
                     <div className="w-24 h-24 bg-gray-900 rounded-3xl border border-gray-800 flex items-center justify-center shadow-2xl mb-4">
                         <Loader2 size={48} className="text-indigo-500 animate-spin-slow" />

@@ -4,14 +4,14 @@ import { useState } from 'react'
 import { Candidate } from '@/types'
 import { Trash2, Edit2 } from 'lucide-react'
 import Avatar from '@/components/ui/avatar'
-import ImagePicker from '@/components/ui/image-picker' // <--- IMPORT
+import ImagePicker from '@/components/ui/image-picker' 
 import { UI } from '@/lib/constants'
 import { useLanguage } from '@/components/providers/language-provider'
 
 interface CandidatesManagerProps {
   candidates: Candidate[]
   setCandidates: (c: Candidate[]) => void
-}
+} 
 
 export default function CandidatesManager({ candidates, setCandidates }: CandidatesManagerProps) {
   const { t } = useLanguage()
@@ -72,7 +72,7 @@ export default function CandidatesManager({ candidates, setCandidates }: Candida
                         placeholder={t.setup.candidates.placeholder_desc}
                         className={`w-full ${UI.COLORS.BG_INPUT} p-2 rounded-lg border border-gray-700 text-sm focus:border-${UI.COLORS.PRIMARY}-500 outline-none`}
                      />
-                     {/* FIX: Uso del nuovo ImagePicker */}
+                     {}
                      <ImagePicker value={img} onChange={setImg} placeholder={t.setup.candidates.placeholder_url} />
                  </div>
              </div>

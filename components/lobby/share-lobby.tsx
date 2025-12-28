@@ -58,7 +58,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
                 className={`w-full max-w-sm bg-white text-black p-8 rounded-3xl flex flex-col items-center shadow-2xl scale-100 animate-in zoom-in-95 duration-200 relative`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button 
+                <button  
                     onClick={() => setShowQR(false)}
                     className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors font-bold text-xl"
                 >

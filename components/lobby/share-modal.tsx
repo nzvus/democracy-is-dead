@@ -89,7 +89,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
                 </p>
             </div>
         </div>
-      )}
+      )} 
     </div>
   )
 }

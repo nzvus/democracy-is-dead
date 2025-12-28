@@ -4,7 +4,7 @@ import Modal from './modal'
 import { useLanguage } from '@/components/providers/language-provider'
 import { BookOpen, History, Cog, ThumbsUp, AlertTriangle } from 'lucide-react'
 
-// Rimossa EncyclopediaKey inutilizzata
+
 
 interface EncyclopediaModalProps {
     topicKey: string
@@ -15,13 +15,12 @@ interface EncyclopediaModalProps {
 export default function EncyclopediaModal({ topicKey, isOpen, onClose }: EncyclopediaModalProps) {
     const { t } = useLanguage()
     
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
+    
     const data = t.encyclopedia?.[topicKey]
 
     if (!data) return null
 
-    return (
+    return ( 
         <Modal isOpen={isOpen} onClose={onClose} title={data.title}>
             <div className="space-y-8">
                 <div className="bg-indigo-900/20 border-l-4 border-indigo-500 p-4 rounded-r-lg">

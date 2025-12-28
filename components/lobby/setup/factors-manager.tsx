@@ -10,7 +10,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 interface FactorsManagerProps {
   factors: Factor[]
   setFactors: (f: Factor[]) => void
-}
+} 
 
 export default function FactorsManager({ factors, setFactors }: FactorsManagerProps) {
   const { t } = useLanguage()
@@ -28,7 +28,6 @@ export default function FactorsManager({ factors, setFactors }: FactorsManagerPr
          image_url: newImage,
          weight: 1, 
          trend: 'higher_better',
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
          type: 'numerical' as any
      }
 
@@ -49,7 +48,7 @@ export default function FactorsManager({ factors, setFactors }: FactorsManagerPr
   return (
     <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             {/* Form Aggiunta */}
+             {}
              <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
                  <h3 className="font-bold text-sm text-gray-400 uppercase">{t.setup.factors.new_title}</h3>
                  <input 
@@ -79,13 +78,13 @@ export default function FactorsManager({ factors, setFactors }: FactorsManagerPr
                  </button>
              </div>
 
-             {/* Lista Fattori */}
+             {}
              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                  {factors.map(factor => (
                      <div key={factor.id} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col gap-2">
                          <div className="flex justify-between items-start">
                              <div className="flex items-center gap-2">
-                                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                                 {}
                                  {factor.image_url && <img src={factor.image_url} alt="" className="w-6 h-6 object-cover rounded" />}
                                  <span className="font-bold">{factor.name}</span>
                                  {factor.description && (

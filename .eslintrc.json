@@ -1,0 +1,29 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:i18next/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["i18next"],
+  "overrides": [
+    {
+      "files": ["*.tsx", "*.ts"],
+      "rules": {
+        "i18next/no-literal-string": [
+          "error",
+          {
+            "markupOnly": true,
+            "validateTemplate": true,
+            "ignoreAttribute": [
+              "className", "style", "href", "src", "alt", "key", "id", 
+              "width", "height", "fill", "stroke", "viewBox", "d", 
+              "target", "rel", "type", "placeholder", "as", "data-testid",
+              "name", "value", "defaultValue", "role",
+              "k", "label", "title", "aria-label"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

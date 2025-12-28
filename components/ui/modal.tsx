@@ -15,7 +15,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        
         setMounted(true) 
     }, [])
 
@@ -49,7 +49,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
                 </div>
                 <div className="p-6 overflow-y-auto text-gray-300 leading-relaxed space-y-4">
                     {children}
-                </div>
+                </div> 
             </div>
         </div>,
         document.body

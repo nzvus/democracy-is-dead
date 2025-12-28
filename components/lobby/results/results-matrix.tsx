@@ -10,7 +10,7 @@ import { VoteRecord } from '@/core/voting/types'
 interface ResultsMatrixProps {
   candidates: Candidate[]
   participants: Participant[]
-  votes: VoteRecord[] // <--- FIX: Type corretto
+  votes: VoteRecord[] 
   currentUserId: string
   badges: Record<string, BadgeType[]>
 }
@@ -95,4 +95,4 @@ export default function ResultsMatrix({ candidates, participants, votes, current
       </table>
     </div>
   )
-}
+} 

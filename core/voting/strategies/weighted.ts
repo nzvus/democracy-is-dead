@@ -1,4 +1,4 @@
-import { VotingStrategy } from '../types'; // Removed VotingResult
+import { VotingStrategy } from '../types'; 
 import { calculateMean } from '../../math/statistics';
 
 const JOLLY_MULTIPLIER = 1.25; 
@@ -39,7 +39,7 @@ export const WeightedStrategy: VotingStrategy = {
 
         const ranking = [...candidates].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
 
-        // Fix: 'details' must be object or null, not undefined implicitly
+        
         return { ranking, scores, details: null, stats: {} };
     }
-};
+}; 

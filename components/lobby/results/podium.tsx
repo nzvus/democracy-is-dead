@@ -52,7 +52,7 @@ export default function Podium({ top3 }: { top3: Candidate[] }) {
             </div>
             <span className="text-4xl font-black text-orange-900/20">3</span>
         </motion.div>
-      )}
+      )} 
     </div>
   )
 }

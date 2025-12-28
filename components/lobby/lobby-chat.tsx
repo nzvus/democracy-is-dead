@@ -16,7 +16,7 @@ type Message = {
 export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId: string }) {
   const { t } = useLanguage()
   const supabase = useMemo(() => createClient(), [])
-  const { confirm } = useConfirm()
+  const { confirm } = useConfirm() 
   
   const [isOpen, setIsOpen] = useState(false) 
   const [activeTab, setActiveTab] = useState<'chat' | 'participants'>('chat')
@@ -42,7 +42,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     })
   }, [])
 
-  // Chiusura con ESC
+  
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
         if (event.key === 'Escape' && isOpen) toggleChat()
@@ -51,7 +51,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isOpen, toggleChat])
 
-  // FIX: Aggiunto supabase alle dipendenze
+  
   useEffect(() => {
     const init = async () => {
         const { data: userData } = await supabase.from('lobby_participants').select('nickname').eq('lobby_id', lobbyId).eq('user_id', userId).maybeSingle()
@@ -84,7 +84,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         })
       .subscribe()
     return () => { supabase.removeChannel(chatChannel); supabase.removeChannel(partsChannel) }
-  }, [lobbyId, isOpen, userId, supabase]) // <--- Dipendenza corretta
+  }, [lobbyId, isOpen, userId, supabase]) 
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -147,7 +147,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                         const isMe = msg.user_id === userId
                         const isSequence = index > 0 && messages[index - 1].user_id === msg.user_id
                         const isEditing = editingId === msg.id
-                        // FIX: Recupera immagine utente
+                        
                         const author = participants.find(p => p.user_id === msg.user_id)
                         
                         return (

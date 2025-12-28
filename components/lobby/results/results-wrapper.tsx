@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Candidate, Participant, Factor } from '@/types'
-import { useConfirm } from '@/components/providers/confirm-provider' // IMPORTATO
+import { useConfirm } from '@/components/providers/confirm-provider' 
 
 import { calculateAllSystems } from '@/core/voting/engine'
 import { calculateAwards, BadgeType } from '@/core/gamification/awards'
@@ -19,7 +19,7 @@ import InfoButton from '@/components/ui/info-button'
 import ResultsMatrix from './results-matrix'
 import SchulzeMatrix from './schulze-matrix'
 import ComparisonChart from './comparison-chart'
-import { RefreshCcw } from 'lucide-react' // Icona Riapri
+import { RefreshCcw } from 'lucide-react' 
 
 interface LobbySettings {
     factors: Factor[];
@@ -45,7 +45,7 @@ interface SchulzeDetails {
 export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapperProps) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const { confirm } = useConfirm() // Hook conferma
+  const { confirm } = useConfirm() 
   
   const [results, setResults] = useState<Record<string, VotingResult> | null>(null)
   const [activeSystem, setActiveSystem] = useState<'weighted' | 'borda' | 'schulze'>('weighted')
@@ -57,7 +57,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
 
   const [loading, setLoading] = useState(true)
 
-  // PERSISTENZA: Questo useEffect carica i dati ogni volta che la pagina si apre/aggiorna
+  
   useEffect(() => {
     const init = async () => {
       try {
@@ -93,10 +93,10 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
       }
     }
     init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [lobby.id]) 
 
-  // FUNZIONE RIAPRI VOTO
+  
   const handleReopen = async () => {
       const confirmed = await confirm({
           title: t.results.reopen_btn,
@@ -124,7 +124,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
         <header className="flex flex-col items-center gap-6 relative z-30">
             <ShareLobby code={lobby.code} compact={true} />
             
-            {/* TABS SISTEMI */}
+            {}
             <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full">
                 {(['weighted', 'borda', 'schulze'] as const).map((sys) => (
                     <button 
@@ -171,7 +171,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
             <ResultsMatrix candidates={rawCandidates} participants={participants} votes={rawVotes} currentUserId={userId} badges={badges} />
         </section>
 
-        {/* BOTTONE RIAPRI (Solo Host) */}
+        {}
         {isHost && (
             <div className="fixed bottom-6 left-0 w-full flex justify-center z-50 pointer-events-none">
                 <button 
@@ -184,5 +184,5 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
         )}
       </div>
     </div>
-  )
+  ) 
 }

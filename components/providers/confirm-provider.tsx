@@ -73,7 +73,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-    </ConfirmContext.Provider>
+    </ConfirmContext.Provider> 
   )
 }
 

@@ -8,7 +8,7 @@ interface JollySelectorProps {
     selectedId: string | null
     onSelect: (id: string) => void
 }
-
+ 
 export default function JollySelector({ candidates, selectedId, onSelect }: JollySelectorProps) {
   if (candidates.length === 0) return null
 
@@ -45,7 +45,7 @@ export default function JollySelector({ candidates, selectedId, onSelect }: Joll
                     </button>
                 )
             })}
-        </div>
+        </div> 
     </div>
   )
 }

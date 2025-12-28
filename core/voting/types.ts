@@ -3,14 +3,14 @@ import { Candidate, Factor } from '@/types';
 export interface VoteRecord {
     candidate_id: string;
     voter_id: string;
-    scores: Record<string, number>; // factor_id -> value
+    scores: Record<string, number>; 
     is_jolly: boolean;
 }
 
 export interface VotingResult {
     ranking: Candidate[]; 
     scores: Record<string, number>; 
-    details: Record<string, unknown> | null; // <--- FIX: unknown invece di any
+    details: Record<string, unknown> | null; 
     stats: {
         min?: number;
         max?: number;
@@ -25,4 +25,4 @@ export interface VotingStrategy {
         factors: Factor[],
         options?: { maxScale: number }
     ): VotingResult;
-}
+} 

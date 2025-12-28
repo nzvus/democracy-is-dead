@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts'
-import { VotingResult } from '@/core/voting/types' // <--- FIX: Import Type corretto
+import { VotingResult } from '@/core/voting/types' 
 import { useLanguage } from '@/components/providers/language-provider'
 
 interface ComparisonChartProps {
@@ -22,13 +22,13 @@ interface ComparisonChartProps {
 export default function ComparisonChart({ weighted, borda, schulze }: ComparisonChartProps) {
   const { t } = useLanguage()
 
-  // Normalizziamo i dati per il grafico
-  // Prendiamo tutti i candidati univoci
+  
+  
   const allCandidates = weighted.ranking.map(c => c.name)
 
   const data = allCandidates.map(name => {
-    // Troviamo il ranking (posizione) in ogni sistema. 
-    // 1 = Primo posto.
+    
+    
     const getRank = (res: VotingResult) => {
       const idx = res.ranking.findIndex(c => c.name === name)
       return idx === -1 ? 0 : idx + 1
@@ -48,11 +48,11 @@ export default function ComparisonChart({ weighted, borda, schulze }: Comparison
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }} 
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="name" stroke="#9CA3AF" />
-          {/* Invertiamo l'asse Y perché Rank 1 è meglio di Rank 10 */}
+          {}
           <YAxis stroke="#9CA3AF" reversed label={{ value: 'Rank (Lower is Better)', angle: -90, position: 'insideLeft', fill: '#6B7280' }} />
           <Tooltip 
             contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#F3F4F6' }}

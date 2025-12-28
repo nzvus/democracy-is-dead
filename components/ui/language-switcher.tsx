@@ -25,7 +25,7 @@ export default function LanguageSwitcher() {
             ? 'bg-white text-black shadow' 
             : 'text-gray-400 hover:text-white'
         }`}
-      >
+      > 
         EN
       </button>
     </div>

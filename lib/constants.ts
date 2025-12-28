@@ -8,7 +8,7 @@ export const UI = {
     ROUNDED_LG: "rounded-3xl",
     ROUNDED_MD: "rounded-xl",
   },
-  
+   
   
   COLORS: {
     PRIMARY: "indigo", 

@@ -5,8 +5,8 @@ import { Info } from 'lucide-react'
 import EncyclopediaModal from './encyclopedia-modal'
 
 interface InfoButtonProps {
-  topicKey?: string // Chiave per l'enciclopedia (es. 'schulze')
-  simpleText?: string // Testo semplice di fallback (vecchio comportamento)
+  topicKey?: string 
+  simpleText?: string 
   size?: number
   className?: string
 }
@@ -14,7 +14,7 @@ interface InfoButtonProps {
 export default function InfoButton({ topicKey, simpleText, size = 16, className = "" }: InfoButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Se non c'è una chiave topic, usiamo il comportamento tooltip nativo browser per il simpleText
+  
   if (!topicKey && simpleText) {
       return (
           <div className={`group relative inline-flex items-center justify-center cursor-help ${className}`} title={simpleText}>
@@ -23,7 +23,7 @@ export default function InfoButton({ topicKey, simpleText, size = 16, className 
       )
   }
 
-  // Se c'è una topicKey, apriamo la modale
+  
   return (
     <>
         <button 
@@ -38,7 +38,7 @@ export default function InfoButton({ topicKey, simpleText, size = 16, className 
             <EncyclopediaModal 
                 topicKey={topicKey} 
                 isOpen={isOpen} 
-                onClose={() => setIsOpen(false)} 
+                onClose={() => setIsOpen(false)}  
             />
         )}
     </>

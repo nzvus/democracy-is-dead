@@ -9,4 +9,4 @@ export const getScoreColor = (score: number, max: number, isLowerBetter: boolean
   if (normalized < 0.3) return 'bg-red-500' 
   if (normalized < 0.7) return 'bg-yellow-500' 
   return 'bg-green-500' 
-}
+} 

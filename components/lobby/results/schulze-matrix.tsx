@@ -69,5 +69,5 @@ export default function SchulzeMatrix({ candidates, matrix }: SchulzeMatrixProps
          {t.results.schulze_matrix.subtitle}
       </div>
     </div>
-  )
+  ) 
 }

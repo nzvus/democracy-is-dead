@@ -6,4 +6,4 @@ export const dictionaries = {
   en
 }
 
-export type Locale = keyof typeof dictionaries
+export type Locale = keyof typeof dictionaries 

@@ -58,7 +58,7 @@ export default function CandidateTooltip({ candidate, children, className = '' }
       )}
     </>
   )
-}
+} 
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
   if (typeof window === 'undefined') return null

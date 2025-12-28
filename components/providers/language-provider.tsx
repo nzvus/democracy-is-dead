@@ -2,23 +2,23 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
-// Importiamo i dizionari IT
+
 import itCommon from '@/locales/it/common'
 import itHome from '@/locales/it/home'
 import itSetup from '@/locales/it/setup'
 import itLobby from '@/locales/it/lobby'
 import itResults from '@/locales/it/results'
 import itOnboarding from '@/locales/it/onboarding'
-import itEncyclopedia from '@/locales/it/encyclopedia' // <--- NUOVO IMPORT
+import itEncyclopedia from '@/locales/it/encyclopedia' 
 
-// Importiamo i dizionari EN
+
 import enCommon from '@/locales/en/common'
 import enHome from '@/locales/en/home'
 import enSetup from '@/locales/en/setup'
 import enLobby from '@/locales/en/lobby'
 import enResults from '@/locales/en/results'
 import enOnboarding from '@/locales/en/onboarding'
-import enEncyclopedia from '@/locales/en/encyclopedia' // <--- NUOVO IMPORT
+import enEncyclopedia from '@/locales/en/encyclopedia' 
 
 type Language = 'it' | 'en'
 
@@ -30,7 +30,7 @@ const dictionaries = {
     lobby: itLobby,
     results: itResults,
     onboarding: itOnboarding,
-    encyclopedia: itEncyclopedia, // <--- REGISTRAZIONE NECESSARIA
+    encyclopedia: itEncyclopedia, 
   },
   en: {
     common: enCommon,
@@ -39,14 +39,14 @@ const dictionaries = {
     lobby: enLobby,
     results: enResults,
     onboarding: enOnboarding,
-    encyclopedia: enEncyclopedia, // <--- REGISTRAZIONE NECESSARIA
+    encyclopedia: enEncyclopedia, 
   }
 }
 
 interface LanguageContextType {
   t: typeof dictionaries['it']
   language: Language
-  setLanguage: (lang: Language) => void
+  setLanguage: (lang: Language) => void 
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)

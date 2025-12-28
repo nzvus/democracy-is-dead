@@ -27,7 +27,7 @@ export const calculateAwards = (
     participants: Participant[],
     votes: VoteRecord[],
     schulzeResult: VotingResult, 
-    // Parametri rimossi perché inutilizzati: weightedResult, maxScale
+    
 ): Record<string, BadgeType[]> => {
     
     if (participants.length < 3) return {};
@@ -95,5 +95,5 @@ export const calculateAwards = (
     const oracles = stats.filter(s => s.agreementScore === 100);
     oracles.forEach(o => result[o.userId].push('oracle'));
 
-    return result;
+    return result; 
 };

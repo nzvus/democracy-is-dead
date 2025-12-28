@@ -15,7 +15,6 @@ interface VotingWrapperProps {
     lobby: {
         id: string;
         code: string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         settings: any; 
     }
     userId: string
@@ -51,7 +50,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperPr
             const voteMap: Record<string, Record<string, number>> = {}
             let savedJolly: string | null = null
             
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             existingVotes.forEach((v: any) => { 
                 voteMap[v.candidate_id] = v.scores
                 if (v.is_jolly) savedJolly = v.candidate_id 
@@ -65,7 +63,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperPr
     }
     init()
     
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [lobby.id, userId, supabase]) 
 
   const handleVote = (candId: string, factId: string, val: number) => {
@@ -149,5 +147,5 @@ export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperPr
             {isHost && <button onClick={endVoting} className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mx-auto py-3 bg-red-950/20 text-red-400 border border-red-900/30 ${UI.LAYOUT.ROUNDED_MD} font-bold text-xs uppercase tracking-widest hover:bg-red-900/40 transition-colors`}>{t.lobby.terminate_btn}</button>}
         </div>
     </div>
-  )
+  ) 
 }

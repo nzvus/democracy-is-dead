@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
+
 'use client'
 
-// Funzione deterministica per colore avatar
+
 const getAvatarColor = (seed: string) => {
     const colors = [
         'bg-red-500', 'bg-orange-500', 'bg-amber-500', 
@@ -34,4 +34,4 @@ export default function Avatar({ seed, src, className }: { seed: string, src?: s
             {initials}
         </div>
     )
-}
+} 

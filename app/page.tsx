@@ -8,7 +8,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { ArrowRight, History, Vote } from 'lucide-react'
 
-// Helper esterno per purezza
+
 const generateCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
@@ -22,15 +22,14 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState('')
   const [recentLobbies, setRecentLobbies] = useState<{code: string, date: string}[]>([])
 
-  // Carica cronologia
+  
   useEffect(() => {
       const history = localStorage.getItem('did_history')
       if (history) {
           try {
-              // eslint-disable-next-line react-hooks/set-state-in-effect
               setRecentLobbies(JSON.parse(history))
           } catch {
-              // Ignore
+              
           }
       }
   }, [])
@@ -56,8 +55,8 @@ export default function Home() {
 
     const code = generateCode()
     
-    // RIMOSSO 'as any' e il commento eslint inutile.
-    // Supabase dovrebbe accettare l'oggetto settings se la colonna è JSONB.
+    
+    
     const { error: lobbyError } = await supabase.from('lobbies').insert({
         code,
         host_id: userId,
@@ -101,7 +100,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden`} style={{ backgroundImage: gridBg }}>
         
-        {/* Language Switcher */}
+        {}
         <div className="absolute top-6 right-6 z-50">
             <button 
                 onClick={() => setLanguage(language === 'it' ? 'en' : 'it')}
@@ -113,7 +112,7 @@ export default function Home() {
 
         <main className="w-full max-w-md relative z-10 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             
-            {/* Header */}
+            {}
             <div className="text-center space-y-4">
                 <div className="mx-auto w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-3xl rotate-3 flex items-center justify-center shadow-2xl shadow-indigo-500/20 mb-6">
                     <Vote size={40} className="text-white -rotate-3" />
@@ -126,7 +125,7 @@ export default function Home() {
                 </p>
             </div>
 
-            {/* Actions Card */}
+            {}
             <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-6 rounded-3xl shadow-2xl space-y-6">
                 
                 <button 
@@ -165,9 +164,8 @@ export default function Home() {
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                     {t.home.no_registration}
                 </p>
-            </div>
-
-            {/* History */}
+            </div>            
+            {}
             {recentLobbies.length > 0 && (
                 <div className="space-y-4 pt-4 border-t border-gray-900/50">
                     <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">

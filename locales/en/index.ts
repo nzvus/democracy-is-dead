@@ -3,8 +3,8 @@ import home from './home'
 import lobby from './lobby'
 import results from './results'
 import encyclopedia from './encyclopedia'
-import setup from './setup'       // <--- AGGIUNTO
-import onboarding from './onboarding' // <--- AGGIUNTO
+import setup from './setup'       
+import onboarding from './onboarding' 
 
 const en = {
   common,
@@ -12,8 +12,8 @@ const en = {
   lobby,
   results,
   encyclopedia,
-  setup,         // <--- AGGIUNTO
-  onboarding     // <--- AGGIUNTO
+  setup,         
+  onboarding     
 }
 
 export default en

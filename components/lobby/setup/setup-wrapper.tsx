@@ -15,10 +15,9 @@ interface SetupWrapperProps {
   lobby: {
       id: string;
       code: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       settings: any; 
   }
-}
+} 
 
 export default function SetupWrapper({ lobby }: SetupWrapperProps) {
   const { t } = useLanguage()
@@ -82,7 +81,6 @@ export default function SetupWrapper({ lobby }: SetupWrapperProps) {
 
             <div className="flex justify-between pt-4">
                 <button 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onClick={() => setStep(prev => Math.max(1, prev - 1) as any)}
                     disabled={step === 1}
                     className="px-6 py-3 rounded-xl font-bold text-gray-400 hover:bg-gray-800 disabled:opacity-0 transition-all"
@@ -92,7 +90,6 @@ export default function SetupWrapper({ lobby }: SetupWrapperProps) {
 
                 {step < 3 ? (
                     <button 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onClick={() => setStep(prev => Math.min(3, prev + 1) as any)}
                         className={`px-8 py-3 bg-white text-black rounded-xl font-bold hover:scale-105 transition-transform`}
                     >

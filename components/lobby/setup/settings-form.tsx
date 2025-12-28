@@ -11,7 +11,7 @@ interface SettingsFormProps {
 export default function SettingsForm({ scale, setScale }: SettingsFormProps) {
   const { t } = useLanguage()
 
-  return (
+  return ( 
     <div className="space-y-6">
         <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 space-y-4">
             <h3 className="font-bold text-gray-300 uppercase tracking-widest text-sm">{t.setup.settings.title}</h3>

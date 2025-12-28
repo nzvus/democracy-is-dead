@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+
 'use client'
 
 import { useState } from 'react'
@@ -50,7 +50,7 @@ export default function ImagePicker({ value, onChange, placeholder = "https://..
             onClick={() => setIsOpen(true)}
             className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 hover:text-white transition-all border border-gray-700 hover:border-gray-600"
         >
-            <ImageIcon size={14} />
+            <ImageIcon size={14} /> 
             <span>Aggiungi Immagine</span>
         </button>
     )
