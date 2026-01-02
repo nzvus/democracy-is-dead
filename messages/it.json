@@ -152,7 +152,10 @@
       "hide_names": "Nascondi Nomi",
       "hide_avatars": "Nascondi Avatar",
       "hide_values": "Nascondi Valori"
-    }
+    },
+    "data_export": "Esportazione Dati",
+    "export_desc": "Scarica tutti i dati in formato JSON per l'analisi.",
+    "download_btn": "Scarica Dati"
   },
   "Voting": {
     "submit": "Invia Voti",

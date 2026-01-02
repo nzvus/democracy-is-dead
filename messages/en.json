@@ -152,7 +152,10 @@
       "hide_names": "Hide Names",
       "hide_avatars": "Hide Avatars",
       "hide_values": "Hide Values"
-    }
+    },
+    "data_export": "Data Export",
+    "export_desc": "Download comprehensive JSON data for analysis.",
+    "download_btn": "Download Data"
   },
   "Voting": {
     "submit": "Submit All Votes",

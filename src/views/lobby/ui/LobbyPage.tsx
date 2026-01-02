@@ -19,26 +19,26 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
   const t = useTranslations('Lobby');
   const tCommon = useTranslations('Common');
   
-  // [FIX] Destructure updateLocalStatus
   const { lobby, candidates, participants, votes, loading, updateLocalStatus, refreshCandidates } = useLobbyState(lobbyId);
-  
   const { user } = useSessionAuth();
   const [profileSet, setProfileSet] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    if (user?.user_metadata?.nickname) setProfileSet(true);
+    if (user?.user_metadata?.nickname) {
+      setProfileSet(true);
+    }
   }, [user]);
 
   const isHost = user && lobby && user.id === lobby.host_id;
 
   const handleStartSetup = useCallback(async () => {
     if (!isHost) return;
-    updateLocalStatus('setup'); // Immediate local update
+    updateLocalStatus('setup');
     await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobbyId);
   }, [isHost, lobbyId, supabase, updateLocalStatus]);
 
-  // Auto-Redirect Host
+  // Auto-Redirect Host to Setup
   useEffect(() => {
     if (isHost && lobby?.status === 'waiting' && profileSet) {
       const timer = setTimeout(() => handleStartSetup(), 500);
@@ -46,24 +46,27 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     }
   }, [isHost, lobby?.status, profileSet, handleStartSetup]);
 
-  // [NEW] Handlers for optimistic updates
-  const handleLaunchSuccess = () => {
-    refreshCandidates(); // Ensure we have the latest data
-    updateLocalStatus('voting'); // Switch view immediately
+  // --- Handlers for Optimistic Updates ---
+
+  const handleLaunchSuccess = async () => {
+    updateLocalStatus('voting');
+    await refreshCandidates(); // Critical: Ensure we have candidates before rendering VotingInterface
   };
 
   const handleSuspend = () => {
-    updateLocalStatus('setup'); // Switch view immediately
+    updateLocalStatus('setup');
   };
 
   const handleEnd = () => {
-    updateLocalStatus('ended'); // Switch view immediately
+    updateLocalStatus('ended');
   };
 
   const handleResume = async () => {
-    updateLocalStatus('voting'); // Immediate local update
+    updateLocalStatus('voting');
     await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobbyId);
   };
+
+  // --- Render ---
 
   if (loading || !lobby || !user) {
     return (
@@ -126,7 +129,6 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
           {/* SETUP */}
           {lobby.status === 'setup' && (
             isHost ? (
-               // [FIX] Pass handleLaunchSuccess
                <ConfigForm lobbyId={lobbyId} onSuccess={handleLaunchSuccess} />
             ) : (
                <div className="glass-card p-12 text-center max-w-xl mx-auto mt-20 animate-in zoom-in-95">
@@ -156,7 +158,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
               candidates={candidates} 
               votes={votes}
               factors={lobby.settings.factors}
-              onResume={isHost ? handleResume : undefined} // [NEW] Pass Resume handler
+              onResume={isHost ? handleResume : undefined}
             />
           )}
         </div>
@@ -166,7 +168,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
                 lobbyId={lobbyId} 
                 settings={lobby.settings} 
                 status={lobby.status} 
-                onSuspend={handleSuspend} // [NEW] Optimistic callbacks
+                onSuspend={handleSuspend} 
                 onEnd={handleEnd}
             />
         )}
