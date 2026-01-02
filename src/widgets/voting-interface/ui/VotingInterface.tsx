@@ -1,6 +1,3 @@
-================================================================================
-FILE: src\widgets\voting-interface\ui\VotingInterface.tsx
-================================================================================
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Candidate } from '@/entities/candidate/model/types';

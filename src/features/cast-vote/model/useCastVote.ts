@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { submitVote } from '../api/vote-api';
 import { createClient } from '@/shared/api/supabase';
@@ -40,7 +39,6 @@ export const useCastVote = (lobbyId: string, userId: string) => {
         }
       } catch (err) {
         console.error("Error fetching previous votes:", err);
-        // Optional: toast.error("Could not load previous votes");
       } finally {
         if (isMounted) setIsFetching(false);
       }
