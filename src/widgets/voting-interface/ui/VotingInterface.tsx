@@ -1,11 +1,15 @@
+================================================================================
+FILE: src\widgets\voting-interface\ui\VotingInterface.tsx
+================================================================================
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Candidate } from '@/entities/candidate/model/types';
 import { Factor } from '@/entities/factor/model/types';
-import { VotingFactorPanel } from './VotingFactorPanel'; // [NEW]
+import { VotingFactorPanel } from './VotingFactorPanel';
 import { JollySelector } from './JollySelector';
 import { useCastVote } from '@/features/cast-vote/model/useCastVote';
 import { Button } from '@/shared/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface VotingInterfaceProps {
   lobbyId: string;
@@ -19,15 +23,17 @@ export const VotingInterface = ({
   lobbyId, userId, candidates, factors, maxScale 
 }: VotingInterfaceProps) => {
   const t = useTranslations('Voting');
-  const { localVotes, registerVote, commitVotes, isSubmitting } = useCastVote(lobbyId, userId);
+  const tCommon = useTranslations('Common');
+  
+  // [NEW] Destructure isFetching from the hook
+  const { localVotes, registerVote, commitVotes, isSubmitting, isFetching } = useCastVote(lobbyId, userId);
   const [jollyId, setJollyId] = useState<string | null>(null);
 
   // Helper to invert the map: We need Candidate Votes grouped by Factor for the Panel
-  // But localVotes is Record<CandidateId, Record<FactorId, Score>>
-  // The panel needs logic to pull score: votes[candidateId][factor.id]
   const getVotesForFactor = (factorId: string) => {
     const map: Record<string, number> = {};
     candidates.forEach(c => {
+        // Safe access: if fetching is done, this will contain DB value or undefined (0)
         map[c.id] = localVotes[c.id]?.[factorId] ?? 0;
     });
     return map;
@@ -35,8 +41,20 @@ export const VotingInterface = ({
 
   const activeFactors = factors.filter(f => !f.is_hidden && f.type === 'numerical');
 
+  // [NEW] Loading State View
+  if (isFetching) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+        <p className="text-sm font-bold uppercase tracking-widest text-gray-500 animate-pulse">
+          {tCommon('loading')}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 pb-40 max-w-3xl mx-auto"> {/* [FIX] Centered Container */}
+    <div className="space-y-8 pb-40 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       <JollySelector 
         candidates={candidates} 

@@ -1,5 +1,5 @@
 PROJECT TRANSCRIPT
-Date: 02/01/2026, 16:13:27
+Date: 02/01/2026, 20:58:44
 
 
 
@@ -282,7 +282,7 @@ FILE: messages\en.json
   },
   "Home": {
     "title": "Democracy is Dead",
-    "subtitle": "The mathematical way to settle arguments about where to eat dinner.",
+    "subtitle": "Election Site",
     "create_lobby": "Start New Lobby",
     "or_join": "Or Join",
     "join_placeholder": "CODE",
@@ -332,7 +332,10 @@ FILE: messages\en.json
       "hide_names": "Hide Names",
       "hide_avatars": "Hide Avatars",
       "hide_values": "Hide Values"
-    }
+    },
+    "data_export": "Data Export",
+    "export_desc": "Download comprehensive JSON data for analysis.",
+    "download_btn": "Download Data"
   },
   "Voting": {
     "submit": "Submit All Votes",
@@ -375,7 +378,10 @@ FILE: messages\en.json
       "schulze": "A Condorcet method. It simulates pairwise duels between every candidate. The winner is the one who beats everyone else in the strongest paths.",
       "radar": "Visualizes the strengths and weaknesses of each candidate across different criteria."
     },
-    "need_more_factors": "Need at least 3 numerical factors for Radar Analysis."
+    "need_more_factors": "Need at least 3 numerical factors for Radar Analysis.",
+  "history_label": "History",
+    "math_label": "The Math",
+    "insight_label": "Insight"
   },
   "Share": {
     "invite": "Invite 🔗",
@@ -528,7 +534,7 @@ FILE: messages\it.json
   },
   "Home": {
     "title": "Democracy is Dead",
-    "subtitle": "Il modo matematico per decidere dove andare a cena.",
+    "subtitle": "Sito di Elezione",
     "create_lobby": "Crea Nuova Lobby",
     "or_join": "O Entra",
     "join_placeholder": "CODICE",
@@ -578,7 +584,10 @@ FILE: messages\it.json
       "hide_names": "Nascondi Nomi",
       "hide_avatars": "Nascondi Avatar",
       "hide_values": "Nascondi Valori"
-    }
+    },
+    "data_export": "Esportazione Dati",
+    "export_desc": "Scarica tutti i dati in formato JSON per l'analisi.",
+    "download_btn": "Scarica Dati"
   },
   "Voting": {
     "submit": "Invia Voti",
@@ -611,6 +620,9 @@ FILE: messages\it.json
       "oracle": { "title": "L'Oracolo", "desc": "Ha predetto perfettamente il vincitore." },
       "hive_mind": { "title": "Mente Collettiva", "desc": "Ha votato esattamente come la media." }
     },
+     "history_label": "Storia",
+    "math_label": "Matematica",
+    "insight_label": "Intuizione",
     "podium_title": "Migliori Candidati",
     "winner": "Vincitore",
     "runner_up": "Secondo Posto",
@@ -736,6 +748,7 @@ FILE: package.json
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.90.15",
     "@types/lodash": "^4.17.21",
+    "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.1",
     "framer-motion": "^12.23.26",
     "lodash": "^4.17.21",
@@ -752,6 +765,7 @@ FILE: package.json
     "recharts": "^3.6.0",
     "root": "github:tanstack/react-query",
     "sonner": "^2.0.7",
+    "uuid": "^13.0.0",
     "zod": "^4.2.1",
     "zustand": "^5.0.9"
   },
@@ -1104,8 +1118,18 @@ export const VotingScaleSchema = z.object({
   max: z.number().min(5).max(100).default(10),
 });
 
+// [FIX] Updated Privacy Schema to allow Granular Object
+export const PrivacySchema = z.union([
+  z.enum(['public', 'anonymous']),
+  z.object({
+    users: z.enum(['visible', 'hidden']).optional(),
+    candidates: z.enum(['visible', 'hidden']).optional(),
+    factors: z.enum(['visible', 'hidden']).optional(),
+  })
+]);
+
 export const LobbySettingsSchema = z.object({
-  privacy: z.enum(['public', 'anonymous', 'blind']).default('public'),
+  privacy: PrivacySchema.default('public'),
   voting_scale: VotingScaleSchema,
   allow_decimals: z.boolean().default(false),
   factors: z.array(FactorSchema).default([]),
@@ -1119,7 +1143,6 @@ export interface Lobby {
   id: string;
   code: string;
   host_id: string;
-  // [FIX] Added name property
   name: string;
   status: LobbyStatus;
   settings: LobbySettings;
@@ -1462,14 +1485,36 @@ export const submitVote = async (payload: SubmitVotePayload) => {
 ================================================================================
 FILE: src\features\cast-vote\model\useCastVote.ts
 ================================================================================
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { submitVote } from '../api/vote-api';
+import { createClient } from '@/shared/api/supabase';
 import { toast } from 'sonner';
 
 export const useCastVote = (lobbyId: string, userId: string) => {
-  // Local state for optimistic UI (instant feedback)
   const [localVotes, setLocalVotes] = useState<Record<string, Record<string, number>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const supabase = useMemo(() => createClient(), []);
+
+  // [NEW] Restore existing votes on mount
+  useEffect(() => {
+    const fetchExistingVotes = async () => {
+      const { data } = await supabase
+        .from('votes')
+        .select('*')
+        .eq('lobby_id', lobbyId)
+        .eq('voter_id', userId);
+
+      if (data && data.length > 0) {
+        const voteMap: Record<string, Record<string, number>> = {};
+        data.forEach((vote: any) => {
+          voteMap[vote.candidate_id] = vote.scores;
+        });
+        setLocalVotes(voteMap);
+      }
+    };
+
+    if (userId && lobbyId) fetchExistingVotes();
+  }, [lobbyId, userId, supabase]);
 
   const registerVote = (candidateId: string, factorId: string, value: number) => {
     setLocalVotes(prev => ({
@@ -1731,23 +1776,38 @@ export const usePresence = (lobbyId: string, userId: string, nickname: string) =
 FILE: src\features\configure-lobby\model\config-schema.ts
 ================================================================================
 import { z } from 'zod';
-import { FactorSchema } from '@/entities/factor/model/types';
 
-// Relaxed Candidate Schema for the Form (Handles empty strings from inputs)
+// Helper for loose string/null handling
+const NullableString = z.string().nullable().optional().or(z.literal(''));
+
+const FormFactorSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Required"),
+  description: NullableString,
+  weight: z.number().default(1),
+  type: z.enum(['numerical', 'constant']).default('numerical'),
+  input_control: z.enum(['slider', 'stars', 'number', 'toggle']).default('slider'),
+  step: z.number().default(1),
+  trend: z.enum(['higher_better', 'lower_better']).default('higher_better'),
+  image_url: NullableString, // [FIX] Allows null, undefined, or ""
+  is_hidden: z.boolean().default(false),
+  disabled_candidates: z.array(z.string()).default([]),
+});
+
 const FormCandidateSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Candidate Name is required"),
-  description: z.string().optional().or(z.literal('')),
-  image_url: z.string().optional().or(z.literal('')), // [FIX] Allow empty string
+  description: NullableString,
+  image_url: NullableString, // [FIX] Allows null, undefined, or ""
   static_values: z.record(z.string(), z.number()).optional()
 });
 
 export const SetupWizardSchema = z.object({
-  lobby_name: z.string().min(3, "Lobby Name must be at least 3 chars").default("My Lobby"),
+  lobby_name: z.string().min(3, "Lobby Name too short").default("My Lobby"),
   settings: z.object({
     privacy: z.enum(['public', 'anonymous']),
     voting_scale: z.object({ max: z.number() }),
-    factors: z.array(FactorSchema).min(1, "Add at least 1 criteria"),
+    factors: z.array(FormFactorSchema).min(1, "Add at least 1 criteria"),
   }),
   candidates: z.array(FormCandidateSchema).min(2, "Add at least 2 candidates"),
 });
@@ -1763,9 +1823,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { SetupWizardSchema, SetupWizardValues } from './config-schema';
 import { createClient } from '@/shared/api/supabase';
 import { toast } from 'sonner';
-import { omit } from 'lodash'; 
 
-export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
+// Define defaults outside component to ensure reference stability for useEffect
+const DEFAULT_VALUES: SetupWizardValues = {
+  lobby_name: "", 
+  settings: {
+    privacy: 'public',
+    voting_scale: { max: 10 },
+    factors: []
+  },
+  candidates: []
+};
+
+export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSaving, setIsSaving] = useState(false);
   const supabase = useMemo(() => createClient(), []);
@@ -1774,40 +1844,85 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
 
   const form = useForm<SetupWizardValues>({
     resolver: zodResolver(SetupWizardSchema) as any,
-    defaultValues: {
-      lobby_name: "", 
-      settings: {
-        privacy: 'public',
-        voting_scale: { max: 10 },
-        factors: []
-      },
-      candidates: []
-    },
+    defaultValues: DEFAULT_VALUES,
     mode: 'onChange',
-    shouldUnregister: false 
+    shouldUnregister: false // Critical: Keep data when changing steps
   });
 
-  // 1. Load Draft
+  // 1. Hydration Strategy: Draft -> DB -> Default
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    const loadData = async () => {
+      if (typeof window === 'undefined') return;
+
+      // A. Try Local Draft First
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
         try {
           const parsed = JSON.parse(draft);
-          form.reset(parsed);
+          
+          // Deep Merge Logic to ensure structure integrity
+          const safeData = {
+            ...DEFAULT_VALUES,
+            ...parsed,
+            settings: {
+              ...DEFAULT_VALUES.settings,
+              ...(parsed.settings || {}),
+              voting_scale: {
+                ...DEFAULT_VALUES.settings.voting_scale,
+                ...(parsed.settings?.voting_scale || {})
+              }
+            }
+          };
+
+          form.reset(safeData);
           toast.info("Restored previous draft");
+          return;
         } catch (e) {
-          console.error("Failed to load draft", e);
+          console.error("Failed to parse draft", e);
+          localStorage.removeItem(DRAFT_KEY);
         }
       }
-    }
-  }, [DRAFT_KEY, form]);
 
-  // 2. Save Draft
+      // B. If no draft, fetch from DB (Suspend & Edit Case)
+      try {
+        const { data: lobby } = await supabase.from('lobbies').select('*').eq('id', lobbyId).single();
+        
+        if (lobby) {
+           const { data: candidates } = await supabase.from('candidates').select('*').eq('lobby_id', lobbyId);
+           const { data: factors } = await supabase.from('factors').select('*').eq('lobby_id', lobbyId);
+           
+           form.reset({
+             lobby_name: lobby.name || "My Lobby",
+             settings: {
+                ...DEFAULT_VALUES.settings,
+                ...lobby.settings,
+                factors: factors?.map(f => ({
+                    ...f,
+                    weight: Number(f.weight),
+                    // Map JSONB config back to UI state
+                    disabled_candidates: f.config?.disabled_for || []
+                })) || []
+             },
+             candidates: candidates?.map(c => ({
+                 ...c,
+                 id: c.id // Essential for Upsert logic
+             })) || []
+           });
+        }
+      } catch (e) {
+        console.error("Hydration failed", e);
+      }
+    };
+    
+    loadData();
+  }, [DRAFT_KEY, lobbyId, supabase, form]);
+
+  // 2. Save Draft Logic (Strip Images to prevent Storage/Header issues)
   useEffect(() => {
     const subscription = form.watch((value) => {
       const safeData = JSON.parse(JSON.stringify(value));
       
+      // Only strip BASE64 (Data URLs). Keep HTTPS URLs (Supabase Storage).
       if (safeData.candidates) {
         safeData.candidates.forEach((c: any) => {
           if (c.image_url?.startsWith('data:')) c.image_url = null;
@@ -1822,27 +1937,40 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(safeData));
     });
     return () => subscription.unsubscribe();
-  }, [form, DRAFT_KEY]); // [FIX] Added form dependency
+  }, [form, DRAFT_KEY]);
 
+  // 3. Main Save Action
   const saveConfiguration = async (data: SetupWizardValues) => {
     setIsSaving(true);
     try {
+      // A. Update Lobby Meta
       const { error: lobbyError } = await supabase
         .from('lobbies')
         .update({ 
           name: data.lobby_name,
-          settings: data.settings, 
+          settings: {
+             ...data.settings,
+             factors: [] // Factors are stored in their own table now
+          }, 
           status: 'voting' 
         })
         .eq('id', lobbyId);
 
       if (lobbyError) throw lobbyError;
 
+      // B. Upsert Candidates
       if (data.candidates.length > 0) {
-        // First delete existing candidates to prevent duplicates (simple approach)
-        await supabase.from('candidates').delete().eq('lobby_id', lobbyId);
+        // 1. Find candidates to delete
+        const { data: existingCands } = await supabase.from('candidates').select('id').eq('lobby_id', lobbyId);
+        const existingIds = existingCands?.map(c => c.id) || [];
+        const currentIds = data.candidates.map(c => c.id).filter(Boolean);
+        
+        const toDelete = existingIds.filter(id => !currentIds.includes(id));
+        if (toDelete.length > 0) await supabase.from('candidates').delete().in('id', toDelete);
 
+        // 2. Upsert
         const cleanCandidates = data.candidates.map(c => ({
+          ...(c.id ? { id: c.id } : {}), // Preserve ID if editing
           lobby_id: lobbyId,
           name: c.name,
           description: c.description || '',
@@ -1850,16 +1978,44 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
           static_values: c.static_values || {}
         }));
 
-        const { error: candError } = await supabase
-          .from('candidates')
-          .insert(cleanCandidates);
-
-        if (candError) throw candError;
+        await supabase.from('candidates').upsert(cleanCandidates);
       }
 
+      // C. Upsert Factors
+      if (data.settings.factors.length > 0) {
+         // 1. Find factors to delete
+         const { data: existingFactors } = await supabase.from('factors').select('id').eq('lobby_id', lobbyId);
+         const existingFIds = existingFactors?.map(f => f.id) || [];
+         const currentFIds = data.settings.factors.map(f => f.id).filter(Boolean);
+         
+         const factorsToDelete = existingFIds.filter(id => !currentFIds.includes(id));
+         if (factorsToDelete.length > 0) await supabase.from('factors').delete().in('id', factorsToDelete);
+
+         // 2. Upsert
+         const cleanFactors = data.settings.factors.map(f => ({
+             ...(f.id ? { id: f.id } : {}),
+             lobby_id: lobbyId,
+             name: f.name,
+             description: f.description,
+             weight: f.weight,
+             type: f.type,
+             input_control: f.input_control,
+             trend: f.trend,
+             image_url: f.image_url,
+             is_hidden: f.is_hidden,
+             step: f.step,
+             // Serialize disabled candidates to config JSONB
+             config: { disabled_for: f.disabled_candidates || [] }
+         }));
+
+         await supabase.from('factors').upsert(cleanFactors);
+      }
+
+      // Cleanup & Callback
       localStorage.removeItem(DRAFT_KEY);
       toast.success("Lobby Configured!");
-      onComplete();
+      onComplete(data);
+
     } catch (e) {
       console.error(e);
       toast.error("Failed to save configuration");
@@ -1908,8 +2064,15 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
   const onSubmit = (data: any) => saveConfiguration(data);
 
   const onError = (errors: any) => {
-    console.error("Form Validation Errors:", errors);
-    toast.error(t('validation_error'));
+    // [FIX] Serialize errors to see them in console
+    console.error("Form Validation Errors:", JSON.stringify(errors, null, 2));
+    
+    // Extract error messages
+    const missingCandidates = errors.candidates ? "Check Candidate details." : "";
+    const missingFactors = errors.settings?.factors ? "Check Criteria details." : "";
+    const nameError = errors.lobby_name ? "Lobby name is required." : "";
+
+    toast.error(`Cannot Launch: ${nameError || missingCandidates || missingFactors || "Check for red fields."}`);
   };
 
   const toggleDisabledCandidate = (factorIndex: number, candidateId: string) => {
@@ -2230,32 +2393,45 @@ export const useSessionAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // [FIX] Memoize client
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data: { user: existingUser } } = await supabase.auth.getUser();
+      // 1. Get the session from the browser
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (existingUser) {
-        setUser(existingUser);
-      } else {
-        const { data: { user: anonUser }, error } = await supabase.auth.signInAnonymously();
-        if (!error && anonUser) {
-          setUser(anonUser);
+      if (session) {
+        // 2. VERIFY the user actually exists in the DB
+        const { data: { user: dbUser }, error } = await supabase.auth.getUser();
+        
+        if (error || !dbUser) {
+          // 🚨 User was deleted from DB but session remains -> Force Logout
+          console.warn("Session invalid, forcing logout...");
+          await supabase.auth.signOut();
+          setUser(null);
+        } else {
+          setUser(dbUser);
         }
+      } else {
+        // No session, try anon or stay null
+        // (Optional: Auto-create anon user here if desired, otherwise leave null)
+        setUser(null);
       }
       setLoading(false);
     };
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+      } else if (session?.user) {
+        setUser(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase]); // [FIX] Added dependency
+  }, [supabase]);
 
   return { user, loading };
 };
@@ -2445,22 +2621,31 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/shared/api/supabase';
 import { Lobby, LobbyStatus } from '@/entities/lobby/model/types';
 import { Candidate } from '@/entities/candidate/model/types';
+import { Factor } from '@/entities/factor/model/types'; // [NEW] Import Factor type
 import { Participant } from '@/entities/participant/model/types';
 import { toast } from 'sonner';
 
 export const useLobbyState = (initialLobbyId: string) => {
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [factors, setFactors] = useState<Factor[]>([]); // [NEW] Factors State
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [votes, setVotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const supabase = useMemo(() => createClient(), []);
 
-  // Fetchers
+  // --- Fetchers ---
+
   const fetchCandidates = useCallback(async () => {
     const { data } = await supabase.from('candidates').select('*').eq('lobby_id', initialLobbyId);
     if (data) setCandidates(data);
+  }, [initialLobbyId, supabase]);
+
+  // [NEW] Fetch Factors
+  const fetchFactors = useCallback(async () => {
+    const { data } = await supabase.from('factors').select('*').eq('lobby_id', initialLobbyId);
+    if (data) setFactors(data);
   }, [initialLobbyId, supabase]);
 
   const fetchParticipants = useCallback(async () => {
@@ -2477,12 +2662,19 @@ export const useLobbyState = (initialLobbyId: string) => {
   const updateLocalStatus = (newStatus: LobbyStatus) => {
     if (lobby) {
       setLobby({ ...lobby, status: newStatus });
-      // If entering voting, ensure candidates are ready
-      if (newStatus === 'voting') fetchCandidates();
-      // If entering results, ensure votes are ready
+      if (newStatus === 'voting') {
+        fetchCandidates();
+        fetchFactors();
+      }
       if (newStatus === 'ended') fetchVotes();
     }
   };
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchCandidates(), fetchFactors()]);
+  }, [fetchCandidates, fetchFactors]);
+
+  // --- Effects ---
 
   useEffect(() => {
     const fetchData = async () => {
@@ -2491,24 +2683,34 @@ export const useLobbyState = (initialLobbyId: string) => {
       
       setLobby(lobbyData);
 
-      if (lobbyData.status !== 'waiting') await fetchCandidates();
+      // Fetch dynamic data if active
+      if (lobbyData.status !== 'waiting') {
+        await fetchCandidates();
+        await fetchFactors(); // [NEW] Fetch factors
+      }
+      
       await fetchParticipants();
-      if (lobbyData.status === 'ended') await fetchVotes();
+
+      if (lobbyData.status === 'ended') {
+        await fetchVotes();
+      }
       
       setLoading(false);
     };
 
     fetchData();
 
-    // Realtime Subscriptions
+    // --- Realtime Subscriptions ---
     const lobbyChannel = supabase.channel(`lobby_main:${initialLobbyId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `id=eq.${initialLobbyId}` },
         (payload) => {
           const newLobby = payload.new as Lobby;
           setLobby(newLobby);
           
-          // React to status changes from OTHER users/devices
-          if (payload.old.status !== 'voting' && newLobby.status === 'voting') fetchCandidates();
+          if (payload.old.status !== 'voting' && newLobby.status === 'voting') {
+             fetchCandidates();
+             fetchFactors();
+          }
           if (newLobby.status === 'ended') fetchVotes();
         }
       )
@@ -2517,6 +2719,13 @@ export const useLobbyState = (initialLobbyId: string) => {
     const candidateChannel = supabase.channel(`lobby_cands:${initialLobbyId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates', filter: `lobby_id=eq.${initialLobbyId}` },
         () => fetchCandidates()
+      )
+      .subscribe();
+
+    // [NEW] Subscribe to Factors changes
+    const factorChannel = supabase.channel(`lobby_factors:${initialLobbyId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'factors', filter: `lobby_id=eq.${initialLobbyId}` },
+        () => fetchFactors()
       )
       .subscribe();
 
@@ -2537,12 +2746,22 @@ export const useLobbyState = (initialLobbyId: string) => {
     return () => { 
       supabase.removeChannel(lobbyChannel); 
       supabase.removeChannel(candidateChannel);
+      supabase.removeChannel(factorChannel);
       supabase.removeChannel(partsChannel);
       supabase.removeChannel(voteChannel);
     };
-  }, [initialLobbyId, supabase, fetchCandidates, fetchParticipants, fetchVotes, lobby?.status]);
+  }, [initialLobbyId, supabase, fetchCandidates, fetchFactors, fetchParticipants, fetchVotes, lobby?.status]);
 
-  return { lobby, candidates, participants, votes, loading, updateLocalStatus, refreshCandidates: fetchCandidates };
+  return { 
+    lobby, 
+    candidates, 
+    factors, // [NEW] Export factors
+    participants, 
+    votes, 
+    loading, 
+    updateLocalStatus, 
+    refreshAll 
+  };
 };
 
 ================================================================================
@@ -2686,6 +2905,64 @@ export const getHistory = (): HistoryItem[] => {
 export const clearHistory = () => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(KEY);
+};
+
+================================================================================
+FILE: src\shared\lib\image-upload.ts
+================================================================================
+import imageCompression from 'browser-image-compression';
+import { createClient } from '@/shared/api/supabase';
+import { v4 as uuidv4 } from 'uuid';
+
+export const uploadImage = async (file: File): Promise<string> => {
+  const supabase = createClient();
+
+  // iOS Camera photos can be huge (10MB+). Aggressive compression is needed.
+  const options = {
+    maxSizeMB: 0.3, // Reduced to 300KB for speed/stability
+    maxWidthOrHeight: 1024,
+    useWebWorker: true,
+    fileType: "image/jpeg" // Force JPEG conversion to handle HEIC better
+  };
+
+  let fileToUpload = file;
+
+  try {
+    // Attempt compression
+    fileToUpload = await imageCompression(file, options);
+  } catch (error) {
+    console.warn("Image compression failed, attempting raw upload...", error);
+    // Fallback: If compression fails (common on some iOS versions), try uploading original
+    // Check size first to avoid 494 or timeout
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("Image too large (>5MB) and compression failed.");
+    }
+    fileToUpload = file;
+  }
+
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `${uuidv4()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('public-images')
+      .upload(filePath, fileToUpload, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('public-images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.error('Image upload failed:', error);
+    throw error;
+  }
 };
 
 ================================================================================
@@ -3062,19 +3339,20 @@ FILE: src\shared\ui\image-picker.tsx
 ================================================================================
 'use client'
 import { useState, useRef } from 'react';
-import { Image as ImageIcon, Upload, X, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, Upload, X, RefreshCw, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { uploadImage } from '@/shared/lib/image-upload';
+import { toast } from 'sonner';
 
 interface ImagePickerProps {
   value: string | null;
   onChange: (val: string | null) => void;
-  allowShuffle?: boolean; // For Avatars
-  seed?: string; // Seed for shuffle
+  allowShuffle?: boolean; 
+  seed?: string; 
   className?: string;
 }
 
-// [FIX] Renamed component to match import in ConfigForm
 export const ImagePicker = ({ 
   value, 
   onChange, 
@@ -3084,78 +3362,99 @@ export const ImagePicker = ({
 }: ImagePickerProps) => {
   const t = useTranslations('Common');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Local state for shuffle logic
   const [currentSeed, setCurrentSeed] = useState(seed || 'default');
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onChange(reader.result as string); // Save as Base64
-      };
-      reader.readAsDataURL(file);
+      setIsUploading(true);
+      try {
+        const publicUrl = await uploadImage(file);
+        onChange(publicUrl);
+      } catch (error) {
+        console.error(error);
+        // Fallback for UI feedback
+        alert("Upload failed. Try a smaller image.");
+      } finally {
+        setIsUploading(false);
+      }
     }
-    // Reset input value so same file can be selected again
     e.target.value = '';
   };
 
-  const handleRemove = () => {
+  const handleShuffle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSeed = Math.random().toString();
+    setCurrentSeed(newSeed);
+    if (allowShuffle) onChange(`https://api.dicebear.com/9.x/avataaars/svg?seed=${newSeed}`);
+  };
+
+  const handleUpload = (e: React.MouseEvent) => {
+    e.preventDefault(); // Stop bubbling
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onChange(null);
   };
 
-  const handleShuffle = () => {
-    const newSeed = Math.random().toString();
-    setCurrentSeed(newSeed);
-    if (allowShuffle) {
-        onChange(`https://api.dicebear.com/9.x/avataaars/svg?seed=${newSeed}`);
-    }
-  };
-
-  // Determine what to show
-  const hasCustomImage = value && (value.startsWith('data:') || value.startsWith('http'));
-  const displaySrc = hasCustomImage ? value : (allowShuffle ? `https://api.dicebear.com/9.x/avataaars/svg?seed=${currentSeed}` : null);
-
+  const displaySrc = value || (allowShuffle ? `https://api.dicebear.com/9.x/avataaars/svg?seed=${currentSeed}` : null);
   return (
     <div className={`relative group ${className}`}>
-      <div className="w-full h-full min-w-[3rem] min-h-[3rem] rounded-xl overflow-hidden bg-gray-900 border border-gray-700 shadow-inner flex items-center justify-center relative">
-        {displaySrc ? (
-          <Image src={displaySrc} alt="Preview" fill className="object-cover" />
+      <div className="w-full h-full min-w-[5rem] min-h-[5rem] rounded-xl overflow-hidden bg-gray-900 border border-gray-700 shadow-inner flex items-center justify-center relative aspect-square">
+        
+        {isUploading ? (
+          <Loader2 className="animate-spin text-indigo-500" />
+        ) : displaySrc ? (
+          <Image 
+            src={displaySrc} 
+            alt="Preview" 
+            fill 
+            className="object-cover" 
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
         ) : (
-          <ImageIcon className="text-gray-600" size={24} />
+          <ImageIcon className="text-gray-600 w-1/3 h-1/3" />
         )}
         
         {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+        {/* Added 'active:opacity-100' for better mobile touch feedback */}
+        <div className={`
+            absolute inset-0 bg-black/70 flex items-center justify-center gap-2 z-10 transition-opacity
+            ${isUploading ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 active:opacity-100 focus-within:opacity-100'}
+        `}>
           <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 bg-indigo-600 rounded-full text-white hover:bg-indigo-500 transition-transform hover:scale-110"
+            onClick={handleUpload}
+            className="p-2 bg-indigo-600 rounded-full text-white hover:bg-indigo-500 transition-transform hover:scale-110 shadow-lg"
             title={t('upload_image')}
             type="button"
           >
-            <Upload size={14} />
+            <Upload size={16} />
           </button>
           
           {allowShuffle && (
             <button 
                 onClick={handleShuffle}
-                className="p-1.5 bg-gray-700 rounded-full text-white hover:bg-gray-600 transition-transform hover:scale-110"
+                className="p-2 bg-gray-700 rounded-full text-white hover:bg-gray-600 transition-transform hover:scale-110 shadow-lg"
                 title={t('shuffle')}
                 type="button"
             >
-                <RefreshCw size={14} />
+                <RefreshCw size={16} />
             </button>
           )}
 
           {displaySrc && (
             <button 
                 onClick={handleRemove}
-                className="p-1.5 bg-red-600 rounded-full text-white hover:bg-red-500 transition-transform hover:scale-110"
+                className="p-2 bg-red-600 rounded-full text-white hover:bg-red-500 transition-transform hover:scale-110 shadow-lg"
                 title={t('remove_image')}
                 type="button"
             >
-                <X size={14} />
+                <X size={16} />
             </button>
           )}
         </div>
@@ -3167,6 +3466,8 @@ export const ImagePicker = ({
         onChange={handleFileChange} 
         className="hidden" 
         accept="image/*"
+        // [FIX] Helps mobile browsers allow camera/gallery choice
+        capture={undefined} 
       />
     </div>
   );
@@ -3395,13 +3696,18 @@ import { createClient } from '@/shared/api/supabase';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { AuthForm } from '@/features/auth/ui/AuthForm';
-import { ArrowRight, Clock, Plus, Play } from 'lucide-react';
+import { ArrowRight, LogOut, Clock, Plus, Play } from 'lucide-react';
 import { useSessionAuth } from '@/features/session-auth/model/useSessionAuth';
 import { ProfileEditor } from '@/widgets/user-dashboard/ui/ProfileEditor';
+import { getHistory, clearHistory } from '@/shared/lib/history-manager';
+import { toast } from 'sonner';
 
 export const HomePage = () => {
   const t = useTranslations('Home');
   const tDash = useTranslations('Dashboard');
+  const tAuth = useTranslations('Auth');
+  const tCommon = useTranslations('Common');
+  
   const router = useRouter();
   const supabase = createClient();
   const { user } = useSessionAuth();
@@ -3410,16 +3716,17 @@ export const HomePage = () => {
   const [myLobbies, setMyLobbies] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Fetch User's Lobbies (Correct Join Query)
+  // Fetch User's Lobbies (Corrected Join Query)
   useEffect(() => {
     if (user && !user.is_anonymous) {
       const fetchLobbies = async () => {
+        // Query participants -> join lobbies
         const { data, error } = await supabase
             .from('lobby_participants')
             .select(`
                 lobby_id,
                 last_seen_at,
-                lobbies (
+                lobbies!inner (
                     id, code, name, host_id, status
                 )
             `)
@@ -3430,12 +3737,18 @@ export const HomePage = () => {
         if (!error && data) {
             // Flatten structure
             const lobbies = data
-                .map((row: any) => row.lobbies)
-                .filter((l: any) => l !== null); // Filter out deleted lobbies
+                .map((row: any) => ({
+                    ...row.lobbies,
+                    last_seen_at: row.last_seen_at
+                }))
+                .filter((l: any) => l !== null); 
             setMyLobbies(lobbies);
         }
       };
       fetchLobbies();
+    } else {
+      // Load Local History for Guests
+      setMyLobbies(getHistory());
     }
   }, [user, supabase]);
 
@@ -3444,15 +3757,36 @@ export const HomePage = () => {
     setIsCreating(true);
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    const { data } = await supabase.from('lobbies').insert({
+    // 1. Create Lobby
+    const { data: lobbyData, error: lobbyError } = await supabase.from('lobbies').insert({
         code,
         host_id: user.id,
         name: "Untitled Lobby",
         settings: { factors: [] }
-    }).select('code').single();
+    }).select('id, code').single();
     
-    if (data) router.push(`/lobby/${data.code}`);
-    setIsCreating(false);
+    if (lobbyError || !lobbyData) {
+        toast.error(tCommon('error'));
+        setIsCreating(false);
+        return;
+    }
+
+    // 2. [FIX] Immediately add Host as a Participant
+    // This ensures the lobby appears in history and the host is in the list
+    const { error: partError } = await supabase.from('lobby_participants').insert({
+        lobby_id: lobbyData.id,
+        user_id: user.id,
+        nickname: user.user_metadata?.nickname || 'Host',
+        avatar_url: user.user_metadata?.avatar_url || null,
+        last_seen_at: new Date().toISOString()
+    });
+
+    if (partError) {
+        console.error("Failed to add host to participants", partError);
+    }
+
+    router.push(`/lobby/${lobbyData.code}`);
+    // Note: No need to setIsCreating(false) as we are navigating away
   };
 
   const handleJoin = () => {
@@ -3460,12 +3794,17 @@ export const HomePage = () => {
     router.push(`/lobby/${joinCode.toUpperCase()}`);
   };
 
-  // --- GUEST VIEW ---
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  };
+
+  // --- GUEST VIEW (Show Auth) ---
   if (!user || user.is_anonymous) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#030712] relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-        <div className="w-full max-w-md space-y-8 relative z-10">
+        <div className="w-full max-w-md space-y-8 relative z-10 animate-in fade-in zoom-in-95">
           <div className="text-center space-y-4">
             <h1 className="text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-600">
               {t('title')}
@@ -3478,81 +3817,103 @@ export const HomePage = () => {
     );
   }
 
-  // --- DASHBOARD VIEW ---
+  // --- LOGGED IN DASHBOARD (Single Column) ---
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-[#030712] text-white">
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-8">
+    <div className="min-h-screen p-4 bg-[#030712] text-white flex justify-center items-start pt-10 md:pt-20">
+      <div className="w-full max-w-4xl grid md:grid-cols-2 gap-6">
         
-        {/* LEFT COL: Profile & Actions (4 cols) */}
-        <div className="lg:col-span-4 space-y-8">
-            <ProfileEditor user={user} />
-            
-            <div className="glass-card p-6 space-y-6">
-                <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-4 text-lg btn-primary">
-                    <Plus className="mr-2" /> {t('create_lobby')}
+        {/* LEFT: Profile & Actions */}
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex justify-between items-center px-2">
+                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                    {t('welcome_user', { name: user.user_metadata?.nickname || 'User' })}
+                </h2>
+                <Button variant="ghost" onClick={handleLogout} className="text-[10px] h-7 px-2 text-red-400 hover:bg-red-900/10">
+                    <LogOut size={12} className="mr-1" /> {tAuth('logout')}
                 </Button>
+            </div>
+
+            {/* Actions Card */}
+            <div className="glass-card p-6 space-y-4 border-indigo-500/20">
+                <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-4 text-base btn-primary">
+                    <Plus className="mr-2" size={18} /> {t('create_lobby')}
+                </Button>
+                
+                <div className="relative flex items-center gap-4 py-2">
+                    <div className="h-px bg-white/10 flex-1"></div>
+                    <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">{t('or_join')}</span>
+                    <div className="h-px bg-white/10 flex-1"></div>
+                </div>
+
                 <div className="flex gap-2">
                     <Input 
                         value={joinCode} 
                         onChange={e => setJoinCode(e.target.value.toUpperCase())}
                         placeholder={t('join_placeholder')}
-                        className="glass-input text-center font-mono font-bold uppercase"
+                        className="glass-input text-center font-mono font-bold uppercase tracking-widest h-12"
                         maxLength={6}
                     />
-                    <Button onClick={handleJoin} className="bg-white text-black hover:bg-gray-200 rounded-xl px-4">
-                        <ArrowRight />
+                    <Button onClick={handleJoin} className="bg-white text-black hover:bg-gray-200 h-12 px-5 rounded-xl">
+                        <ArrowRight size={18} />
                     </Button>
                 </div>
             </div>
+
+            {/* Profile Editor */}
+            <div className="glass-card p-4">
+               <ProfileEditor user={user} />
+            </div>
         </div>
 
-        {/* RIGHT COL: My Lobbies (8 cols) */}
-        <div className="lg:col-span-8">
-            <div className="glass-card p-8 min-h-[600px] flex flex-col animate-in slide-in-from-right-4 duration-500 delay-100">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                    <Clock className="text-indigo-400" /> {tDash('my_lobbies')}
-                </h2>
+        {/* RIGHT: History */}
+        <div className="glass-card p-6 min-h-[400px] flex flex-col">
+            <div className="flex justify-between items-center mb-4 px-2">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                   <Clock size={14} /> {tDash('my_lobbies')}
+                </h3>
+                {/* Clear History Button (Only relevant for local history/guests really, but useful UI) */}
+                {user.is_anonymous && (
+                    <button onClick={() => { clearHistory(); setMyLobbies([]); }} className="text-[10px] text-red-400 hover:underline">
+                        {t('clear_history')}
+                    </button>
+                )}
+            </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                    {myLobbies.length === 0 && (
-                        <div className="col-span-2 text-center py-20 text-gray-600 italic border-2 border-dashed border-gray-800 rounded-2xl">
-                            {tDash('no_lobbies')}
-                        </div>
-                    )}
+            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
+                {myLobbies.length === 0 && (
+                    <div className="text-center py-12 text-gray-600 italic text-sm border border-dashed border-gray-800 rounded-xl bg-black/20">
+                        {tDash('no_lobbies')}
+                    </div>
+                )}
 
-                    {myLobbies.map((l) => (
-                        <div 
-                            key={l.id} 
-                            className="bg-black/20 hover:bg-indigo-900/10 border border-white/5 hover:border-indigo-500/30 rounded-2xl p-5 transition-all group relative overflow-hidden"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="font-bold text-lg text-white group-hover:text-indigo-200 transition-colors truncate max-w-[200px]">
-                                        {l.name || "Untitled Lobby"}
-                                    </h3>
-                                    <span className="text-xs font-mono text-gray-500 bg-black/40 px-2 py-1 rounded">
-                                        {l.code}
-                                    </span>
-                                </div>
-                                <span className={`text-[10px] font-black px-2 py-1 rounded border ${l.host_id === user.id ? 'border-yellow-500/30 text-yellow-500' : 'border-blue-500/30 text-blue-500'}`}>
-                                    {l.host_id === user.id ? tDash('host_badge') : tDash('guest_badge')}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center justify-between mt-4">
-                                <span className={`text-xs uppercase font-bold ${l.status === 'voting' ? 'text-green-400 animate-pulse' : 'text-gray-600'}`}>
-                                    {l.status}
-                                </span>
-                                <Button 
-                                    onClick={() => router.push(`/lobby/${l.code}`)} 
-                                    className="h-8 text-xs bg-white text-black hover:bg-gray-200 shadow-none"
-                                >
-                                    {l.status === 'ended' ? tDash('view_results') : tDash('resume')} <Play size={10} className="ml-1" />
-                                </Button>
+                {myLobbies.map((l: any) => (
+                    <div 
+                        key={l.id || l.code} 
+                        className="bg-black/20 p-3 rounded-xl border border-white/5 hover:border-indigo-500/30 flex justify-between items-center group transition-all"
+                    >
+                        <div>
+                            <div className="font-bold text-sm text-gray-200 group-hover:text-white transition-colors">{l.name || "Untitled Lobby"}</div>
+                            <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+                                {t('lobby_code_display', { code: l.code })}
                             </div>
                         </div>
-                    ))}
-                </div>
+
+                        <div className="flex items-center gap-2">
+                            {l.host_id === user.id && (
+                                <span className="text-[9px] font-black bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/20">
+                                    {tDash('host_badge')}
+                                </span>
+                            )}
+                            <button 
+                                onClick={() => router.push(`/lobby/${l.code}`)} 
+                                className="p-2 rounded-lg bg-white text-black hover:bg-indigo-400 hover:text-white transition-all shadow-lg"
+                            >
+                                <Play size={12} fill="currentColor" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
 
@@ -3585,22 +3946,48 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
   const t = useTranslations('Lobby');
   const tCommon = useTranslations('Common');
   
-  // [FIX] Destructure updateLocalStatus
-  const { lobby, candidates, participants, votes, loading, updateLocalStatus, refreshCandidates } = useLobbyState(lobbyId);
+  // [FIX] Removed 'refreshCandidates', using 'refreshAll' instead
+  const { lobby, candidates, factors, participants, votes, loading, updateLocalStatus, refreshAll } = useLobbyState(lobbyId);
   
   const { user } = useSessionAuth();
   const [profileSet, setProfileSet] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    if (user?.user_metadata?.nickname) setProfileSet(true);
+    if (user?.user_metadata?.nickname) {
+      setProfileSet(true);
+    }
   }, [user]);
+
+  // Auto-Join Lobby
+  useEffect(() => {
+    const joinLobby = async () => {
+      if (!user || !lobbyId) return;
+
+      const nickname = user.user_metadata?.nickname || 'Anonymous';
+      const avatarUrl = user.user_metadata?.avatar_url || null;
+
+      const { error } = await supabase.from('lobby_participants').upsert({
+        lobby_id: lobbyId,
+        user_id: user.id,
+        nickname: nickname,
+        avatar_url: avatarUrl,
+        last_seen_at: new Date().toISOString()
+      }, { onConflict: 'lobby_id, user_id' });
+
+      if (error) console.error("Auto-join failed:", error);
+    };
+
+    if (user && lobbyId) {
+        joinLobby();
+    }
+  }, [lobbyId, user, supabase]);
 
   const isHost = user && lobby && user.id === lobby.host_id;
 
   const handleStartSetup = useCallback(async () => {
     if (!isHost) return;
-    updateLocalStatus('setup'); // Immediate local update
+    updateLocalStatus('setup');
     await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobbyId);
   }, [isHost, lobbyId, supabase, updateLocalStatus]);
 
@@ -3612,24 +3999,28 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     }
   }, [isHost, lobby?.status, profileSet, handleStartSetup]);
 
-  // [NEW] Handlers for optimistic updates
-  const handleLaunchSuccess = () => {
-    refreshCandidates(); // Ensure we have the latest data
-    updateLocalStatus('voting'); // Switch view immediately
+  // --- Handlers for Optimistic Updates ---
+
+  const handleLaunchSuccess = async () => {
+    updateLocalStatus('voting');
+    // [FIX] Use refreshAll() to fetch candidates AND factors
+    await refreshAll(); 
   };
 
   const handleSuspend = () => {
-    updateLocalStatus('setup'); // Switch view immediately
+    updateLocalStatus('setup');
   };
 
   const handleEnd = () => {
-    updateLocalStatus('ended'); // Switch view immediately
+    updateLocalStatus('ended');
   };
 
   const handleResume = async () => {
-    updateLocalStatus('voting'); // Immediate local update
+    updateLocalStatus('voting');
     await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobbyId);
   };
+
+  // --- Render ---
 
   if (loading || !lobby || !user) {
     return (
@@ -3692,7 +4083,6 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
           {/* SETUP */}
           {lobby.status === 'setup' && (
             isHost ? (
-               // [FIX] Pass handleLaunchSuccess
                <ConfigForm lobbyId={lobbyId} onSuccess={handleLaunchSuccess} />
             ) : (
                <div className="glass-card p-12 text-center max-w-xl mx-auto mt-20 animate-in zoom-in-95">
@@ -3707,13 +4097,14 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
 
           {/* VOTING */}
           {lobby.status === 'voting' && (
-            <VotingInterface 
-              lobbyId={lobbyId} 
-              userId={user.id} 
-              candidates={candidates}
-              factors={lobby.settings.factors}
-              maxScale={lobby.settings.voting_scale.max}
-            />
+              <VotingInterface 
+    lobbyId={lobbyId} 
+    userId={user.id} 
+    candidates={candidates}
+    factors={factors}
+    // [FIX] Extra safety check: handle null settings or null voting_scale
+    maxScale={lobby.settings?.voting_scale?.max ?? 10}
+  />
           )}
 
           {/* ENDED */}
@@ -3721,8 +4112,8 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
             <ResultsDashboard 
               candidates={candidates} 
               votes={votes}
-              factors={lobby.settings.factors}
-              onResume={isHost ? handleResume : undefined} // [NEW] Pass Resume handler
+              factors={factors}
+              onResume={isHost ? handleResume : undefined}
             />
           )}
         </div>
@@ -3732,7 +4123,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
                 lobbyId={lobbyId} 
                 settings={lobby.settings} 
                 status={lobby.status} 
-                onSuspend={handleSuspend} // [NEW] Optimistic callbacks
+                onSuspend={handleSuspend} 
                 onEnd={handleEnd}
             />
         )}
@@ -3751,8 +4142,9 @@ import { useChat } from '@/features/chat/model/useChat';
 import { usePresence } from '@/features/chat/model/usePresence';
 import { MessageBubble } from './MessageBubble';
 import { Button } from '@/shared/ui/button';
-import { MessageSquare, X, Send, CornerDownRight } from 'lucide-react';
+import { MessageCircle, X, Send, ChevronRight } from 'lucide-react';
 import { ChatMessage } from '@/features/chat/model/types';
+import { createClient } from '@/shared/api/supabase';
 
 export const ChatWidget = ({ lobbyId, userId }: { lobbyId: string, userId: string }) => {
   const t = useTranslations('Chat');
@@ -3760,21 +4152,34 @@ export const ChatWidget = ({ lobbyId, userId }: { lobbyId: string, userId: strin
   const [input, setInput] = useState("");
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
   
-  const { messages, typingUsers, sendMessage, deleteMessage, editMessage, broadcastTyping } = useChat(lobbyId, userId, "User");
-  const { onlineUsers } = usePresence(lobbyId, userId, "User");
+  // [FIX] Fetch real participant data for avatars
+  const [participantsMap, setParticipantsMap] = useState<Record<string, { nickname: string; avatar_url: string | null }>>({});
+  const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    supabase.from('lobby_participants').select('user_id, nickname, avatar_url').eq('lobby_id', lobbyId)
+      .then(({ data }) => {
+        if (data) {
+          const map: any = {};
+          data.forEach(p => map[p.user_id] = p);
+          setParticipantsMap(map);
+        }
+      });
+  }, [lobbyId, supabase]);
+
+  const currentUser = participantsMap[userId] || { nickname: "User", avatar_url: null };
+  
+  const { messages, typingUsers, sendMessage, deleteMessage, editMessage, broadcastTyping } = useChat(lobbyId, userId, currentUser.nickname);
+  const { onlineUsers } = usePresence(lobbyId, userId, currentUser.nickname);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll
   useEffect(() => {
     if (isOpen) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
-  // Handle ESC key
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
@@ -3787,99 +4192,101 @@ export const ChatWidget = ({ lobbyId, userId }: { lobbyId: string, userId: strin
     setReplyTarget(null);
   };
 
-  if (!isOpen) {
-    return (
-      <div className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-3 md:bottom-8">
-      {onlineUsers.length > 0 && (
-          <div className="bg-black/60 backdrop-blur border border-white/10 px-3 py-1 rounded-full text-xs font-bold text-green-400 shadow-xl animate-in fade-in">
-            {'\u25CF'} {t('online_count', { count: onlineUsers.length })}
-          </div>
-        )}
-        <Button onClick={() => setIsOpen(true)} className="rounded-full w-14 h-14 shadow-2xl p-0 btn-primary">
-          <MessageSquare />
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <>
-      {/* Backdrop for click-outside dismissal */}
-      <div 
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[49]" 
-        onClick={() => setIsOpen(false)} 
-      />
+      {/* Floating Action Button - [FIX] Raised higher for Mobile */}
+      {!isOpen && (
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 group flex items-center gap-2 pl-4 pr-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-all duration-300 hover:scale-105 active:scale-95"
+        >
+          <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">{t('title')}</span>
+          <div className="bg-white/20 p-2 rounded-full relative">
+            <MessageCircle size={20} />
+            {onlineUsers.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-indigo-600 animate-pulse" />
+            )}
+          </div>
+        </button>
+      )}
+
+      {/* Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90] transition-opacity" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
       {/* Sidebar Panel */}
-      <div className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-[#0b0f19] border-l border-white/10 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
-        
+      <div 
+        className={`fixed top-0 right-0 h-full w-[85vw] sm:w-[400px] bg-[#0b0f19] border-l border-white/10 shadow-2xl z-[100] flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         {/* Header */}
-        <div className="p-4 bg-gray-900/50 border-b border-gray-800 flex justify-between items-center backdrop-blur-md">
+        <div className="p-4 bg-gray-900/80 border-b border-white/10 flex justify-between items-center backdrop-blur-md">
           <div>
-            <h3 className="font-bold text-white">{t('title')}</h3>
-            <span className="text-xs text-green-400 font-mono flex items-center gap-1">
-              <span className="animate-pulse">{'\u25CF'}</span> {/* [FIX] Unicode bullet */}
-              {t('online_count', { count: onlineUsers.length })}
+            <h3 className="font-bold text-white flex items-center gap-2">
+                <MessageCircle size={18} className="text-indigo-400" /> 
+                {t('title')}
+            </h3>
+            <span className="text-[10px] text-green-400 font-mono tracking-wider ml-6 block">
+              {'\u25CF'} {t('online_count', { count: onlineUsers.length })}
             </span>
           </div>
-          <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
+          <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">
+            <ChevronRight size={24} />
+          </button>
         </div>
         
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-800">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-3 bg-gradient-to-b from-[#0b0f19] to-[#111827] scrollbar-thin scrollbar-thumb-gray-800">
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-gray-600 space-y-4 opacity-50">
-               <MessageSquare size={48} />
-               <p>{t('empty')}</p>
+               <MessageCircle size={48} />
+               <p className="text-sm">{t('empty')}</p>
             </div>
           )}
           
-          {messages.map((m, index) => {
-            // Grouping Logic: Hide header if previous msg was from same user within 5 mins
-            const prevMsg = messages[index - 1];
-            const isSequence = prevMsg && prevMsg.user_id === m.user_id && (new Date(m.created_at).getTime() - new Date(prevMsg.created_at).getTime() < 300000);
-            
-            return (
-              <div key={m.id} className={isSequence ? "mt-0.5" : "mt-4"}>
-                {/* We pass a custom 'hideHeader' prop if you update MessageBubble to support it, 
-                    or handle it via CSS/Structure here. 
-                    For now, MessageBubble handles structure internally, so we might keep it simple or refactor MessageBubble.
-                    Let's assume MessageBubble is smart enough or we wrap it. */}
+          <div className="flex flex-col gap-0.5"> {/* [FIX] Tighter gap */}
+            {messages.map((m, index) => {
+                const prevMsg = messages[index - 1];
+                // Strict sequence check: same user, < 2 mins, and prev message wasn't a system msg
+                const isSequence = prevMsg && prevMsg.user_id === m.user_id && (new Date(m.created_at).getTime() - new Date(prevMsg.created_at).getTime() < 120000);
+                
+                // Get real user data from map
+                const senderData = participantsMap[m.user_id] || { nickname: m.nickname, avatar_url: null };
+
+                return (
                 <MessageBubble 
-                  message={m} 
-                  isMe={m.user_id === userId}
-                  onReply={setReplyTarget}
-                  onEdit={editMessage}
-                  onDelete={deleteMessage}
-                  // You might need to add a prop to MessageBubble like 'compact={isSequence}' to hide avatar/name
+                    key={m.id} 
+                    message={{ ...m, nickname: senderData.nickname }} // Use latest nickname
+                    avatarUrl={senderData.avatar_url} // [FIX] Pass real avatar
+                    isMe={m.user_id === userId}
+                    onReply={setReplyTarget}
+                    onEdit={editMessage}
+                    onDelete={deleteMessage}
+                    showAvatar={!isSequence}
                 />
-              </div>
-            );
-          })}
-          
-          {typingUsers.length > 0 && (
-            <div className="text-xs text-indigo-400 italic ml-4 animate-pulse mt-2">
-              {t('typing', { name: typingUsers.join(", ") })}
-            </div>
-          )}
+                );
+            })}
+          </div>
           <div ref={bottomRef} />
         </div>
 
-        {/* Reply Context Bar */}
+        {/* Input & Reply (Same as before) */}
         {replyTarget && (
-          <div className="bg-gray-900/80 px-4 py-3 border-t border-gray-800 flex justify-between items-center backdrop-blur">
+          <div className="bg-gray-800/50 px-4 py-2 border-t border-white/5 flex justify-between items-center backdrop-blur">
             <div className="text-xs text-gray-300 truncate max-w-[250px] border-l-2 border-indigo-500 pl-2">
               <span className="font-bold text-indigo-400 block">@{replyTarget.nickname}</span>
-              <span className="opacity-70">{replyTarget.content}</span>
+              <span className="opacity-70 line-clamp-1">{replyTarget.content}</span>
             </div>
-            <button onClick={() => setReplyTarget(null)} className="p-1 hover:bg-white/10 rounded"><X size={14} /></button>
+            <button onClick={() => setReplyTarget(null)}><X size={14} className="text-gray-500 hover:text-white" /></button>
           </div>
         )}
 
-        {/* Input Area */}
-        <form onSubmit={handleSend} className="p-4 bg-[#0b0f19]/90 border-t border-white/10 flex gap-2 backdrop-blur-md">
+        <form onSubmit={handleSend} className="p-3 bg-gray-900 border-t border-white/10 flex gap-2">
           <input 
-            className="flex-1 glass-input focus:ring-indigo-500 bg-black/40 text-white placeholder-gray-500"
+            className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-gray-600 transition-colors"
             value={input}
             onChange={e => {
               setInput(e.target.value);
@@ -3888,7 +4295,7 @@ export const ChatWidget = ({ lobbyId, userId }: { lobbyId: string, userId: strin
             placeholder={t('placeholder')}
             autoFocus={isOpen}
           />
-          <Button type="submit" variant="primary" className="px-4 rounded-xl h-full shadow-lg shadow-indigo-500/20">
+          <Button type="submit" variant="primary" className="px-3 rounded-xl h-full shadow-none bg-indigo-600 hover:bg-indigo-500">
             <Send size={18} />
           </Button>
         </form>
@@ -3912,9 +4319,11 @@ interface MessageBubbleProps {
   onReply: (msg: ChatMessage) => void;
   onEdit: (id: string, newContent: string) => void;
   onDelete: (id: string) => void;
+  showAvatar: boolean;
+  avatarUrl?: string | null; // [NEW]
 }
 
-export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete, showAvatar, avatarUrl }: MessageBubbleProps) => {
   const t = useTranslations('Chat');
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -3929,18 +4338,28 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: Mess
 
   return (
     <div 
-      className={`flex gap-3 group mb-4 ${isMe ? 'flex-row-reverse' : ''}`}
+      className={`flex gap-2 group ${isMe ? 'flex-row-reverse' : ''} ${!showAvatar ? 'mt-0' : 'mt-3'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <SmartEntity 
-        label={message.nickname} 
-        seed={message.user_id} 
-        className={isMe ? "hidden" : "self-end"} 
-      />
+      <div className="w-8 shrink-0 flex flex-col justify-end">
+         {showAvatar && !isMe && (
+            <SmartEntity 
+                label="" 
+                seed={message.user_id} 
+                imageUrl={avatarUrl} 
+                className="w-8 h-8"
+            />
+         )}
+      </div>
       
       <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
-        {/* Reply Context */}
+        
+        {/* Name Header */}
+        {!isMe && showAvatar && !message.reply_to && (
+            <div className="text-[10px] font-bold text-gray-400 mb-0.5 ml-1">{message.nickname}</div>
+        )}
+
         {message.reply_to && (
           <div className="text-[10px] text-gray-500 bg-gray-800/50 px-2 py-1 rounded-t-md border-b-0 border border-gray-700 w-fit mb-[-4px] z-0 opacity-80">
             <span className="font-bold">@{message.reply_to.nickname}:</span> {message.reply_to.content.substring(0, 20)}...
@@ -3948,14 +4367,12 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: Mess
         )}
 
         <div className={`
-          relative rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm z-10 min-w-[120px]
+          relative rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm z-10 min-w-[60px]
           ${isMe 
             ? 'bg-indigo-600 text-white rounded-tr-sm' 
-            : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
+            : 'bg-[#1f2937] text-gray-200 border border-gray-700/50 rounded-tl-sm'
           }
         `}>
-          {!isMe && !message.reply_to && <div className="text-[10px] font-bold opacity-50 mb-1">{message.nickname}</div>}
-          
           {isEditing ? (
             <div className="flex flex-col gap-2 min-w-[200px]">
               <input 
@@ -3972,13 +4389,13 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: Mess
           ) : (
             <p className="break-words">
               {message.content}
-              {message.is_edited && <span className="text-[10px] opacity-60 ml-1 italic">{t('edited')}</span>}
+              {message.is_edited && <span className="text-[9px] opacity-60 ml-1 italic">{t('edited')}</span>}
             </p>
           )}
         </div>
 
-        {/* Action Buttons (Visible on Hover) */}
-        <div className={`flex gap-1 mt-1 opacity-0 transition-opacity ${isHovered ? 'opacity-100' : ''}`}>
+        {/* Action Buttons */}
+        <div className={`flex gap-1 mt-0.5 opacity-0 transition-opacity ${isHovered ? 'opacity-100' : ''}`}>
           <button onClick={() => onReply(message)} className="p-1 text-gray-500 hover:text-indigo-400" title={t('actions.reply')}>
             <Reply size={12} />
           </button>
@@ -4233,7 +4650,7 @@ import { createClient } from '@/shared/api/supabase';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
 import { LobbySettings } from '@/entities/lobby/model/types';
-import { PauseCircle, Eye, EyeOff } from 'lucide-react';
+import { PauseCircle, Eye, EyeOff, Download, Database } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface HostSettingsModalProps {
@@ -4247,17 +4664,15 @@ interface HostSettingsModalProps {
 export const HostSettingsModal = ({ isOpen, onClose, lobbyId, settings, onSuspend }: HostSettingsModalProps) => {
   const t = useTranslations('Host');
   const [tab, setTab] = useState<'privacy' | 'manage'>('privacy');
+  const [isExporting, setIsExporting] = useState(false);
   const supabase = createClient();
 
-  // Normalize privacy settings safely
   const currentPrivacy = (typeof settings.privacy === 'object' && settings.privacy !== null)
     ? settings.privacy as Record<string, string>
     : { users: 'visible', candidates: 'visible', factors: 'visible' };
 
   const updatePrivacy = async (key: string, val: string) => {
     const newPrivacy = { ...currentPrivacy, [key]: val };
-    
-    // Optimistic / Fire-and-forget for UI responsiveness
     const { error } = await supabase
       .from('lobbies')
       .update({ settings: { ...settings, privacy: newPrivacy } })
@@ -4267,82 +4682,109 @@ export const HostSettingsModal = ({ isOpen, onClose, lobbyId, settings, onSuspen
   };
 
   const handleSuspend = async () => {
-    // 1. Optimistic Update (Switch View Immediately)
     if (onSuspend) onSuspend();
-    
-    // 2. DB Update
-    const { error } = await supabase
-      .from('lobbies')
-      .update({ status: 'setup' })
-      .eq('id', lobbyId);
-
-    if (error) {
-        toast.error(t('end_error'));
-    } else {
+    const { error } = await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobbyId);
+    if (error) toast.error(t('end_error'));
+    else {
         toast.success("Lobby Suspended");
         onClose(); 
     }
   };
 
-  // Define the sections for the map loop
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+        const [lobby, candidates, factors, participants, votes, messages] = await Promise.all([
+            supabase.from('lobbies').select('*').eq('id', lobbyId).single(),
+            supabase.from('candidates').select('*').eq('lobby_id', lobbyId),
+            supabase.from('factors').select('*').eq('lobby_id', lobbyId),
+            supabase.from('lobby_participants').select('*').eq('lobby_id', lobbyId),
+            supabase.from('votes').select('*').eq('lobby_id', lobbyId),
+            supabase.from('lobby_messages').select('*').eq('lobby_id', lobbyId),
+        ]);
+
+        const exportData = {
+            timestamp: new Date().toISOString(),
+            lobby: lobby.data,
+            configuration: {
+                candidates: candidates.data,
+                factors: factors.data
+            },
+            session: {
+                participants: participants.data,
+                messages: messages.data,
+                votes: votes.data
+            },
+            stats: {
+                vote_count: votes.data?.length || 0,
+                participant_count: participants.data?.length || 0
+            }
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `did-lobby-${lobby.data?.code || lobbyId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.success("Export Complete");
+    } catch (e) {
+        console.error(e);
+        toast.error("Export Failed");
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
   const sections = ['users', 'candidates', 'factors'] as const;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
-      {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2">
-        <button 
-            onClick={() => setTab('privacy')} 
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${tab === 'privacy' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
-        >
+        <button onClick={() => setTab('privacy')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${tab === 'privacy' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             {t('tab_privacy')}
         </button>
-        <button 
-            onClick={() => setTab('manage')} 
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${tab === 'manage' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
-        >
+        <button onClick={() => setTab('manage')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${tab === 'manage' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             {t('tab_manage')}
         </button>
       </div>
 
-      {/* Privacy Tab */}
       {tab === 'privacy' && (
         <div className="space-y-4">
             {sections.map((section) => (
                 <div key={section} className="flex items-center justify-between bg-gray-800 p-3 rounded-xl border border-gray-700">
-                    <span className="font-bold text-sm text-gray-300 capitalize">
-                        {t(`privacy_sections.${section}` as any)}
-                    </span>
+                    <span className="font-bold text-sm text-gray-300 capitalize">{t(`privacy_sections.${section}` as any)}</span>
                     <div className="flex bg-black/40 rounded-lg p-1">
-                        <button 
-                            onClick={() => updatePrivacy(section, 'visible')}
-                            className={`p-1.5 rounded-md transition-all ${currentPrivacy[section] !== 'hidden' ? 'bg-green-500/20 text-green-400' : 'text-gray-600 hover:text-gray-400'}`}
-                            title="Visible"
-                        >
-                            <Eye size={16} />
-                        </button>
-                        <button 
-                            onClick={() => updatePrivacy(section, 'hidden')}
-                            className={`p-1.5 rounded-md transition-all ${currentPrivacy[section] === 'hidden' ? 'bg-red-500/20 text-red-400' : 'text-gray-600 hover:text-gray-400'}`}
-                            title="Hidden"
-                        >
-                            <EyeOff size={16} />
-                        </button>
+                        <button onClick={() => updatePrivacy(section, 'visible')} className={`p-1.5 rounded-md transition-all ${currentPrivacy[section] !== 'hidden' ? 'bg-green-500/20 text-green-400' : 'text-gray-600 hover:text-gray-400'}`}><Eye size={16} /></button>
+                        <button onClick={() => updatePrivacy(section, 'hidden')} className={`p-1.5 rounded-md transition-all ${currentPrivacy[section] === 'hidden' ? 'bg-red-500/20 text-red-400' : 'text-gray-600 hover:text-gray-400'}`}><EyeOff size={16} /></button>
                     </div>
                 </div>
             ))}
         </div>
       )}
 
-      {/* Manage Tab */}
       {tab === 'manage' && (
-        <div className="space-y-6 text-center">
-            <div className="bg-yellow-900/20 border border-yellow-500/20 p-4 rounded-xl">
-                <p className="text-xs text-yellow-200/80 mb-4 leading-relaxed">
-                    {t('suspend_desc')}
-                </p>
+        <div className="space-y-6">
+            {/* Suspend Section */}
+            <div className="bg-yellow-900/20 border border-yellow-500/20 p-4 rounded-xl text-center">
+                <p className="text-xs text-yellow-200/80 mb-4 leading-relaxed">{t('suspend_desc')}</p>
                 <Button variant="danger" onClick={handleSuspend} className="w-full justify-center">
                     <PauseCircle size={18} className="mr-2" /> {t('suspend_vote')}
+                </Button>
+            </div>
+
+            {/* Export Section */}
+            <div className="bg-gray-800/50 border border-gray-700 p-4 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-2 text-indigo-300 font-bold mb-2">
+                    <Database size={16} /> {t('data_export')}
+                </div>
+                <p className="text-xs text-gray-400 mb-4">{t('export_desc')}</p>
+                <Button variant="secondary" onClick={handleExport} isLoading={isExporting} className="w-full justify-center">
+                    <Download size={18} className="mr-2" /> {t('download_btn')}
                 </Button>
             </div>
         </div>
@@ -4400,139 +4842,132 @@ export const ChartsContainer = ({ data }: { data: ChartData[] }) => {
 };
 
 ================================================================================
-FILE: src\widgets\results-dashboard\ui\Podium.tsx
+FILE: src\widgets\results-dashboard\ui\MethodExplainer.tsx
 ================================================================================
-import React, { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Candidate } from '@/entities/candidate/model/types';
-import { Factor } from '@/entities/factor/model/types';
-import { calculateSchulze } from '@/shared/lib/voting-math';
-import { ChartsContainer } from './ChartsContainer';
-import { SchulzeMatrix } from './SchulzeMatrix';
-import { RadarAnalysis } from './RadarAnalysis';
-import { Podium } from './Podium';
-import { Info, Play } from 'lucide-react';
-import { SmartTooltip } from '@/shared/ui/tooltip';
-import { Button } from '@/shared/ui/button';
+import { Info, BookOpen, GitMerge, Radar } from 'lucide-react';
 
-interface ResultsDashboardProps {
-  candidates: Candidate[];
-  votes: any[];
-  factors: Factor[];
-  onResume?: () => void;
-}
-
-export const ResultsDashboard = ({ candidates, votes, factors, onResume }: ResultsDashboardProps) => {
+export const MethodExplainer = ({ method }: { method: 'weighted' | 'schulze' | 'radar' }) => {
   const t = useTranslations('Results');
-  const tDash = useTranslations('Dashboard');
-  const [tab, setTab] = useState<'weighted' | 'schulze' | 'radar'>('weighted');
 
-  // --- Calculations ---
-  const weightedResults = useMemo(() => {
-    return candidates.map(c => {
-      const cVotes = votes.filter(v => v.candidate_id === c.id);
-      if (cVotes.length === 0) return { candidate: c, score: 0, name: c.name };
-      
-      // Calculate Weighted Average per candidate (Simplified for view)
-      // In production, use the `calculateWeightedScore` from voting-math for full accuracy
-      let total = 0;
-      let count = 0;
-      let maxPossible = 0;
+  const content = {
+    weighted: {
+      icon: <Info className="text-blue-400" size={24} />,
+      title: "Weighted Sum Model",
+      history: "Developed in the 1970s for Multi-Criteria Decision Analysis (MCDA).",
+      math: "Sums up normalized scores multiplied by factor weights. Good for measuring intensity of preference.",
+      insight: "Best when you care about specific criteria (e.g. Price vs Quality)."
+    },
+    schulze: {
+      icon: <GitMerge className="text-yellow-400" size={24} />,
+      title: "Schulze Method (Beatpath)",
+      history: "Created by Markus Schulze in 1997. Used by Debian, Ubuntu, and Pirate Parties.",
+      math: "Simulates 1-on-1 duels between every candidate pair. It finds the strongest path of victories to determine the Condorcet winner.",
+      insight: "Best for finding the 'truest' winner that minimizes dissatisfaction. Immune to spoilers."
+    },
+    radar: {
+      icon: <Radar className="text-pink-400" size={24} />,
+      title: "Radar Analysis (Star Plot)",
+      history: "Invented by Georg von Mayr in 1877.",
+      math: "Visualizes multivariate data on a 2D chart.",
+      insight: "Use this to spot candidates with 'Fatal Flaws' (e.g. High average score, but zero safety)."
+    }
+  };
 
-      cVotes.forEach(v => {
-        Object.keys(v.scores).forEach(factorId => {
-            const val = Number(v.scores[factorId]);
-            const factor = factors.find(f => f.id === factorId);
-            if (factor && factor.type === 'numerical' && !factor.disabled_candidates?.includes(c.id)) {
-                total += val * (factor.weight || 1);
-                // Rough normalization for display
-                count++; 
-            }
-        });
-      });
-      
-      const score = count ? (total / count) : 0;
-      return { candidate: c, name: c.name, score };
-    }).sort((a, b) => b.score - a.score);
-  }, [candidates, votes, factors]);
-
-  const schulzeData = useMemo(() => {
-    const voterIds = Array.from(new Set(votes.map(v => v.voter_id)));
-    const ballots = voterIds.map(vid => {
-        const userVotes = votes.filter(v => v.voter_id === vid);
-        // Sort candidates by this user's total score to determine rank
-        return userVotes
-            .sort((a, b) => {
-                const sumA = Object.values(a.scores).reduce((x: any, y: any) => x + y, 0) as number;
-                const sumB = Object.values(b.scores).reduce((x: any, y: any) => x + y, 0) as number;
-                return sumB - sumA;
-            })
-            .map(v => v.candidate_id);
-    });
-    // Add candidates who received 0 votes to the end of ballots implicitly
-    return calculateSchulze(candidates.map(c => c.id), ballots);
-  }, [candidates, votes]);
+  const info = content[method] || content.weighted;
 
   return (
-    <div className="space-y-8 pb-32">
+    <div className="mt-6 bg-black/20 border border-white/10 rounded-xl p-6 relative overflow-hidden">
+      <div className="absolute top-0 right-0 p-4 opacity-10">
+        <BookOpen size={100} />
+      </div>
       
-      {/* Header Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-         
-         {/* Tabs */}
-         <div className="flex flex-wrap gap-2 p-1 bg-gray-900/80 border border-white/10 rounded-xl backdrop-blur-md">
-            {(['weighted', 'schulze', 'radar'] as const).map(key => (
-            <button 
-                key={key}
-                onClick={() => setTab(key)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === key ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-            >
-                {t(`tabs.${key}`)}
-            </button>
-            ))}
-         </div>
-
-         {/* Right Side: Resume Button & Info */}
-         <div className="flex items-center gap-3">
-            <SmartTooltip content={t(`system_explainer.${tab}`)} side="left">
-                <div className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white cursor-help border border-white/5">
-                    <Info size={20} />
-                </div>
-            </SmartTooltip>
-
-            {onResume && (
-                <Button 
-                    onClick={onResume} 
-                    className="btn-primary bg-white text-black hover:bg-gray-200 border-none shadow-xl"
-                >
-                    <Play size={16} className="mr-2 fill-black" /> {tDash('resume')}
-                </Button>
-            )}
-         </div>
-      </div>
-
-      {/* Podium (Weighted Only) */}
-      {tab === 'weighted' && <Podium candidates={weightedResults} />}
-
-      {/* Main Content View */}
-      <div className="glass-card p-6 min-h-[400px]">
-        {tab === 'weighted' && <ChartsContainer data={weightedResults} />}
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-4">
+            {info.icon}
+            <h3 className="text-lg font-bold text-white">{info.title}</h3>
+        </div>
         
-        {tab === 'schulze' && (
-            <SchulzeMatrix 
-                candidates={candidates} 
-                matrix={schulzeData.matrix} 
-            />
-        )}
-
-        {tab === 'radar' && (
-            <RadarAnalysis 
-                candidates={candidates} 
-                factors={factors} 
-                votes={votes} 
-            />
-        )}
+        <div className="grid md:grid-cols-2 gap-6 text-sm">
+            <div>
+                {/* [FIX] Used translation key */}
+                <h4 className="text-[10px] uppercase font-bold text-gray-500 mb-1">{t('history_label')}</h4>
+                <p className="text-gray-300 leading-relaxed">{info.history}</p>
+            </div>
+            <div>
+                {/* [FIX] Used translation key */}
+                <h4 className="text-[10px] uppercase font-bold text-gray-500 mb-1">{t('math_label')}</h4>
+                <p className="text-gray-300 leading-relaxed">{info.math}</p>
+            </div>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-white/5">
+            {/* [FIX] Used translation key & unicode bulb */}
+            <p className="text-indigo-300 text-xs font-medium">{'\uD83D\uDCA1'} {t('insight_label')}: {info.insight}</p>
+        </div>
       </div>
+    </div>
+  );
+};
+
+================================================================================
+FILE: src\widgets\results-dashboard\ui\Podium.tsx
+================================================================================
+import { Candidate } from '@/entities/candidate/model/types';
+import { AvatarContainer } from '@/shared/ui/avatar-container';
+import { useTranslations } from 'next-intl';
+import { Trophy } from 'lucide-react';
+
+interface PodiumProps {
+  candidates: { candidate: Candidate; score: number }[];
+}
+
+// [FIX] Ensure "export const Podium" is present
+export const Podium = ({ candidates }: PodiumProps) => {
+  const t = useTranslations('Results');
+  if (candidates.length === 0) return null;
+
+  const [first, second, third] = candidates;
+
+  return (
+    <div className="flex justify-center items-end gap-4 h-64 mb-12 px-4">
+      
+      {/* 2nd Place */}
+      {second && (
+        <div className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-8 duration-700 delay-100">
+          <AvatarContainer src={second.candidate.image_url} alt={second.candidate.name} size="md" seed={second.candidate.id} className="border-gray-400 border-2" />
+          <div className="flex flex-col items-center w-24 md:w-32 bg-gradient-to-t from-gray-800 to-gray-700/50 rounded-t-xl p-4 border-t-4 border-gray-400 h-32 justify-end">
+            <span className="text-2xl font-black text-gray-500/50">2</span>
+            <span className="font-bold text-xs text-gray-300 truncate w-full text-center">{second.candidate.name}</span>
+            <span className="text-[10px] font-mono opacity-70">{second.score.toFixed(1)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* 1st Place */}
+      <div className="flex flex-col items-center gap-3 animate-in slide-in-from-bottom-8 duration-700 z-10">
+        <div className="relative">
+            <Trophy className="absolute -top-8 left-1/2 -translate-x-1/2 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" size={32} />
+            <AvatarContainer src={first.candidate.image_url} alt={first.candidate.name} size="lg" seed={first.candidate.id} className="border-yellow-400 border-4 shadow-[0_0_30px_rgba(250,204,21,0.3)]" />
+        </div>
+        <div className="flex flex-col items-center w-28 md:w-40 bg-gradient-to-t from-yellow-900/40 to-yellow-600/20 rounded-t-xl p-4 border-t-4 border-yellow-400 h-44 justify-end shadow-2xl">
+            <span className="text-4xl font-black text-yellow-500/20">1</span>
+            <span className="font-black text-sm text-yellow-100 truncate w-full text-center uppercase tracking-widest">{first.candidate.name}</span>
+            <span className="text-lg font-mono font-bold text-yellow-400">{first.score.toFixed(1)}</span>
+        </div>
+      </div>
+
+      {/* 3rd Place */}
+      {third && (
+        <div className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-8 duration-700 delay-200">
+          <AvatarContainer src={third.candidate.image_url} alt={third.candidate.name} size="md" seed={third.candidate.id} className="border-orange-700 border-2" />
+          <div className="flex flex-col items-center w-24 md:w-32 bg-gradient-to-t from-orange-900/30 to-orange-800/20 rounded-t-xl p-4 border-t-4 border-orange-700 h-24 justify-end">
+            <span className="text-2xl font-black text-orange-800/50">3</span>
+            <span className="font-bold text-xs text-orange-200/70 truncate w-full text-center">{third.candidate.name}</span>
+            <span className="text-[10px] font-mono opacity-70">{third.score.toFixed(1)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -4631,6 +5066,8 @@ import { Info, Play, Users } from 'lucide-react';
 import { SmartTooltip } from '@/shared/ui/tooltip';
 import { Button } from '@/shared/ui/button';
 import { createClient } from '@/shared/api/supabase'; // To get participants? Or pass them in props
+import { MethodExplainer } from './MethodExplainer';
+
 
 interface ResultsDashboardProps {
   candidates: Candidate[];
@@ -4733,18 +5170,12 @@ export const ResultsDashboard = ({ candidates, votes, factors, onResume }: Resul
       {/* Content */}
       <div className="glass-card p-6 min-h-[400px]">
         {tab === 'weighted' && <ChartsContainer data={weightedResults} />}
-        
         {tab === 'schulze' && <SchulzeMatrix candidates={candidates} matrix={schulzeData.matrix} />}
-
         {tab === 'radar' && <RadarAnalysis candidates={candidates} factors={factors} votes={votes} />}
-
-        {tab === 'badges' && (
-            <VoterAnalysis 
-                participants={participants} 
-                votes={votes} 
-                winnerId={weightedResults[0]?.candidate.id} 
-            />
-        )}
+        {tab === 'badges' && <VoterAnalysis participants={participants} votes={votes} winnerId={weightedResults[0]?.candidate.id} />}
+        
+        {/* [NEW] Explainer Footer */}
+        {tab !== 'badges' && <MethodExplainer method={tab} />}
       </div>
     </div>
   );
@@ -5227,15 +5658,15 @@ import React, { useState } from 'react';
 import { Candidate } from '@/entities/candidate/model/types';
 import { Factor } from '@/entities/factor/model/types';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, Star, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChevronDown, Star, ArrowUp, ArrowDown, EyeOff } from 'lucide-react';
 import { SmartEntity } from '@/shared/ui/smart-entity';
 import Image from 'next/image';
-
+import { useLobbyStore } from '@/entities/lobby/model/lobby-store'; // Need access to lobby settings
 
 interface VotingFactorPanelProps {
   factor: Factor;
   candidates: Candidate[];
-  votes: Record<string, number>; // CandidateID -> Score
+  votes: Record<string, number>; 
   maxScale: number;
   onVote: (candidateId: string, value: number) => void;
 }
@@ -5243,20 +5674,30 @@ interface VotingFactorPanelProps {
 export const VotingFactorPanel = ({ factor, candidates, votes, maxScale, onVote }: VotingFactorPanelProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const t = useTranslations('Voting');
+  const tCommon = useTranslations('Common');
   
-  const tCommon = useTranslations('Common'); // [FIX] Access Common keys
+  // Access global store to get privacy settings
+  const lobby = useLobbyStore((s) => s.lobby);
+  const privacy = lobby?.settings?.privacy;
+  
+  // Determine Visibility
+  // Type guard for privacy object (it can be string 'public'/'anonymous' or object)
+  const isCandidateMasked = (typeof privacy === 'object' && privacy?.candidates === 'hidden');
+  const isFactorMasked = (typeof privacy === 'object' && privacy?.factors === 'hidden');
 
-  // Helper: Get color based on value & weight trend
+  const factorName = isFactorMasked ? t('anon_factor') : factor.name;
+  const factorDesc = isFactorMasked ? "???" : factor.description;
+  const factorImage = isFactorMasked ? null : factor.image_url;
+
   const getColor = (value: number) => {
     const percent = value / maxScale;
     const isPositive = factor.weight >= 0;
-    // Hue: 0 (Red) -> 120 (Green)
     const hue = isPositive ? percent * 120 : 120 - (percent * 120);
     return `hsl(${hue}, 70%, 50%)`;
   };
 
   const renderInput = (candidateId: string, value: number) => {
-    const commonStyle = { accentColor: getColor(value) }; // For slider track
+    const commonStyle = { accentColor: getColor(value) };
 
     switch (factor.input_control) {
       case 'stars':
@@ -5275,18 +5716,8 @@ export const VotingFactorPanel = ({ factor, candidates, votes, maxScale, onVote 
       case 'toggle':
         return (
           <div className="flex bg-black/40 rounded-lg p-1 gap-1">
-            <button 
-                onClick={() => onVote(candidateId, maxScale)} 
-                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors ${value === maxScale ? 'bg-green-500 text-black' : 'text-gray-400'}`}
-            >
-                {tCommon('yes')} {/* [FIX] Translated */}
-            </button>
-            <button 
-                onClick={() => onVote(candidateId, 0)} 
-                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors ${value === 0 ? 'bg-red-500 text-white' : 'text-gray-400'}`}
-            >
-                {tCommon('no')} {/* [FIX] Translated */}
-            </button>
+            <button onClick={() => onVote(candidateId, maxScale)} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors ${value === maxScale ? 'bg-green-500 text-black' : 'text-gray-400'}`}>{tCommon('yes')}</button>
+            <button onClick={() => onVote(candidateId, 0)} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors ${value === 0 ? 'bg-red-500 text-white' : 'text-gray-400'}`}>{tCommon('no')}</button>
           </div>
         );
       case 'number':
@@ -5294,19 +5725,19 @@ export const VotingFactorPanel = ({ factor, candidates, votes, maxScale, onVote 
           <input 
             type="number" 
             min={0} max={maxScale} 
-            step={factor.step} // Use configured step
+            step={factor.step}
             value={value}
             onChange={(e) => onVote(candidateId, Number(e.target.value))}
             className="w-20 bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-center font-mono text-white"
           />
         );
-      default: // Slider
+      default:
         return (
           <div className="flex-1 flex items-center gap-4">
             <input 
               type="range" 
               min={0} max={maxScale} 
-              step={factor.step} // Use configured step
+              step={factor.step}
               value={value}
               onChange={(e) => onVote(candidateId, Number(e.target.value))}
               className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer"
@@ -5328,27 +5759,26 @@ export const VotingFactorPanel = ({ factor, candidates, votes, maxScale, onVote 
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-4">
-          {factor.image_url ? (
+          {factorImage ? (
             <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 border border-gray-700">
-               <Image src={factor.image_url} alt="" width={40} height={40} className="object-cover w-full h-full" />
+               <Image src={factorImage} alt="" width={40} height={40} className="object-cover w-full h-full" />
             </div>
           ) : (
             <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-gray-500">
-                {factor.name.charAt(0)}
+                {isFactorMasked ? <EyeOff size={16} /> : (factor.name ? factor.name.charAt(0) : '?')}
             </div>
           )}
           
           <div>
             <h3 className="font-bold text-white flex items-center gap-2">
-                {factor.name}
-                {factor.weight < 0 ? <ArrowDown size={14} className="text-red-400" /> : <ArrowUp size={14} className="text-green-400" />}
+                {factorName}
+                {!isFactorMasked && (factor.weight < 0 ? <ArrowDown size={14} className="text-red-400" /> : <ArrowUp size={14} className="text-green-400" />)}
             </h3>
-            <p className="text-xs text-gray-500 line-clamp-1">{factor.description || t('expand_to_vote')}</p>
+            <p className="text-xs text-gray-500 line-clamp-1">{factorDesc || t('expand_to_vote')}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-            {/* Minimized DNA Bar */}
             {!isOpen && (
                 <div className="flex gap-0.5 h-6 items-end opacity-70">
                     {candidates.map(c => (
@@ -5371,27 +5801,42 @@ export const VotingFactorPanel = ({ factor, candidates, votes, maxScale, onVote 
       {/* Expanded Body */}
       {isOpen && (
         <div className="border-t border-white/5 bg-black/10">
-            {candidates.map((cand) => (
-                <div key={cand.id} className="p-4 flex items-center gap-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                    {/* Centered Image Container */}
-                    <div className="w-16 flex justify-center shrink-0">
-                        <SmartEntity 
-                            label="" 
-                            seed={cand.id} 
-                            imageUrl={cand.image_url} 
-                            className="scale-125"
-                        />
-                    </div>
-                    
-                    <div className="flex-1">
-                        <div className="flex justify-between mb-1">
-                            <span className="text-sm font-bold text-gray-200">{cand.name}</span>
-                            {/* Show constant values if relevant here? Optional. */}
+            {candidates.map((cand, idx) => {
+                // Determine Anonymization per Candidate
+                const cLabel = isCandidateMasked ? t('anon_candidate', { index: idx + 1 }) : cand.name;
+                const cImage = isCandidateMasked ? null : cand.image_url;
+                const cSeed = isCandidateMasked ? `masked-${idx}` : cand.id;
+
+                return (
+                    <div key={cand.id} className="p-4 flex items-center gap-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                        <div className="w-16 flex justify-center shrink-0">
+                            <SmartEntity 
+                                label="" 
+                                seed={cSeed} 
+                                imageUrl={cImage} 
+                                isMasked={isCandidateMasked}
+                                className="scale-125"
+                            />
                         </div>
-                        {renderInput(cand.id, votes[cand.id] ?? 0)}
+                        
+                        <div className="flex-1">
+                            <div className="flex justify-between mb-1">
+                                <span className="text-sm font-bold text-gray-200">{cLabel}</span>
+                                
+                                {/* Show constant value if this is a constant factor */}
+                                {factor.type === 'constant' && (
+                                    <span className="text-xs font-mono text-indigo-300">
+                                        {isFactorMasked ? '***' : (cand.static_values?.[factor.id] ?? '-')}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            {/* Render input if numerical */}
+                            {factor.type === 'numerical' && renderInput(cand.id, votes[cand.id] ?? 0)}
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
       )}
     </div>
