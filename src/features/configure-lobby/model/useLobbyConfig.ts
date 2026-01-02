@@ -103,7 +103,7 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
     const subscription = form.watch((value) => {
       const safeData = JSON.parse(JSON.stringify(value));
       
-      // Remove Base64 images from draft to save space
+      // Only strip BASE64 (Data URLs). Keep HTTPS URLs (Supabase Storage).
       if (safeData.candidates) {
         safeData.candidates.forEach((c: any) => {
           if (c.image_url?.startsWith('data:')) c.image_url = null;
