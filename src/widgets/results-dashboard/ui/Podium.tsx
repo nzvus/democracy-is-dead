@@ -1,134 +1,58 @@
-import React, { useState, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
 import { Candidate } from '@/entities/candidate/model/types';
-import { Factor } from '@/entities/factor/model/types';
-import { calculateSchulze } from '@/shared/lib/voting-math';
-import { ChartsContainer } from './ChartsContainer';
-import { SchulzeMatrix } from './SchulzeMatrix';
-import { RadarAnalysis } from './RadarAnalysis';
-import { Podium } from './Podium';
-import { Info, Play } from 'lucide-react';
-import { SmartTooltip } from '@/shared/ui/tooltip';
-import { Button } from '@/shared/ui/button';
+import { AvatarContainer } from '@/shared/ui/avatar-container';
+import { useTranslations } from 'next-intl';
+import { Trophy } from 'lucide-react';
 
-interface ResultsDashboardProps {
-  candidates: Candidate[];
-  votes: any[];
-  factors: Factor[];
-  onResume?: () => void;
+interface PodiumProps {
+  candidates: { candidate: Candidate; score: number }[];
 }
 
-export const ResultsDashboard = ({ candidates, votes, factors, onResume }: ResultsDashboardProps) => {
+// [FIX] Ensure "export const Podium" is present
+export const Podium = ({ candidates }: PodiumProps) => {
   const t = useTranslations('Results');
-  const tDash = useTranslations('Dashboard');
-  const [tab, setTab] = useState<'weighted' | 'schulze' | 'radar'>('weighted');
+  if (candidates.length === 0) return null;
 
-  // --- Calculations ---
-  const weightedResults = useMemo(() => {
-    return candidates.map(c => {
-      const cVotes = votes.filter(v => v.candidate_id === c.id);
-      if (cVotes.length === 0) return { candidate: c, score: 0, name: c.name };
-      
-      // Calculate Weighted Average per candidate (Simplified for view)
-      // In production, use the `calculateWeightedScore` from voting-math for full accuracy
-      let total = 0;
-      let count = 0;
-      let maxPossible = 0;
-
-      cVotes.forEach(v => {
-        Object.keys(v.scores).forEach(factorId => {
-            const val = Number(v.scores[factorId]);
-            const factor = factors.find(f => f.id === factorId);
-            if (factor && factor.type === 'numerical' && !factor.disabled_candidates?.includes(c.id)) {
-                total += val * (factor.weight || 1);
-                // Rough normalization for display
-                count++; 
-            }
-        });
-      });
-      
-      const score = count ? (total / count) : 0;
-      return { candidate: c, name: c.name, score };
-    }).sort((a, b) => b.score - a.score);
-  }, [candidates, votes, factors]);
-
-  const schulzeData = useMemo(() => {
-    const voterIds = Array.from(new Set(votes.map(v => v.voter_id)));
-    const ballots = voterIds.map(vid => {
-        const userVotes = votes.filter(v => v.voter_id === vid);
-        // Sort candidates by this user's total score to determine rank
-        return userVotes
-            .sort((a, b) => {
-                const sumA = Object.values(a.scores).reduce((x: any, y: any) => x + y, 0) as number;
-                const sumB = Object.values(b.scores).reduce((x: any, y: any) => x + y, 0) as number;
-                return sumB - sumA;
-            })
-            .map(v => v.candidate_id);
-    });
-    // Add candidates who received 0 votes to the end of ballots implicitly
-    return calculateSchulze(candidates.map(c => c.id), ballots);
-  }, [candidates, votes]);
+  const [first, second, third] = candidates;
 
   return (
-    <div className="space-y-8 pb-32">
+    <div className="flex justify-center items-end gap-4 h-64 mb-12 px-4">
       
-      {/* Header Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-         
-         {/* Tabs */}
-         <div className="flex flex-wrap gap-2 p-1 bg-gray-900/80 border border-white/10 rounded-xl backdrop-blur-md">
-            {(['weighted', 'schulze', 'radar'] as const).map(key => (
-            <button 
-                key={key}
-                onClick={() => setTab(key)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === key ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-            >
-                {t(`tabs.${key}`)}
-            </button>
-            ))}
-         </div>
+      {/* 2nd Place */}
+      {second && (
+        <div className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-8 duration-700 delay-100">
+          <AvatarContainer src={second.candidate.image_url} alt={second.candidate.name} size="md" seed={second.candidate.id} className="border-gray-400 border-2" />
+          <div className="flex flex-col items-center w-24 md:w-32 bg-gradient-to-t from-gray-800 to-gray-700/50 rounded-t-xl p-4 border-t-4 border-gray-400 h-32 justify-end">
+            <span className="text-2xl font-black text-gray-500/50">2</span>
+            <span className="font-bold text-xs text-gray-300 truncate w-full text-center">{second.candidate.name}</span>
+            <span className="text-[10px] font-mono opacity-70">{second.score.toFixed(1)}</span>
+          </div>
+        </div>
+      )}
 
-         {/* Right Side: Resume Button & Info */}
-         <div className="flex items-center gap-3">
-            <SmartTooltip content={t(`system_explainer.${tab}`)} side="left">
-                <div className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white cursor-help border border-white/5">
-                    <Info size={20} />
-                </div>
-            </SmartTooltip>
-
-            {onResume && (
-                <Button 
-                    onClick={onResume} 
-                    className="btn-primary bg-white text-black hover:bg-gray-200 border-none shadow-xl"
-                >
-                    <Play size={16} className="mr-2 fill-black" /> {tDash('resume')}
-                </Button>
-            )}
-         </div>
+      {/* 1st Place */}
+      <div className="flex flex-col items-center gap-3 animate-in slide-in-from-bottom-8 duration-700 z-10">
+        <div className="relative">
+            <Trophy className="absolute -top-8 left-1/2 -translate-x-1/2 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" size={32} />
+            <AvatarContainer src={first.candidate.image_url} alt={first.candidate.name} size="lg" seed={first.candidate.id} className="border-yellow-400 border-4 shadow-[0_0_30px_rgba(250,204,21,0.3)]" />
+        </div>
+        <div className="flex flex-col items-center w-28 md:w-40 bg-gradient-to-t from-yellow-900/40 to-yellow-600/20 rounded-t-xl p-4 border-t-4 border-yellow-400 h-44 justify-end shadow-2xl">
+            <span className="text-4xl font-black text-yellow-500/20">1</span>
+            <span className="font-black text-sm text-yellow-100 truncate w-full text-center uppercase tracking-widest">{first.candidate.name}</span>
+            <span className="text-lg font-mono font-bold text-yellow-400">{first.score.toFixed(1)}</span>
+        </div>
       </div>
 
-      {/* Podium (Weighted Only) */}
-      {tab === 'weighted' && <Podium candidates={weightedResults} />}
-
-      {/* Main Content View */}
-      <div className="glass-card p-6 min-h-[400px]">
-        {tab === 'weighted' && <ChartsContainer data={weightedResults} />}
-        
-        {tab === 'schulze' && (
-            <SchulzeMatrix 
-                candidates={candidates} 
-                matrix={schulzeData.matrix} 
-            />
-        )}
-
-        {tab === 'radar' && (
-            <RadarAnalysis 
-                candidates={candidates} 
-                factors={factors} 
-                votes={votes} 
-            />
-        )}
-      </div>
+      {/* 3rd Place */}
+      {third && (
+        <div className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-8 duration-700 delay-200">
+          <AvatarContainer src={third.candidate.image_url} alt={third.candidate.name} size="md" seed={third.candidate.id} className="border-orange-700 border-2" />
+          <div className="flex flex-col items-center w-24 md:w-32 bg-gradient-to-t from-orange-900/30 to-orange-800/20 rounded-t-xl p-4 border-t-4 border-orange-700 h-24 justify-end">
+            <span className="text-2xl font-black text-orange-800/50">3</span>
+            <span className="font-bold text-xs text-orange-200/70 truncate w-full text-center">{third.candidate.name}</span>
+            <span className="text-[10px] font-mono opacity-70">{third.score.toFixed(1)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
