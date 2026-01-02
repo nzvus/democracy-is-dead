@@ -26,8 +26,15 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
   const onSubmit = (data: any) => saveConfiguration(data);
 
   const onError = (errors: any) => {
-    console.error("Form Validation Errors:", errors);
-    toast.error(t('validation_error'));
+    // [FIX] Serialize errors to see them in console
+    console.error("Form Validation Errors:", JSON.stringify(errors, null, 2));
+    
+    // Extract error messages
+    const missingCandidates = errors.candidates ? "Check Candidate details." : "";
+    const missingFactors = errors.settings?.factors ? "Check Criteria details." : "";
+    const nameError = errors.lobby_name ? "Lobby name is required." : "";
+
+    toast.error(`Cannot Launch: ${nameError || missingCandidates || missingFactors || "Check for red fields."}`);
   };
 
   const toggleDisabledCandidate = (factorIndex: number, candidateId: string) => {

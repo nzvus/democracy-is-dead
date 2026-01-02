@@ -12,17 +12,20 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
   
   const DRAFT_KEY = `draft_${lobbyId}`;
 
+  // Define defaults explicitly
+  const defaultValues: SetupWizardValues = {
+    lobby_name: "", 
+    settings: {
+      privacy: 'public',
+      voting_scale: { max: 10 },
+      factors: []
+    },
+    candidates: []
+  };
+
   const form = useForm<SetupWizardValues>({
     resolver: zodResolver(SetupWizardSchema) as any,
-    defaultValues: {
-      lobby_name: "", 
-      settings: {
-        privacy: 'public',
-        voting_scale: { max: 10 },
-        factors: []
-      },
-      candidates: []
-    },
+    defaultValues,
     mode: 'onChange',
     shouldUnregister: false 
   });
@@ -37,35 +40,50 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
       if (draft) {
         try {
           const parsed = JSON.parse(draft);
-          form.reset(parsed);
-          // toast.info("Restored draft");
+          
+          // [FIX] Deep Merge logic to prevent missing nested keys (like voting_scale)
+          const safeData = {
+            ...defaultValues,
+            ...parsed,
+            settings: {
+              ...defaultValues.settings,
+              ...(parsed.settings || {}),
+              voting_scale: {
+                ...defaultValues.settings.voting_scale,
+                ...(parsed.settings?.voting_scale || {})
+              }
+            }
+          };
+
+          form.reset(safeData);
+          toast.info("Restored previous draft");
           return;
-        } catch {}
+        } catch (e) {
+          console.error("Failed to parse draft", e);
+          localStorage.removeItem(DRAFT_KEY); // Clear bad draft
+        }
       }
 
-      // B. If no draft, fetch from DB (Suspend & Edit Case)
+      // B. If no draft, fetch from DB
       try {
         const { data: lobby } = await supabase.from('lobbies').select('*').eq('id', lobbyId).single();
         if (lobby) {
            const { data: candidates } = await supabase.from('candidates').select('*').eq('lobby_id', lobbyId);
            const { data: factors } = await supabase.from('factors').select('*').eq('lobby_id', lobbyId);
            
-           // Populate form with DB data
            form.reset({
              lobby_name: lobby.name || "My Lobby",
              settings: {
+                ...defaultValues.settings, // Merge defaults
                 ...lobby.settings,
-                // Merge JSON settings with Real Factor Table data
                 factors: factors?.map(f => ({
                     ...f,
-                    // Ensure types match schema
                     weight: Number(f.weight),
-                    disabled_candidates: f.config?.disabled_for || [] // Map back from JSON config
+                    disabled_candidates: f.config?.disabled_for || []
                 })) || []
              },
              candidates: candidates?.map(c => ({
                  ...c,
-                 // Ensure ID is present to trigger Updates instead of Inserts
                  id: c.id 
              })) || []
            });
@@ -75,12 +93,13 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
       }
     };
     loadData();
-  }, [DRAFT_KEY, lobbyId, supabase, form]);
+  }, [DRAFT_KEY, lobbyId, supabase, form]); // Removed defaultValues from dep array to avoid loops
 
   // 2. Save Draft Logic (Strip Images)
   useEffect(() => {
     const subscription = form.watch((value) => {
       const safeData = JSON.parse(JSON.stringify(value));
+      
       if (safeData.candidates) {
         safeData.candidates.forEach((c: any) => {
           if (c.image_url?.startsWith('data:')) c.image_url = null;
@@ -91,23 +110,22 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
           if (f.image_url?.startsWith('data:')) f.image_url = null;
         });
       }
+
       localStorage.setItem(DRAFT_KEY, JSON.stringify(safeData));
     });
     return () => subscription.unsubscribe();
   }, [form, DRAFT_KEY]);
 
-  // 3. Save Configuration (Diff & Upsert Strategy)
   const saveConfiguration = async (data: SetupWizardValues) => {
     setIsSaving(true);
     try {
-      // A. Update Lobby
       const { error: lobbyError } = await supabase
         .from('lobbies')
         .update({ 
           name: data.lobby_name,
           settings: {
              ...data.settings,
-             factors: [] // Don't store factors in JSON anymore, they are in their own table
+             factors: [] 
           }, 
           status: 'voting' 
         })
@@ -115,22 +133,17 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
 
       if (lobbyError) throw lobbyError;
 
-      // B. Upsert Candidates (Preserve IDs)
+      // Upsert Candidates
       if (data.candidates.length > 0) {
-        // 1. Get existing IDs to find deletions
         const { data: existingCands } = await supabase.from('candidates').select('id').eq('lobby_id', lobbyId);
         const existingIds = existingCands?.map(c => c.id) || [];
         const currentIds = data.candidates.map(c => c.id).filter(Boolean);
         
-        // 2. Delete removed candidates
         const toDelete = existingIds.filter(id => !currentIds.includes(id));
-        if (toDelete.length > 0) {
-            await supabase.from('candidates').delete().in('id', toDelete);
-        }
+        if (toDelete.length > 0) await supabase.from('candidates').delete().in('id', toDelete);
 
-        // 3. Upsert new/updated
         const cleanCandidates = data.candidates.map(c => ({
-          ...(c.id ? { id: c.id } : {}), // Only include ID if it exists
+          ...(c.id ? { id: c.id } : {}),
           lobby_id: lobbyId,
           name: c.name,
           description: c.description || '',
@@ -141,17 +154,14 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
         await supabase.from('candidates').upsert(cleanCandidates);
       }
 
-      // C. Upsert Factors
+      // Upsert Factors
       if (data.settings.factors.length > 0) {
-         // Same Diff Logic for Factors
          const { data: existingFactors } = await supabase.from('factors').select('id').eq('lobby_id', lobbyId);
          const existingFIds = existingFactors?.map(f => f.id) || [];
          const currentFIds = data.settings.factors.map(f => f.id).filter(Boolean);
          
          const factorsToDelete = existingFIds.filter(id => !currentFIds.includes(id));
-         if (factorsToDelete.length > 0) {
-             await supabase.from('factors').delete().in('id', factorsToDelete);
-         }
+         if (factorsToDelete.length > 0) await supabase.from('factors').delete().in('id', factorsToDelete);
 
          const cleanFactors = data.settings.factors.map(f => ({
              ...(f.id ? { id: f.id } : {}),
@@ -164,18 +174,15 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
              trend: f.trend,
              image_url: f.image_url,
              is_hidden: f.is_hidden,
-             // Map disabled_candidates to config JSONB column
+             step: f.step, // Save step
              config: { disabled_for: f.disabled_candidates || [] }
          }));
 
          await supabase.from('factors').upsert(cleanFactors);
       }
 
-      // Cleanup
       localStorage.removeItem(DRAFT_KEY);
       toast.success("Lobby Configured!");
-      
-      // Pass the full data back so LobbyPage can optimistically update
       onComplete(data);
 
     } catch (e) {
@@ -186,11 +193,5 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
     }
   };
 
-  return {
-    step,
-    setStep,
-    form,
-    isSaving,
-    saveConfiguration
-  };
+  return { step, setStep, form, isSaving, saveConfiguration };
 };

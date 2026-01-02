@@ -148,7 +148,8 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
               userId={user.id} 
               candidates={candidates}
               factors={lobby.settings.factors}
-              maxScale={lobby.settings.voting_scale.max}
+              // [FIX] Added safe access with default fallback
+              maxScale={lobby.settings?.voting_scale?.max || 10}
             />
           )}
 
