@@ -12,6 +12,8 @@ import { Info, Play, Users } from 'lucide-react';
 import { SmartTooltip } from '@/shared/ui/tooltip';
 import { Button } from '@/shared/ui/button';
 import { createClient } from '@/shared/api/supabase'; // To get participants? Or pass them in props
+import { MethodExplainer } from './MethodExplainer';
+
 
 interface ResultsDashboardProps {
   candidates: Candidate[];
@@ -114,18 +116,12 @@ export const ResultsDashboard = ({ candidates, votes, factors, onResume }: Resul
       {/* Content */}
       <div className="glass-card p-6 min-h-[400px]">
         {tab === 'weighted' && <ChartsContainer data={weightedResults} />}
-        
         {tab === 'schulze' && <SchulzeMatrix candidates={candidates} matrix={schulzeData.matrix} />}
-
         {tab === 'radar' && <RadarAnalysis candidates={candidates} factors={factors} votes={votes} />}
-
-        {tab === 'badges' && (
-            <VoterAnalysis 
-                participants={participants} 
-                votes={votes} 
-                winnerId={weightedResults[0]?.candidate.id} 
-            />
-        )}
+        {tab === 'badges' && <VoterAnalysis participants={participants} votes={votes} winnerId={weightedResults[0]?.candidate.id} />}
+        
+        {/* [NEW] Explainer Footer */}
+        {tab !== 'badges' && <MethodExplainer method={tab} />}
       </div>
     </div>
   );

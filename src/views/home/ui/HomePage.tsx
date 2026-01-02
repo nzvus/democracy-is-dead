@@ -9,7 +9,7 @@ import { AuthForm } from '@/features/auth/ui/AuthForm';
 import { ArrowRight, LogOut, Clock, Plus, Play } from 'lucide-react';
 import { useSessionAuth } from '@/features/session-auth/model/useSessionAuth';
 import { ProfileEditor } from '@/widgets/user-dashboard/ui/ProfileEditor';
-import { getHistory } from '@/shared/lib/history-manager';
+import { getHistory, clearHistory } from '@/shared/lib/history-manager';
 
 export const HomePage = () => {
   const t = useTranslations('Home');
@@ -27,7 +27,6 @@ export const HomePage = () => {
   useEffect(() => {
     if (user && !user.is_anonymous) {
       const fetchLobbies = async () => {
-        // Query participants -> join lobbies
         const { data, error } = await supabase
             .from('lobby_participants')
             .select(`
@@ -46,7 +45,6 @@ export const HomePage = () => {
       };
       fetchLobbies();
     } else {
-      // Load Local History for Guests
       setMyLobbies(getHistory());
     }
   }, [user, supabase]);
@@ -95,87 +93,88 @@ export const HomePage = () => {
     );
   }
 
-  // --- LOGGED IN DASHBOARD (Single Column) ---
+  // --- COMPACT DASHBOARD ---
   return (
-    <div className="min-h-screen bg-[#030712] text-white flex justify-center p-4 md:p-8">
-      <div className="w-full max-w-xl space-y-12">
+    <div className="min-h-screen p-4 bg-[#030712] text-white flex justify-center items-start pt-10 md:pt-20">
+      <div className="w-full max-w-4xl grid md:grid-cols-2 gap-6">
         
-        {/* Header */}
-        <header className="flex justify-between items-center pb-6 border-b border-white/10">
-            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
-                {t('welcome_user', { name: user.user_metadata?.nickname || 'User' })}
-            </h2>
-            <Button variant="ghost" onClick={handleLogout} className="text-xs h-8 px-3 text-red-400 hover:text-red-300 hover:bg-red-900/10">
-                <LogOut size={14} className="mr-2" /> {tAuth('logout')}
-            </Button>
-        </header>
-
-        {/* Profile Editor (Collapsible or Inline) */}
-        <ProfileEditor user={user} />
-
-        {/* Actions */}
-        <div className="glass-card p-8 space-y-6 border-indigo-500/20 shadow-[0_0_40px_rgba(79,70,229,0.1)]">
-            <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-5 text-lg btn-primary">
-                <Plus className="mr-2" /> {t('create_lobby')}
-            </Button>
-            
-            <div className="relative flex items-center gap-4">
-                <div className="h-px bg-white/10 flex-1"></div>
-                <span className="text-xs text-gray-500 uppercase font-bold tracking-widest">{t('or_join')}</span>
-                <div className="h-px bg-white/10 flex-1"></div>
+        {/* LEFT: Profile & Actions */}
+        <div className="space-y-6">
+            <div className="flex justify-between items-center px-2">
+                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                    {t('welcome_user', { name: user.user_metadata?.nickname || 'User' })}
+                </h2>
+                <Button variant="ghost" onClick={handleLogout} className="text-[10px] h-7 px-2 text-red-400 hover:bg-red-900/10">
+                    <LogOut size={12} className="mr-1" /> {tAuth('logout')}
+                </Button>
             </div>
 
-            <div className="flex gap-2">
-                <Input 
-                    value={joinCode} 
-                    onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                    placeholder={t('join_placeholder')}
-                    className="glass-input text-center font-mono font-bold uppercase tracking-widest text-xl h-14"
-                    maxLength={6}
-                />
-                <Button onClick={handleJoin} className="bg-white text-black hover:bg-gray-200 h-14 px-6 rounded-xl">
-                    <ArrowRight />
+            <div className="glass-card p-6 space-y-4 border-indigo-500/20">
+                <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-4 text-base btn-primary">
+                    <Plus className="mr-2" size={18} /> {t('create_lobby')}
                 </Button>
+                
+                <div className="relative flex items-center gap-4 py-2">
+                    <div className="h-px bg-white/10 flex-1"></div>
+                    <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">{t('or_join')}</span>
+                    <div className="h-px bg-white/10 flex-1"></div>
+                </div>
+
+                <div className="flex gap-2">
+                    <Input 
+                        value={joinCode} 
+                        onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                        placeholder={t('join_placeholder')}
+                        className="glass-input text-center font-mono font-bold uppercase tracking-widest h-12"
+                        maxLength={6}
+                    />
+                    <Button onClick={handleJoin} className="bg-white text-black hover:bg-gray-200 h-12 px-5 rounded-xl">
+                        <ArrowRight size={18} />
+                    </Button>
+                </div>
+            </div>
+
+            {/* Collapsed Profile Editor */}
+            <div className="glass-card p-4">
+               <ProfileEditor user={user} />
             </div>
         </div>
 
-        {/* History List */}
-        <div className="space-y-4 animate-in slide-in-from-bottom-8 duration-700">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 px-2">
+        {/* RIGHT: History */}
+        <div className="glass-card p-6 min-h-[400px] flex flex-col">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-4">
                <Clock size={14} /> {tDash('my_lobbies')}
             </h3>
 
-            <div className="grid gap-3">
+            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
                 {myLobbies.length === 0 && (
-                    <div className="text-center py-12 text-gray-600 italic text-sm border border-dashed border-gray-800 rounded-2xl bg-black/20">
+                    <div className="text-center py-12 text-gray-600 italic text-sm border border-dashed border-gray-800 rounded-xl bg-black/20">
                         {tDash('no_lobbies')}
                     </div>
                 )}
 
                 {myLobbies.map((l: any) => (
                     <div 
-                        key={l.code || Math.random()} 
-                        className="glass-card p-4 flex justify-between items-center hover:border-indigo-500/40 hover:bg-white/5 transition-all group relative overflow-hidden"
+                        key={l.id || l.code} 
+                        className="bg-black/20 p-3 rounded-xl border border-white/5 hover:border-indigo-500/30 flex justify-between items-center group transition-all"
                     >
-                        <div className="z-10">
-                            <div className="font-bold text-lg text-gray-200 group-hover:text-white transition-colors">{l.name || "Untitled Lobby"}</div>
-                            <div className="text-xs text-gray-500 font-mono mt-1">
+                        <div>
+                            <div className="font-bold text-sm text-gray-200 group-hover:text-white transition-colors">{l.name || "Untitled Lobby"}</div>
+                            <div className="text-[10px] text-gray-500 font-mono mt-0.5">
                                 {t('lobby_code_display', { code: l.code })}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 z-10">
+                        <div className="flex items-center gap-2">
                             {l.host_id === user.id && (
-                                <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded border border-indigo-500/30">
-                                    {tDash('host_badge')}
-                                </span>
+                                <span className="text-[9px] font-black bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/20">HOST</span>
                             )}
-                            <Button 
+                            <button 
                                 onClick={() => router.push(`/lobby/${l.code}`)} 
-                                className="h-9 w-9 p-0 rounded-full bg-white text-black hover:bg-gray-200 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all"
+                                className="p-2 rounded-lg bg-white text-black hover:bg-indigo-400 hover:text-white transition-all shadow-lg"
                             >
-                                <Play size={14} fill="currentColor" />
-                            </Button>
+                                <Play size={12} fill="currentColor" />
+                            </button>
                         </div>
                     </div>
                 ))}

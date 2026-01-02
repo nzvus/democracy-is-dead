@@ -188,6 +188,9 @@
       "oracle": { "title": "L'Oracolo", "desc": "Ha predetto perfettamente il vincitore." },
       "hive_mind": { "title": "Mente Collettiva", "desc": "Ha votato esattamente come la media." }
     },
+     "history_label": "Storia",
+    "math_label": "Matematica",
+    "insight_label": "Intuizione",
     "podium_title": "Migliori Candidati",
     "winner": "Vincitore",
     "runner_up": "Secondo Posto",

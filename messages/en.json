@@ -198,7 +198,10 @@
       "schulze": "A Condorcet method. It simulates pairwise duels between every candidate. The winner is the one who beats everyone else in the strongest paths.",
       "radar": "Visualizes the strengths and weaknesses of each candidate across different criteria."
     },
-    "need_more_factors": "Need at least 3 numerical factors for Radar Analysis."
+    "need_more_factors": "Need at least 3 numerical factors for Radar Analysis.",
+  "history_label": "History",
+    "math_label": "The Math",
+    "insight_label": "Insight"
   },
   "Share": {
     "invite": "Invite 🔗",

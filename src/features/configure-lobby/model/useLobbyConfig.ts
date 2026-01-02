@@ -5,6 +5,17 @@ import { SetupWizardSchema, SetupWizardValues } from './config-schema';
 import { createClient } from '@/shared/api/supabase';
 import { toast } from 'sonner';
 
+// Define defaults outside component to ensure reference stability for useEffect
+const DEFAULT_VALUES: SetupWizardValues = {
+  lobby_name: "", 
+  settings: {
+    privacy: 'public',
+    voting_scale: { max: 10 },
+    factors: []
+  },
+  candidates: []
+};
+
 export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -12,22 +23,11 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
   
   const DRAFT_KEY = `draft_${lobbyId}`;
 
-  // Define defaults explicitly
-  const defaultValues: SetupWizardValues = {
-    lobby_name: "", 
-    settings: {
-      privacy: 'public',
-      voting_scale: { max: 10 },
-      factors: []
-    },
-    candidates: []
-  };
-
   const form = useForm<SetupWizardValues>({
     resolver: zodResolver(SetupWizardSchema) as any,
-    defaultValues,
+    defaultValues: DEFAULT_VALUES,
     mode: 'onChange',
-    shouldUnregister: false 
+    shouldUnregister: false // Critical: Keep data when changing steps
   });
 
   // 1. Hydration Strategy: Draft -> DB -> Default
@@ -41,15 +41,15 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
         try {
           const parsed = JSON.parse(draft);
           
-          // [FIX] Deep Merge logic to prevent missing nested keys (like voting_scale)
+          // Deep Merge Logic to ensure structure integrity
           const safeData = {
-            ...defaultValues,
+            ...DEFAULT_VALUES,
             ...parsed,
             settings: {
-              ...defaultValues.settings,
+              ...DEFAULT_VALUES.settings,
               ...(parsed.settings || {}),
               voting_scale: {
-                ...defaultValues.settings.voting_scale,
+                ...DEFAULT_VALUES.settings.voting_scale,
                 ...(parsed.settings?.voting_scale || {})
               }
             }
@@ -60,13 +60,14 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
           return;
         } catch (e) {
           console.error("Failed to parse draft", e);
-          localStorage.removeItem(DRAFT_KEY); // Clear bad draft
+          localStorage.removeItem(DRAFT_KEY);
         }
       }
 
-      // B. If no draft, fetch from DB
+      // B. If no draft, fetch from DB (Suspend & Edit Case)
       try {
         const { data: lobby } = await supabase.from('lobbies').select('*').eq('id', lobbyId).single();
+        
         if (lobby) {
            const { data: candidates } = await supabase.from('candidates').select('*').eq('lobby_id', lobbyId);
            const { data: factors } = await supabase.from('factors').select('*').eq('lobby_id', lobbyId);
@@ -74,17 +75,18 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
            form.reset({
              lobby_name: lobby.name || "My Lobby",
              settings: {
-                ...defaultValues.settings, // Merge defaults
+                ...DEFAULT_VALUES.settings,
                 ...lobby.settings,
                 factors: factors?.map(f => ({
                     ...f,
                     weight: Number(f.weight),
+                    // Map JSONB config back to UI state
                     disabled_candidates: f.config?.disabled_for || []
                 })) || []
              },
              candidates: candidates?.map(c => ({
                  ...c,
-                 id: c.id 
+                 id: c.id // Essential for Upsert logic
              })) || []
            });
         }
@@ -92,14 +94,16 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
         console.error("Hydration failed", e);
       }
     };
+    
     loadData();
-  }, [DRAFT_KEY, lobbyId, supabase, form]); // Removed defaultValues from dep array to avoid loops
+  }, [DRAFT_KEY, lobbyId, supabase, form]);
 
-  // 2. Save Draft Logic (Strip Images)
+  // 2. Save Draft Logic (Strip Images to prevent Storage/Header issues)
   useEffect(() => {
     const subscription = form.watch((value) => {
       const safeData = JSON.parse(JSON.stringify(value));
       
+      // Remove Base64 images from draft to save space
       if (safeData.candidates) {
         safeData.candidates.forEach((c: any) => {
           if (c.image_url?.startsWith('data:')) c.image_url = null;
@@ -116,16 +120,18 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
     return () => subscription.unsubscribe();
   }, [form, DRAFT_KEY]);
 
+  // 3. Main Save Action
   const saveConfiguration = async (data: SetupWizardValues) => {
     setIsSaving(true);
     try {
+      // A. Update Lobby Meta
       const { error: lobbyError } = await supabase
         .from('lobbies')
         .update({ 
           name: data.lobby_name,
           settings: {
              ...data.settings,
-             factors: [] 
+             factors: [] // Factors are stored in their own table now
           }, 
           status: 'voting' 
         })
@@ -133,8 +139,9 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
 
       if (lobbyError) throw lobbyError;
 
-      // Upsert Candidates
+      // B. Upsert Candidates
       if (data.candidates.length > 0) {
+        // 1. Find candidates to delete
         const { data: existingCands } = await supabase.from('candidates').select('id').eq('lobby_id', lobbyId);
         const existingIds = existingCands?.map(c => c.id) || [];
         const currentIds = data.candidates.map(c => c.id).filter(Boolean);
@@ -142,8 +149,9 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
         const toDelete = existingIds.filter(id => !currentIds.includes(id));
         if (toDelete.length > 0) await supabase.from('candidates').delete().in('id', toDelete);
 
+        // 2. Upsert
         const cleanCandidates = data.candidates.map(c => ({
-          ...(c.id ? { id: c.id } : {}),
+          ...(c.id ? { id: c.id } : {}), // Preserve ID if editing
           lobby_id: lobbyId,
           name: c.name,
           description: c.description || '',
@@ -154,8 +162,9 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
         await supabase.from('candidates').upsert(cleanCandidates);
       }
 
-      // Upsert Factors
+      // C. Upsert Factors
       if (data.settings.factors.length > 0) {
+         // 1. Find factors to delete
          const { data: existingFactors } = await supabase.from('factors').select('id').eq('lobby_id', lobbyId);
          const existingFIds = existingFactors?.map(f => f.id) || [];
          const currentFIds = data.settings.factors.map(f => f.id).filter(Boolean);
@@ -163,6 +172,7 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
          const factorsToDelete = existingFIds.filter(id => !currentFIds.includes(id));
          if (factorsToDelete.length > 0) await supabase.from('factors').delete().in('id', factorsToDelete);
 
+         // 2. Upsert
          const cleanFactors = data.settings.factors.map(f => ({
              ...(f.id ? { id: f.id } : {}),
              lobby_id: lobbyId,
@@ -174,13 +184,15 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
              trend: f.trend,
              image_url: f.image_url,
              is_hidden: f.is_hidden,
-             step: f.step, // Save step
+             step: f.step,
+             // Serialize disabled candidates to config JSONB
              config: { disabled_for: f.disabled_candidates || [] }
          }));
 
          await supabase.from('factors').upsert(cleanFactors);
       }
 
+      // Cleanup & Callback
       localStorage.removeItem(DRAFT_KEY);
       toast.success("Lobby Configured!");
       onComplete(data);
@@ -193,5 +205,11 @@ export const useLobbyConfig = (lobbyId: string, onComplete: (data: any) => void)
     }
   };
 
-  return { step, setStep, form, isSaving, saveConfiguration };
+  return {
+    step,
+    setStep,
+    form,
+    isSaving,
+    saveConfiguration
+  };
 };

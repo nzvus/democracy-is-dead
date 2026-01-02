@@ -10,9 +10,10 @@ interface MessageBubbleProps {
   onReply: (msg: ChatMessage) => void;
   onEdit: (id: string, newContent: string) => void;
   onDelete: (id: string) => void;
+  showAvatar: boolean; // [NEW]
 }
 
-export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete, showAvatar }: MessageBubbleProps) => {
   const t = useTranslations('Chat');
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -27,17 +28,29 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: Mess
 
   return (
     <div 
-      className={`flex gap-3 group mb-4 ${isMe ? 'flex-row-reverse' : ''}`}
+      className={`flex gap-3 group ${isMe ? 'flex-row-reverse' : ''} ${!showAvatar ? 'mt-0' : 'mt-3'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <SmartEntity 
-        label={message.nickname} 
-        seed={message.user_id} 
-        className={isMe ? "hidden" : "self-end"} 
-      />
+      {/* Avatar Container: Always render width to keep alignment */}
+      <div className="w-8 shrink-0 flex flex-col items-center">
+         {showAvatar && !isMe && (
+            <SmartEntity 
+                label="" 
+                seed={message.user_id} 
+                imageUrl={null} 
+                className="w-8 h-8 scale-90"
+            />
+         )}
+      </div>
       
       <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
+        
+        {/* Name Header (Only if showAvatar is true and not me) */}
+        {!isMe && showAvatar && !message.reply_to && (
+            <div className="text-[10px] font-bold text-gray-400 mb-1 ml-1">{message.nickname}</div>
+        )}
+
         {/* Reply Context */}
         {message.reply_to && (
           <div className="text-[10px] text-gray-500 bg-gray-800/50 px-2 py-1 rounded-t-md border-b-0 border border-gray-700 w-fit mb-[-4px] z-0 opacity-80">
@@ -46,14 +59,12 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: Mess
         )}
 
         <div className={`
-          relative rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm z-10 min-w-[120px]
+          relative rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm z-10 min-w-[60px]
           ${isMe 
             ? 'bg-indigo-600 text-white rounded-tr-sm' 
-            : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
+            : 'bg-[#1f2937] text-gray-200 border border-gray-700/50 rounded-tl-sm'
           }
         `}>
-          {!isMe && !message.reply_to && <div className="text-[10px] font-bold opacity-50 mb-1">{message.nickname}</div>}
-          
           {isEditing ? (
             <div className="flex flex-col gap-2 min-w-[200px]">
               <input 
@@ -75,7 +86,7 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete }: Mess
           )}
         </div>
 
-        {/* Action Buttons (Visible on Hover) */}
+        {/* Action Buttons */}
         <div className={`flex gap-1 mt-1 opacity-0 transition-opacity ${isHovered ? 'opacity-100' : ''}`}>
           <button onClick={() => onReply(message)} className="p-1 text-gray-500 hover:text-indigo-400" title={t('actions.reply')}>
             <Reply size={12} />
