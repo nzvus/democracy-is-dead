@@ -169,14 +169,16 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
           )}
 
           {/* VOTING */}
-          <VotingInterface 
-            lobbyId={lobbyId} 
-            userId={user.id} 
-            candidates={candidates}
-            factors={factors}
-            // [FIX] Extra safety check: handle null settings or null voting_scale
-            maxScale={lobby.settings?.voting_scale?.max ?? 10}
-          />
+          {lobby.status === 'voting' && (
+              <VotingInterface 
+    lobbyId={lobbyId} 
+    userId={user.id} 
+    candidates={candidates}
+    factors={factors}
+    // [FIX] Extra safety check: handle null settings or null voting_scale
+    maxScale={lobby.settings?.voting_scale?.max ?? 10}
+  />
+          )}
 
           {/* ENDED */}
           {lobby.status === 'ended' && (
