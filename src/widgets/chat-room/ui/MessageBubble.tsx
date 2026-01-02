@@ -11,7 +11,7 @@ interface MessageBubbleProps {
   onEdit: (id: string, newContent: string) => void;
   onDelete: (id: string) => void;
   showAvatar: boolean;
-  avatarUrl?: string | null; // [NEW]
+  avatarUrl?: string | null;
 }
 
 export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete, showAvatar, avatarUrl }: MessageBubbleProps) => {
@@ -53,7 +53,8 @@ export const MessageBubble = ({ message, isMe, onReply, onEdit, onDelete, showAv
 
         {message.reply_to && (
           <div className="text-[10px] text-gray-500 bg-gray-800/50 px-2 py-1 rounded-t-md border-b-0 border border-gray-700 w-fit mb-[-4px] z-0 opacity-80">
-            <span className="font-bold">@{message.reply_to.nickname}:</span> {message.reply_to.content.substring(0, 20)}...
+            {/* [FIX] Defensive check for reply_to.content */}
+            <span className="font-bold">@{message.reply_to.nickname}:</span> {(message.reply_to.content || "").substring(0, 20)}...
           </div>
         )}
 

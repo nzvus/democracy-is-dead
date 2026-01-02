@@ -24,7 +24,8 @@ export const SchulzeMatrix = ({ candidates, matrix }: SchulzeMatrixProps) => {
                 <th key={c.id} className="p-2 w-20 text-center align-bottom">
                   <div className="flex flex-col items-center gap-2">
                     <AvatarContainer src={c.image_url} alt={c.name} seed={c.id} size="sm" className="mx-auto" />
-                    <span className="truncate w-full block text-[10px] text-gray-400 font-mono">{c.name.substring(0, 6)}</span>
+                    {/* [FIX] Added defensive check for c.name */}
+                    <span className="truncate w-full block text-[10px] text-gray-400 font-mono">{(c.name || "???").substring(0, 6)}</span>
                   </div>
                 </th>
               ))}
