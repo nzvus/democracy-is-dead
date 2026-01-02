@@ -5,8 +5,18 @@ export const VotingScaleSchema = z.object({
   max: z.number().min(5).max(100).default(10),
 });
 
+// [FIX] Updated Privacy Schema to allow Granular Object
+export const PrivacySchema = z.union([
+  z.enum(['public', 'anonymous']),
+  z.object({
+    users: z.enum(['visible', 'hidden']).optional(),
+    candidates: z.enum(['visible', 'hidden']).optional(),
+    factors: z.enum(['visible', 'hidden']).optional(),
+  })
+]);
+
 export const LobbySettingsSchema = z.object({
-  privacy: z.enum(['public', 'anonymous', 'blind']).default('public'),
+  privacy: PrivacySchema.default('public'),
   voting_scale: VotingScaleSchema,
   allow_decimals: z.boolean().default(false),
   factors: z.array(FactorSchema).default([]),
@@ -20,7 +30,6 @@ export interface Lobby {
   id: string;
   code: string;
   host_id: string;
-  // [FIX] Added name property
   name: string;
   status: LobbyStatus;
   settings: LobbySettings;

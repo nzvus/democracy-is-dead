@@ -5,29 +5,43 @@ import { v4 as uuidv4 } from 'uuid';
 export const uploadImage = async (file: File): Promise<string> => {
   const supabase = createClient();
 
-  // 1. Compress Image
+  // iOS Camera photos can be huge (10MB+). Aggressive compression is needed.
   const options = {
-    maxSizeMB: 0.5, // Max 500KB
-    maxWidthOrHeight: 800, // Resize to max 800px width/height
+    maxSizeMB: 0.3, // Reduced to 300KB for speed/stability
+    maxWidthOrHeight: 1024,
     useWebWorker: true,
+    fileType: "image/jpeg" // Force JPEG conversion to handle HEIC better
   };
 
+  let fileToUpload = file;
+
   try {
-    const compressedFile = await imageCompression(file, options);
-    
-    // 2. Generate Unique Path
-    const fileExt = file.name.split('.').pop();
+    // Attempt compression
+    fileToUpload = await imageCompression(file, options);
+  } catch (error) {
+    console.warn("Image compression failed, attempting raw upload...", error);
+    // Fallback: If compression fails (common on some iOS versions), try uploading original
+    // Check size first to avoid 494 or timeout
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("Image too large (>5MB) and compression failed.");
+    }
+    fileToUpload = file;
+  }
+
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
     const fileName = `${uuidv4()}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
 
-    // 3. Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
-      .from('public-images') // Must match your bucket name
-      .upload(filePath, compressedFile);
+      .from('public-images')
+      .upload(filePath, fileToUpload, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (uploadError) throw uploadError;
 
-    // 4. Get Public URL
     const { data } = supabase.storage
       .from('public-images')
       .getPublicUrl(filePath);
