@@ -19,7 +19,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
   const t = useTranslations('Lobby');
   const tCommon = useTranslations('Common');
   
-  // [FIX] Destructure 'factors' and 'refreshAll'
+  // [FIX] Removed 'refreshCandidates', using 'refreshAll' instead
   const { lobby, candidates, factors, participants, votes, loading, updateLocalStatus, refreshAll } = useLobbyState(lobbyId);
   
   const { user } = useSessionAuth();
@@ -31,6 +31,30 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
       setProfileSet(true);
     }
   }, [user]);
+
+  // Auto-Join Lobby
+  useEffect(() => {
+    const joinLobby = async () => {
+      if (!user || !lobbyId) return;
+
+      const nickname = user.user_metadata?.nickname || 'Anonymous';
+      const avatarUrl = user.user_metadata?.avatar_url || null;
+
+      const { error } = await supabase.from('lobby_participants').upsert({
+        lobby_id: lobbyId,
+        user_id: user.id,
+        nickname: nickname,
+        avatar_url: avatarUrl,
+        last_seen_at: new Date().toISOString()
+      }, { onConflict: 'lobby_id, user_id' });
+
+      if (error) console.error("Auto-join failed:", error);
+    };
+
+    if (user && lobbyId) {
+        joinLobby();
+    }
+  }, [lobbyId, user, supabase]);
 
   const isHost = user && lobby && user.id === lobby.host_id;
 
@@ -48,10 +72,12 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     }
   }, [isHost, lobby?.status, profileSet, handleStartSetup]);
 
-  // Handlers
+  // --- Handlers for Optimistic Updates ---
+
   const handleLaunchSuccess = async () => {
     updateLocalStatus('voting');
-    await refreshAll(); // [FIX] Refresh both candidates and factors
+    // [FIX] Use refreshAll() to fetch candidates AND factors
+    await refreshAll(); 
   };
 
   const handleSuspend = () => {
@@ -66,6 +92,8 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     updateLocalStatus('voting');
     await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobbyId);
   };
+
+  // --- Render ---
 
   if (loading || !lobby || !user) {
     return (
@@ -146,7 +174,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
               lobbyId={lobbyId} 
               userId={user.id} 
               candidates={candidates}
-              factors={factors} // [FIX] Use real factors state
+              factors={factors}
               maxScale={lobby.settings?.voting_scale?.max || 10}
             />
           )}
@@ -156,7 +184,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
             <ResultsDashboard 
               candidates={candidates} 
               votes={votes}
-              factors={factors} // [FIX] Use real factors state
+              factors={factors}
               onResume={isHost ? handleResume : undefined}
             />
           )}

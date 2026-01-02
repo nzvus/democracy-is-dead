@@ -10,11 +10,14 @@ import { ArrowRight, LogOut, Clock, Plus, Play } from 'lucide-react';
 import { useSessionAuth } from '@/features/session-auth/model/useSessionAuth';
 import { ProfileEditor } from '@/widgets/user-dashboard/ui/ProfileEditor';
 import { getHistory, clearHistory } from '@/shared/lib/history-manager';
+import { toast } from 'sonner';
 
 export const HomePage = () => {
   const t = useTranslations('Home');
   const tDash = useTranslations('Dashboard');
   const tAuth = useTranslations('Auth');
+  const tCommon = useTranslations('Common');
+  
   const router = useRouter();
   const supabase = createClient();
   const { user } = useSessionAuth();
@@ -23,13 +26,15 @@ export const HomePage = () => {
   const [myLobbies, setMyLobbies] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Fetch User's Lobbies (Corrected Logic)
+  // Fetch User's Lobbies (Corrected Join Query)
   useEffect(() => {
     if (user && !user.is_anonymous) {
       const fetchLobbies = async () => {
+        // Query participants -> join lobbies
         const { data, error } = await supabase
             .from('lobby_participants')
             .select(`
+                lobby_id,
                 last_seen_at,
                 lobbies!inner (
                     id, code, name, host_id, status
@@ -40,11 +45,19 @@ export const HomePage = () => {
             .limit(10);
 
         if (!error && data) {
-            setMyLobbies(data.map((row: any) => row.lobbies));
+            // Flatten structure
+            const lobbies = data
+                .map((row: any) => ({
+                    ...row.lobbies,
+                    last_seen_at: row.last_seen_at
+                }))
+                .filter((l: any) => l !== null); 
+            setMyLobbies(lobbies);
         }
       };
       fetchLobbies();
     } else {
+      // Load Local History for Guests
       setMyLobbies(getHistory());
     }
   }, [user, supabase]);
@@ -54,15 +67,36 @@ export const HomePage = () => {
     setIsCreating(true);
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    const { data } = await supabase.from('lobbies').insert({
+    // 1. Create Lobby
+    const { data: lobbyData, error: lobbyError } = await supabase.from('lobbies').insert({
         code,
         host_id: user.id,
         name: "Untitled Lobby",
         settings: { factors: [] }
-    }).select('code').single();
+    }).select('id, code').single();
     
-    if (data) router.push(`/lobby/${data.code}`);
-    setIsCreating(false);
+    if (lobbyError || !lobbyData) {
+        toast.error(tCommon('error'));
+        setIsCreating(false);
+        return;
+    }
+
+    // 2. [FIX] Immediately add Host as a Participant
+    // This ensures the lobby appears in history and the host is in the list
+    const { error: partError } = await supabase.from('lobby_participants').insert({
+        lobby_id: lobbyData.id,
+        user_id: user.id,
+        nickname: user.user_metadata?.nickname || 'Host',
+        avatar_url: user.user_metadata?.avatar_url || null,
+        last_seen_at: new Date().toISOString()
+    });
+
+    if (partError) {
+        console.error("Failed to add host to participants", partError);
+    }
+
+    router.push(`/lobby/${lobbyData.code}`);
+    // Note: No need to setIsCreating(false) as we are navigating away
   };
 
   const handleJoin = () => {
@@ -75,7 +109,7 @@ export const HomePage = () => {
     window.location.reload();
   };
 
-  // --- GUEST VIEW ---
+  // --- GUEST VIEW (Show Auth) ---
   if (!user || user.is_anonymous) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#030712] relative overflow-hidden">
@@ -93,13 +127,14 @@ export const HomePage = () => {
     );
   }
 
-  // --- COMPACT DASHBOARD ---
+  // --- LOGGED IN DASHBOARD (Single Column) ---
   return (
     <div className="min-h-screen p-4 bg-[#030712] text-white flex justify-center items-start pt-10 md:pt-20">
       <div className="w-full max-w-4xl grid md:grid-cols-2 gap-6">
         
         {/* LEFT: Profile & Actions */}
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex justify-between items-center px-2">
                 <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
                     {t('welcome_user', { name: user.user_metadata?.nickname || 'User' })}
@@ -109,6 +144,7 @@ export const HomePage = () => {
                 </Button>
             </div>
 
+            {/* Actions Card */}
             <div className="glass-card p-6 space-y-4 border-indigo-500/20">
                 <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-4 text-base btn-primary">
                     <Plus className="mr-2" size={18} /> {t('create_lobby')}
@@ -134,7 +170,7 @@ export const HomePage = () => {
                 </div>
             </div>
 
-            {/* Collapsed Profile Editor */}
+            {/* Profile Editor */}
             <div className="glass-card p-4">
                <ProfileEditor user={user} />
             </div>
@@ -142,9 +178,17 @@ export const HomePage = () => {
 
         {/* RIGHT: History */}
         <div className="glass-card p-6 min-h-[400px] flex flex-col">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-4">
-               <Clock size={14} /> {tDash('my_lobbies')}
-            </h3>
+            <div className="flex justify-between items-center mb-4 px-2">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                   <Clock size={14} /> {tDash('my_lobbies')}
+                </h3>
+                {/* Clear History Button (Only relevant for local history/guests really, but useful UI) */}
+                {user.is_anonymous && (
+                    <button onClick={() => { clearHistory(); setMyLobbies([]); }} className="text-[10px] text-red-400 hover:underline">
+                        {t('clear_history')}
+                    </button>
+                )}
+            </div>
 
             <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
                 {myLobbies.length === 0 && (
@@ -167,7 +211,9 @@ export const HomePage = () => {
 
                         <div className="flex items-center gap-2">
                             {l.host_id === user.id && (
-                                <span className="text-[9px] font-black bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/20">HOST</span>
+                                <span className="text-[9px] font-black bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/20">
+                                    {tDash('host_badge')}
+                                </span>
                             )}
                             <button 
                                 onClick={() => router.push(`/lobby/${l.code}`)} 
