@@ -34,7 +34,9 @@ export const ImagePicker = ({
         const publicUrl = await uploadImage(file);
         onChange(publicUrl);
       } catch (error) {
-        toast.error(t('error'));
+        console.error(error);
+        // Fallback for UI feedback
+        alert("Upload failed. Try a smaller image.");
       } finally {
         setIsUploading(false);
       }
@@ -50,9 +52,11 @@ export const ImagePicker = ({
   };
 
   const handleUpload = (e: React.MouseEvent) => {
+    e.preventDefault(); // Stop bubbling
     e.stopPropagation();
     fileInputRef.current?.click();
   };
+
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,7 +64,6 @@ export const ImagePicker = ({
   };
 
   const displaySrc = value || (allowShuffle ? `https://api.dicebear.com/9.x/avataaars/svg?seed=${currentSeed}` : null);
-
   return (
     <div className={`relative group ${className}`}>
       <div className="w-full h-full min-w-[5rem] min-h-[5rem] rounded-xl overflow-hidden bg-gray-900 border border-gray-700 shadow-inner flex items-center justify-center relative aspect-square">
@@ -79,36 +82,40 @@ export const ImagePicker = ({
           <ImageIcon className="text-gray-600 w-1/3 h-1/3" />
         )}
         
-        {/* Overlay Actions: Changed opacity logic for better mobile support */}
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 z-10 transition-opacity opacity-0 group-hover:opacity-100 active:opacity-100 focus-within:opacity-100 md:opacity-0 md:group-hover:opacity-100">
+        {/* Overlay Actions */}
+        {/* Added 'active:opacity-100' for better mobile touch feedback */}
+        <div className={`
+            absolute inset-0 bg-black/70 flex items-center justify-center gap-2 z-10 transition-opacity
+            ${isUploading ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 active:opacity-100 focus-within:opacity-100'}
+        `}>
           <button 
             onClick={handleUpload}
-            className="p-2 bg-indigo-600 rounded-full text-white shadow-lg active:scale-95"
+            className="p-2 bg-indigo-600 rounded-full text-white hover:bg-indigo-500 transition-transform hover:scale-110 shadow-lg"
             title={t('upload_image')}
             type="button"
           >
-            <Upload size={18} />
+            <Upload size={16} />
           </button>
           
           {allowShuffle && (
             <button 
                 onClick={handleShuffle}
-                className="p-2 bg-gray-700 rounded-full text-white shadow-lg active:scale-95"
+                className="p-2 bg-gray-700 rounded-full text-white hover:bg-gray-600 transition-transform hover:scale-110 shadow-lg"
                 title={t('shuffle')}
                 type="button"
             >
-                <RefreshCw size={18} />
+                <RefreshCw size={16} />
             </button>
           )}
 
           {displaySrc && (
             <button 
                 onClick={handleRemove}
-                className="p-2 bg-red-600 rounded-full text-white shadow-lg active:scale-95"
+                className="p-2 bg-red-600 rounded-full text-white hover:bg-red-500 transition-transform hover:scale-110 shadow-lg"
                 title={t('remove_image')}
                 type="button"
             >
-                <X size={18} />
+                <X size={16} />
             </button>
           )}
         </div>
@@ -120,6 +127,8 @@ export const ImagePicker = ({
         onChange={handleFileChange} 
         className="hidden" 
         accept="image/*"
+        // [FIX] Helps mobile browsers allow camera/gallery choice
+        capture={undefined} 
       />
     </div>
   );
