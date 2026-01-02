@@ -19,7 +19,9 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
   const t = useTranslations('Lobby');
   const tCommon = useTranslations('Common');
   
-  const { lobby, candidates, participants, votes, loading, updateLocalStatus, refreshCandidates } = useLobbyState(lobbyId);
+  // [FIX] Destructure 'factors' and 'refreshAll'
+  const { lobby, candidates, factors, participants, votes, loading, updateLocalStatus, refreshAll } = useLobbyState(lobbyId);
+  
   const { user } = useSessionAuth();
   const [profileSet, setProfileSet] = useState(false);
   const supabase = createClient();
@@ -38,7 +40,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobbyId);
   }, [isHost, lobbyId, supabase, updateLocalStatus]);
 
-  // Auto-Redirect Host to Setup
+  // Auto-Redirect Host
   useEffect(() => {
     if (isHost && lobby?.status === 'waiting' && profileSet) {
       const timer = setTimeout(() => handleStartSetup(), 500);
@@ -46,11 +48,10 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     }
   }, [isHost, lobby?.status, profileSet, handleStartSetup]);
 
-  // --- Handlers for Optimistic Updates ---
-
+  // Handlers
   const handleLaunchSuccess = async () => {
     updateLocalStatus('voting');
-    await refreshCandidates(); // Critical: Ensure we have candidates before rendering VotingInterface
+    await refreshAll(); // [FIX] Refresh both candidates and factors
   };
 
   const handleSuspend = () => {
@@ -65,8 +66,6 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     updateLocalStatus('voting');
     await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobbyId);
   };
-
-  // --- Render ---
 
   if (loading || !lobby || !user) {
     return (
@@ -147,8 +146,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
               lobbyId={lobbyId} 
               userId={user.id} 
               candidates={candidates}
-              factors={lobby.settings.factors}
-              // [FIX] Added safe access with default fallback
+              factors={factors} // [FIX] Use real factors state
               maxScale={lobby.settings?.voting_scale?.max || 10}
             />
           )}
@@ -158,7 +156,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
             <ResultsDashboard 
               candidates={candidates} 
               votes={votes}
-              factors={lobby.settings.factors}
+              factors={factors} // [FIX] Use real factors state
               onResume={isHost ? handleResume : undefined}
             />
           )}

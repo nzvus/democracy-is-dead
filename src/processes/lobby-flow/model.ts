@@ -2,22 +2,31 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/shared/api/supabase';
 import { Lobby, LobbyStatus } from '@/entities/lobby/model/types';
 import { Candidate } from '@/entities/candidate/model/types';
+import { Factor } from '@/entities/factor/model/types'; // [NEW] Import Factor type
 import { Participant } from '@/entities/participant/model/types';
 import { toast } from 'sonner';
 
 export const useLobbyState = (initialLobbyId: string) => {
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [factors, setFactors] = useState<Factor[]>([]); // [NEW] Factors State
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [votes, setVotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const supabase = useMemo(() => createClient(), []);
 
-  // Fetchers
+  // --- Fetchers ---
+
   const fetchCandidates = useCallback(async () => {
     const { data } = await supabase.from('candidates').select('*').eq('lobby_id', initialLobbyId);
     if (data) setCandidates(data);
+  }, [initialLobbyId, supabase]);
+
+  // [NEW] Fetch Factors
+  const fetchFactors = useCallback(async () => {
+    const { data } = await supabase.from('factors').select('*').eq('lobby_id', initialLobbyId);
+    if (data) setFactors(data);
   }, [initialLobbyId, supabase]);
 
   const fetchParticipants = useCallback(async () => {
@@ -34,12 +43,19 @@ export const useLobbyState = (initialLobbyId: string) => {
   const updateLocalStatus = (newStatus: LobbyStatus) => {
     if (lobby) {
       setLobby({ ...lobby, status: newStatus });
-      // If entering voting, ensure candidates are ready
-      if (newStatus === 'voting') fetchCandidates();
-      // If entering results, ensure votes are ready
+      if (newStatus === 'voting') {
+        fetchCandidates();
+        fetchFactors();
+      }
       if (newStatus === 'ended') fetchVotes();
     }
   };
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchCandidates(), fetchFactors()]);
+  }, [fetchCandidates, fetchFactors]);
+
+  // --- Effects ---
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,24 +64,34 @@ export const useLobbyState = (initialLobbyId: string) => {
       
       setLobby(lobbyData);
 
-      if (lobbyData.status !== 'waiting') await fetchCandidates();
+      // Fetch dynamic data if active
+      if (lobbyData.status !== 'waiting') {
+        await fetchCandidates();
+        await fetchFactors(); // [NEW] Fetch factors
+      }
+      
       await fetchParticipants();
-      if (lobbyData.status === 'ended') await fetchVotes();
+
+      if (lobbyData.status === 'ended') {
+        await fetchVotes();
+      }
       
       setLoading(false);
     };
 
     fetchData();
 
-    // Realtime Subscriptions
+    // --- Realtime Subscriptions ---
     const lobbyChannel = supabase.channel(`lobby_main:${initialLobbyId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'lobbies', filter: `id=eq.${initialLobbyId}` },
         (payload) => {
           const newLobby = payload.new as Lobby;
           setLobby(newLobby);
           
-          // React to status changes from OTHER users/devices
-          if (payload.old.status !== 'voting' && newLobby.status === 'voting') fetchCandidates();
+          if (payload.old.status !== 'voting' && newLobby.status === 'voting') {
+             fetchCandidates();
+             fetchFactors();
+          }
           if (newLobby.status === 'ended') fetchVotes();
         }
       )
@@ -74,6 +100,13 @@ export const useLobbyState = (initialLobbyId: string) => {
     const candidateChannel = supabase.channel(`lobby_cands:${initialLobbyId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates', filter: `lobby_id=eq.${initialLobbyId}` },
         () => fetchCandidates()
+      )
+      .subscribe();
+
+    // [NEW] Subscribe to Factors changes
+    const factorChannel = supabase.channel(`lobby_factors:${initialLobbyId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'factors', filter: `lobby_id=eq.${initialLobbyId}` },
+        () => fetchFactors()
       )
       .subscribe();
 
@@ -94,10 +127,20 @@ export const useLobbyState = (initialLobbyId: string) => {
     return () => { 
       supabase.removeChannel(lobbyChannel); 
       supabase.removeChannel(candidateChannel);
+      supabase.removeChannel(factorChannel);
       supabase.removeChannel(partsChannel);
       supabase.removeChannel(voteChannel);
     };
-  }, [initialLobbyId, supabase, fetchCandidates, fetchParticipants, fetchVotes, lobby?.status]);
+  }, [initialLobbyId, supabase, fetchCandidates, fetchFactors, fetchParticipants, fetchVotes, lobby?.status]);
 
-  return { lobby, candidates, participants, votes, loading, updateLocalStatus, refreshCandidates: fetchCandidates };
+  return { 
+    lobby, 
+    candidates, 
+    factors, // [NEW] Export factors
+    participants, 
+    votes, 
+    loading, 
+    updateLocalStatus, 
+    refreshAll 
+  };
 };
