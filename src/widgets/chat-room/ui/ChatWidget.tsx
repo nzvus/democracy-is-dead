@@ -130,9 +130,9 @@ export const ChatWidget = ({ lobbyId, userId }: { lobbyId: string, userId: strin
         )}
 
         {/* Input Area */}
-        <form onSubmit={handleSend} className="p-4 bg-gray-900 border-t border-gray-800 flex gap-2">
+        <form onSubmit={handleSend} className="p-4 bg-[#0b0f19]/90 border-t border-white/10 flex gap-2 backdrop-blur-md">
           <input 
-            className="flex-1 glass-input focus:ring-indigo-500"
+            className="flex-1 glass-input focus:ring-indigo-500 bg-black/40 text-white placeholder-gray-500"
             value={input}
             onChange={e => {
               setInput(e.target.value);
@@ -141,7 +141,7 @@ export const ChatWidget = ({ lobbyId, userId }: { lobbyId: string, userId: strin
             placeholder={t('placeholder')}
             autoFocus={isOpen}
           />
-          <Button type="submit" variant="primary" className="px-4 rounded-xl h-full shadow-none">
+          <Button type="submit" variant="primary" className="px-4 rounded-xl h-full shadow-lg shadow-indigo-500/20">
             <Send size={18} />
           </Button>
         </form>

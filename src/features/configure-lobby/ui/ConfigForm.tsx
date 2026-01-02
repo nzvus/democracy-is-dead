@@ -3,47 +3,50 @@ import { useTranslations } from 'next-intl';
 import { useLobbyConfig } from '../model/useLobbyConfig';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { UniversalImagePicker } from '@/shared/ui/image-picker'; // [NEW]
+import { UniversalImagePicker } from '@/shared/ui/image-picker'; 
 import { useFieldArray, Controller } from 'react-hook-form';
-import { ArrowRight, ArrowLeft, Trash2, Plus, GripVertical, CheckCircle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Trash2, Plus, GripVertical, CheckCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { CheckSquare, Square } from 'lucide-react';
 
 export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess: () => void }) => {
   const t = useTranslations('Setup');
   const tCommon = useTranslations('Common');
   
   const { step, setStep, form, isSaving, saveConfiguration } = useLobbyConfig(lobbyId, onSuccess);
-  const { register, control, handleSubmit, watch, formState: { errors } } = form;
+  const { register, control, handleSubmit, watch, formState: { errors }, setValue } = form;
   
   const candidatesField = useFieldArray({ control, name: "candidates" });
   const factorsField = useFieldArray({ control, name: "settings.factors" });
 
-  const onSubmit = (data: any) => {
-    saveConfiguration(data);
+  const currentFactors = watch("settings.factors");
+  const constantFactors = currentFactors?.filter(f => f.type === 'constant') || [];
+
+  const onSubmit = (data: any) => saveConfiguration(data);
+
+  const toggleDisabledCandidate = (factorIndex: number, candidateId: string) => {
+    const current = factorsField.fields[factorIndex].disabled_candidates || [];
+    const newSet = new Set(current);
+    if (newSet.has(candidateId)) newSet.delete(candidateId);
+    else newSet.add(candidateId);
+    setValue(`settings.factors.${factorIndex}.disabled_candidates`, Array.from(newSet));
   };
 
   const onError = (errors: any) => {
     console.error("Form Validation Errors:", errors);
-    
-    // Extract error messages
-    const missingCandidates = errors.candidates ? "Check Candidate details." : "";
-    const missingFactors = errors.settings?.factors ? "Check Criteria details." : "";
-    const nameError = errors.lobby_name ? "Lobby name is required." : "";
-
-    toast.error(`Cannot Launch: ${nameError || missingCandidates || missingFactors || "Check for red fields."}`);
+    toast.error(t('validation_error'));
   };
   
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-32">
       
-      {/* Progress Bar */}
       <div className="flex justify-center gap-3 mb-8">
         {[1, 2, 3].map(s => (
           <div key={s} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= s ? 'bg-gradient-to-r from-indigo-500 to-purple-500' : 'bg-gray-800'}`} />
         ))}
       </div>
 
-      {/* --- STEP 1: CANDIDATES (Reordered) --- */}
+      {/* --- STEP 1: CANDIDATES --- */}
       {step === 1 && (
         <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
           <div className="text-center mb-6">
@@ -60,7 +63,6 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
 
                 <div className="flex gap-4">
                     <div className="shrink-0">
-                        {/* [NEW] Universal Image Picker */}
                         <Controller
                             control={control}
                             name={`candidates.${index}.image_url`}
@@ -81,17 +83,15 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
                 onClick={() => candidatesField.append({ name: "", id: crypto.randomUUID() } as any)}
                 className="glass-card flex flex-col items-center justify-center gap-3 min-h-[200px] border-dashed border-2 border-gray-700 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all text-gray-500 hover:text-white group cursor-pointer"
             >
-                <div className="w-12 h-12 rounded-full bg-gray-800 group-hover:bg-indigo-600 flex items-center justify-center transition-colors">
-                    <Plus size={24} />
-                </div>
-                <span className="font-bold">{tCommon('yes')}</span> {/* Using yes as placeholder for Add */}
+                <Plus size={24} />
+                <span className="font-bold">{t('add_candidate_btn')}</span>
             </button>
           </div>
           {errors.candidates && <p className="text-red-400 text-center">{errors.candidates.message}</p>}
         </div>
       )}
 
-      {/* --- STEP 2: FACTORS (Reordered) --- */}
+      {/* --- STEP 2: FACTORS --- */}
       {step === 2 && (
         <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
           <div className="text-center mb-6">
@@ -108,7 +108,6 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
 
                   <div className="flex gap-4 items-start">
                     <div className="shrink-0 pt-2">
-                        {/* [NEW] Factor Image Picker */}
                         <Controller
                             control={control}
                             name={`settings.factors.${index}.image_url`}
@@ -145,22 +144,44 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
                                         </select>
                                     </div>
 
-                                    {/* [NEW] Decimal Toggle */}
+                                    {/* Decimal Toggle */}
                                     <div className="flex items-end pb-2">
                                         <label className="flex items-center gap-2 cursor-pointer w-full bg-gray-900 border border-gray-700 rounded-lg p-1.5 px-3 hover:bg-gray-800 transition-colors">
                                             <input 
                                                 type="checkbox" 
                                                 className="accent-indigo-500 w-4 h-4"
-                                                // We treat 0.1 as true, 1 as false
                                                 onChange={(e) => {
                                                     const val = e.target.checked ? 0.1 : 1;
-                                                    form.setValue(`settings.factors.${index}.step`, val);
+                                                    setValue(`settings.factors.${index}.step`, val);
                                                 }}
                                                 checked={watch(`settings.factors.${index}.step`) === 0.1}
                                             />
-                                            <span className="text-xs text-gray-300 font-bold">{t('allow_decimals')}</span>
+                                            <span className="text-xs text-gray-300 font-bold">{t('decimal_allowed')}</span>
                                         </label>
                                     </div>
+
+                                    {/* Disable For... */}
+                                    <div className="col-span-2 md:col-span-4 mt-2 border-t border-white/5 pt-2">
+                                      <label className="text-[10px] uppercase text-gray-500 font-bold mb-2 block">{t('disable_for')}</label>
+                                      <div className="flex flex-wrap gap-2">
+                                        {candidatesField.fields.map((cand) => {
+                                          const isDisabled = watch(`settings.factors.${index}.disabled_candidates`)?.includes(cand.id);
+                                          return (
+                                            <button
+                                              key={cand.id}
+                                              type="button"
+                                              onClick={() => toggleDisabledCandidate(index, cand.id)}
+                                              className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs border transition-colors ${isDisabled ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-gray-800 border-gray-700 text-gray-400'}`}
+                                            >
+                                              {isDisabled ? <CheckSquare size={12} /> : <Square size={12} />}
+                                              {cand.name || "Unnamed"}
+                                            </button>
+                                          );
+                                        })}
+                                        {/* [FIX] Used Key for string */}
+                                        {candidatesField.fields.length === 0 && <span className="text-xs text-gray-600 italic">{t('add_candidates_first')}</span>}
+                                      </div>
+                                    </div>  
                                 </>
                             )}
 
@@ -177,7 +198,7 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
 
           <Button 
             variant="secondary" 
-            onClick={() => factorsField.append({ id: crypto.randomUUID(), name: "", weight: 1, type: 'numerical', input_control: 'slider', trend: 'higher_better', is_hidden: false } as any)}
+            onClick={() => factorsField.append({ id: crypto.randomUUID(), name: "", weight: 1, type: 'numerical', input_control: 'slider', trend: 'higher_better', is_hidden: false, step: 1, disabled_candidates: [] } as any)}
             className="w-full py-4 border-dashed border-2 border-gray-700 text-gray-400 hover:text-white"
           >
             <Plus size={20} /> {t('add_factor')}
@@ -185,37 +206,64 @@ export const ConfigForm = ({ lobbyId, onSuccess }: { lobbyId: string, onSuccess:
         </div>
       )}
 
-      {/* --- STEP 3: REVIEW & SETTINGS (Lobby Name) --- */}
+      {/* --- STEP 3: REVIEW & STATIC VALUES --- */}
       {step === 3 && (
-        <div className="glass-card p-8 animate-in slide-in-from-right-8 duration-500 max-w-2xl mx-auto text-center">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-green-400">
-            <CheckCircle size={40} />
-          </div>
-          
-          <h3 className="text-2xl font-bold mb-6">{t('step_3')}</h3>
-          
-          <div className="space-y-6 text-left">
-            <div className="space-y-2">
-               <Input 
+        <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
+          <div className="glass-card p-8 max-w-2xl mx-auto text-center">
+            <h3 className="text-2xl font-bold mb-6">{t('step_3')}</h3>
+            
+            <div className="space-y-6 text-left">
+              <Input 
                   label={t('lobby_name')} 
                   placeholder={t('lobby_name_ph')}
                   {...register("lobby_name")} 
                   className="glass-input text-lg font-bold text-center"
-                />
-            </div>
+              />
 
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-3 block text-center">{t('privacy_label')}</label>
-              <div className="flex justify-center gap-4">
-                {['public', 'anonymous'].map((mode) => (
-                  <label key={mode} className={`px-6 py-3 rounded-xl cursor-pointer transition-all ${watch('settings.privacy') === mode ? 'bg-indigo-600 text-white shadow-lg scale-105' : 'bg-gray-800 text-gray-400'}`}>
-                    <input type="radio" value={mode} {...register('settings.privacy')} className="hidden" />
-                    <span className="capitalize font-bold">{mode}</span>
-                  </label>
-                ))}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-3 block text-center">{t('privacy_label')}</label>
+                <div className="flex justify-center gap-4">
+                  {['public', 'anonymous'].map((mode) => (
+                    <label key={mode} className={`px-6 py-3 rounded-xl cursor-pointer transition-all ${watch('settings.privacy') === mode ? 'bg-indigo-600 text-white shadow-lg scale-105' : 'bg-gray-800 text-gray-400'}`}>
+                      <input type="radio" value={mode} {...register('settings.privacy')} className="hidden" />
+                      <span className="capitalize font-bold">{mode === 'public' ? t('privacy_public') : t('privacy_anon')}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* STATIC VALUES INPUT (Only if constant factors exist) */}
+          {constantFactors.length > 0 && (
+            <div className="glass-card p-6 border-t-4 border-t-yellow-500/50">
+                <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Info size={18} className="text-yellow-500" />
+                    {t('static_info_label')}
+                </h4>
+                <div className="space-y-6">
+                    {candidatesField.fields.map((cand, idx) => (
+                        <div key={cand.id} className="grid grid-cols-12 gap-4 items-center bg-black/20 p-3 rounded-xl">
+                            <div className="col-span-4 font-bold text-sm truncate">{cand.name}</div>
+                            <div className="col-span-8 grid gap-2">
+                                {constantFactors.map(cf => (
+                                    <div key={cf.id} className="flex items-center gap-2">
+                                        <span className="text-[10px] uppercase text-gray-500 w-1/3 text-right">{cf.name}:</span>
+                                        <input 
+                                            type="number" 
+                                            step="any" 
+                                            placeholder="Value"
+                                            {...register(`candidates.${idx}.static_values.${cf.id}`, { valueAsNumber: true })}
+                                            className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:border-indigo-500 outline-none"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+          )}
         </div>
       )}
 

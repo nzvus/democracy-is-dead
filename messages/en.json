@@ -21,17 +21,31 @@
     "remove_image": "Remove Image",
     "shuffle": "Shuffle"
   },
+  "Auth": {
+    "login_title": "Welcome Back",
+    "signup_title": "Create Account",
+    "username": "Username",
+    "password": "Password",
+    "login_btn": "Log In",
+    "signup_btn": "Sign Up",
+    "switch_signup": "New here? Create account",
+    "switch_login": "Have an account? Log In",
+    "logout": "Log Out",
+    "error_creds": "Invalid credentials",
+    "error_generic": "Authentication failed",
+    "host_session": "Host Session"
+  },
   "Profile": {
     "title": "Who are you?",
     "subtitle": "Choose your identity for this session.",
-    "tap_shuffle": "Tap to Shuffle 🎲"
+    "tap_shuffle": "Tap to Shuffle 🎲",
+    "change_avatar": "Change",
+    "upload_btn": "Upload Photo"
   },
-  "Setup": { 
-    "allow_decimals": "Allow Decimals?",
-    "step_label": "Precision",
-    "step_1": "Candidates", 
-    "step_2": "Criteria (Factors)",
-    "step_3": "Final Settings",
+  "Setup": {
+    "step_1": "Step 1: Candidates",
+    "step_2": "Step 2: Criteria",
+    "step_3": "Step 3: Final Settings",
     "max_scale": "Max Voting Scale",
     "max_scale_desc": "The maximum score a user can give (e.g. 10 or 100).",
     "privacy_label": "Privacy",
@@ -54,6 +68,9 @@
     "lobby_name": "Lobby Name",
     "lobby_name_ph": "e.g. Friday Pizza Night",
     "validation_error": "Please fix errors before proceeding.",
+    "add_candidates_first": "Add candidates first to use this.",
+    "decimal_allowed": "Decimals allowed",
+    "disable_for": "Disable for...",
     "types": {
       "numerical": "Vote (Numerical)",
       "constant": "Fixed Info (Constant)"
@@ -76,7 +93,12 @@
     "no_registration": "No registration required. Anonymous voting.",
     "recent_lobbies": "Recent Sessions",
     "clear_history": "Clear History",
-    "last_visited": "Last visited: {date}"
+    "last_visited": "Last visited: {date}",
+    "welcome_user": "Hello, {name}!",
+    "my_lobbies": "My Lobbies",
+    "no_active_lobbies": "No active lobbies found.",
+    "lobby_code_display": "CODE: {code}",
+    "syncing": "Syncing from Cloud"
   },
   "Lobby": {
     "loading": "Loading Lobby...",
@@ -99,7 +121,21 @@
     "public": "Public",
     "end_vote": "End Vote",
     "privacy_updated": "Privacy updated",
-    "end_error": "Failed to end voting"
+    "end_error": "Failed to end voting",
+    "tab_privacy": "Privacy",
+    "tab_manage": "Manage",
+    "suspend_vote": "Suspend & Edit",
+    "suspend_desc": "Pause voting to add/remove candidates or factors. Existing votes for kept items remain safe.",
+    "privacy_sections": {
+      "users": "Participants",
+      "candidates": "Candidates",
+      "factors": "Factors"
+    },
+    "toggles": {
+      "hide_names": "Hide Names",
+      "hide_avatars": "Hide Avatars",
+      "hide_values": "Hide Values"
+    }
   },
   "Voting": {
     "submit": "Submit All Votes",
@@ -131,6 +167,16 @@
       "contrarian": { "title": "The Contrarian", "desc": "Disagreed most with the group." },
       "oracle": { "title": "The Oracle", "desc": "Perfectly predicted the winner." },
       "hive_mind": { "title": "Hive Mind", "desc": "Voted exactly like the average." }
+    },
+    "podium_title": "Top Candidates",
+    "winner": "Winner",
+    "runner_up": "Runner Up",
+    "third": "Third Place",
+    "how_it_works": "How it works",
+    "system_explainer": {
+      "weighted": "Calculates the average score (0-10) given by all voters, adjusted by the weight of each criteria.",
+      "schulze": "A Condorcet method. It simulates pairwise duels between every candidate. The winner is the one who beats everyone else in the strongest paths.",
+      "radar": "Visualizes the strengths and weaknesses of each candidate across different criteria."
     }
   },
   "Share": {

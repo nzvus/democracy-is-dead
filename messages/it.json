@@ -21,17 +21,31 @@
     "remove_image": "Rimuovi Immagine",
     "shuffle": "Mischia"
   },
+  "Auth": {
+    "login_title": "Bentornato",
+    "signup_title": "Crea Account",
+    "username": "Nome Utente",
+    "password": "Password",
+    "login_btn": "Accedi",
+    "signup_btn": "Registrati",
+    "switch_signup": "Nuovo? Crea account",
+    "switch_login": "Hai già un account? Accedi",
+    "logout": "Esci",
+    "error_creds": "Credenziali non valide",
+    "error_generic": "Autenticazione fallita",
+    "host_session": "Sessione Host"
+  },
   "Profile": {
     "title": "Chi sei?",
     "subtitle": "Scegli la tua identità per questa sessione.",
-    "tap_shuffle": "Tocca per mischiare 🎲"
+    "tap_shuffle": "Tocca per mischiare 🎲",
+    "change_avatar": "Modifica",
+    "upload_btn": "Carica Foto"
   },
   "Setup": {
-    "allow_decimals": "Permetti Decimali?",
-    "step_label": "Precisione",
-    "step_1": "Candidati",
-    "step_2": "Criteri (Fattori)",
-    "step_3": "Impostazioni Finali",
+    "step_1": "Step 1: Candidati",
+    "step_2": "Step 2: Criteri",
+    "step_3": "Step 3: Impostazioni Finali",
     "max_scale": "Scala Massima",
     "max_scale_desc": "Il punteggio massimo assegnabile (es. 10 o 100).",
     "privacy_label": "Privacy",
@@ -54,6 +68,9 @@
     "lobby_name": "Nome Lobby",
     "lobby_name_ph": "es. Pizza Venerdì",
     "validation_error": "Correggi gli errori prima di procedere.",
+    "add_candidates_first": "Aggiungi prima i candidati per usare questa funzione.",
+    "decimal_allowed": "Decimali consentiti",
+    "disable_for": "Disabilita per...",
     "types": {
       "numerical": "Voto (Numerico)",
       "constant": "Info Fissa (Costante)"
@@ -76,7 +93,12 @@
     "no_registration": "Nessuna registrazione. Voto anonimo.",
     "recent_lobbies": "Sessioni Recenti",
     "clear_history": "Cancella Cronologia",
-    "last_visited": "Ultima visita: {date}"
+    "last_visited": "Ultima visita: {date}",
+    "welcome_user": "Ciao, {name}!",
+    "my_lobbies": "Le Mie Lobby",
+    "no_active_lobbies": "Nessuna lobby attiva trovata.",
+    "lobby_code_display": "CODICE: {code}",
+    "syncing": "Sincronizzazione Cloud"
   },
   "Lobby": {
     "loading": "Caricamento Lobby...",
@@ -99,12 +121,24 @@
     "public": "Pubblico",
     "end_vote": "Termina Voto",
     "privacy_updated": "Privacy aggiornata",
-    "end_error": "Impossibile terminare"
+    "end_error": "Impossibile terminare",
+    "tab_privacy": "Privacy",
+    "tab_manage": "Gestione",
+    "suspend_vote": "Sospendi & Modifica",
+    "suspend_desc": "Metti in pausa per modificare candidati/fattori. I voti esistenti rimangono salvi.",
+    "privacy_sections": {
+      "users": "Partecipanti",
+      "candidates": "Candidati",
+      "factors": "Fattori"
+    },
+    "toggles": {
+      "hide_names": "Nascondi Nomi",
+      "hide_avatars": "Nascondi Avatar",
+      "hide_values": "Nascondi Valori"
+    }
   },
   "Voting": {
     "submit": "Invia Voti",
-    "expand_to_vote": "Tocca per Votare",
-    "minimized_view": "Distribuzione Attuale",
     "submitted": "Voti inviati con successo!",
     "failed": "Errore nell'invio voti.",
     "jolly_title": "Assegna il tuo Jolly 🃏",
@@ -112,7 +146,9 @@
     "jolly_none": "Nessun Jolly",
     "static_value": "Valore Fisso:",
     "weight_impact": "Impatto: {val}",
-    "negative_impact": "Impatto Negativo (Basso è meglio per il candidato)"
+    "negative_impact": "Impatto Negativo (Basso è meglio per il candidato)",
+    "expand_to_vote": "Tocca per Votare",
+    "minimized_view": "Distribuzione Attuale"
   },
   "Results": {
     "tabs": {
@@ -131,6 +167,16 @@
       "contrarian": { "title": "Bastian Contrario", "desc": "Spesso in disaccordo con il gruppo." },
       "oracle": { "title": "L'Oracolo", "desc": "Ha predetto perfettamente il vincitore." },
       "hive_mind": { "title": "Mente Collettiva", "desc": "Ha votato esattamente come la media." }
+    },
+    "podium_title": "Migliori Candidati",
+    "winner": "Vincitore",
+    "runner_up": "Secondo Posto",
+    "third": "Terzo Posto",
+    "how_it_works": "Come funziona",
+    "system_explainer": {
+      "weighted": "Calcola il punteggio medio (0-10) dato da tutti i votanti, aggiustato per il peso di ogni criterio.",
+      "schulze": "Un metodo di Condorcet. Simula duelli a coppie tra ogni candidato. Vince chi batte tutti gli altri nei percorsi più forti.",
+      "radar": "Visualizza i punti di forza e debolezza di ogni candidato attraverso i diversi criteri."
     }
   },
   "Share": {

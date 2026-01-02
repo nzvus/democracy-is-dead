@@ -1,5 +1,6 @@
 // --- Statistical Helpers ---
-
+import { Candidate } from '@/entities/candidate/model/types';
+import { Factor } from '@/entities/factor/model/types';
 /**
  * Calculates Z-Score for a dataset.
  * Formula: Z = (x - mean) / stdDev
@@ -92,4 +93,42 @@ export const calculateSchulze = (candidates: string[], ballots: string[][]) => {
     matrix: d,
     strongestPaths: p
   };
+};
+
+/**
+ * Calculates a normalized score (0-100%) for a candidate, 
+ * respecting weights and ignoring disabled factors (Nulls).
+ */
+export const calculateWeightedScore = (
+  candidateId: string,
+  votes: Record<string, number>, // FactorID -> Value
+  factors: Factor[],
+  maxScale: number
+): number => {
+  let totalScore = 0;
+  let totalMaxPossible = 0;
+
+  factors.forEach(factor => {
+    // 1. Skip if Factor is disabled for this candidate (Null Factor Logic)
+    if (factor.disabled_candidates?.includes(candidateId)) return;
+    
+    // 2. Skip if hidden or not numerical (visual only)
+    if (factor.type !== 'numerical') return;
+
+    let rawValue = votes[factor.id] ?? 0; // Default 0 if not voted
+    const weight = Math.abs(factor.weight); // Magnitude of importance
+
+    // Handle "Lower is Better" (Flip the value)
+    if (factor.trend === 'lower_better') {
+      rawValue = maxScale - rawValue;
+    }
+
+    totalScore += rawValue * weight;
+    totalMaxPossible += maxScale * weight;
+  });
+
+  if (totalMaxPossible === 0) return 0;
+  
+  // Return percentage 0-100
+  return (totalScore / totalMaxPossible) * 100;
 };

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'; // [FIX] Added useCallback
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLobbyState } from '@/processes/lobby-flow/model';
 import { useSessionAuth } from '@/features/session-auth/model/useSessionAuth';
@@ -25,26 +25,33 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
   const supabase = createClient();
 
   useEffect(() => {
+    // If logged in via AuthForm, user has metadata. 
+    // If anonymous, they might not.
     if (user?.user_metadata?.nickname) {
       setProfileSet(true);
     }
   }, [user]);
 
-  const isHost = user && lobby && user.id === lobby.host_id;
+  // Robust Host Check
+  const isHost = Boolean(user && lobby && user.id === lobby.host_id);
 
-  // [FIX] Wrapped in useCallback to satisfy ESLint
+  // Manual Trigger for Host to force setup start
   const handleStartSetup = useCallback(async () => {
+    if (!isHost) return;
     await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobbyId);
-  }, [lobbyId, supabase]);
+  }, [isHost, lobbyId, supabase]);
 
-  // Auto-Redirect Host
+  // Auto-Redirect Host to Setup if stuck in Waiting
   useEffect(() => {
     if (isHost && lobby?.status === 'waiting' && profileSet) {
-      handleStartSetup();
+      // Add small timeout to ensure UI is ready
+      const timer = setTimeout(() => handleStartSetup(), 500);
+      return () => clearTimeout(timer);
     }
-  }, [isHost, lobby?.status, profileSet, handleStartSetup]); // [FIX] Added dependency
+  }, [isHost, lobby?.status, profileSet, handleStartSetup]);
 
-  if (loading || !lobby || !user) {
+  // --- Loading States ---
+  if (loading || !lobby) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#030712] text-indigo-500 gap-4">
         <div className="animate-spin text-4xl">{t('loading_icon')}</div>
@@ -53,6 +60,12 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     );
   }
 
+  // If we have lobby but no user yet (auth loading)
+  if (!user) {
+    return <div className="h-screen bg-[#030712]" />;
+  }
+
+  // Profile Setup Guard
   if (!profileSet) {
     return <ProfileSetup userId={user.id} onComplete={() => setProfileSet(true)} />;
   }
@@ -62,7 +75,6 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
       <main className="min-h-screen p-4 md:p-8 pb-32">
         <header className="flex justify-between items-center mb-8 max-w-6xl mx-auto">
           <div>
-             {/* Show Lobby Name if available, otherwise Code */}
              <h1 className="text-2xl font-black tracking-tighter text-white">
                {lobby.name && lobby.name !== 'Untitled Lobby' ? lobby.name : t('title', { code: lobby.code })}
              </h1>
@@ -79,7 +91,7 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
         <div className="max-w-6xl mx-auto">
           {/* WAITING */}
           {lobby.status === 'waiting' && (
-            <div className="glass-card p-12 text-center max-w-xl mx-auto mt-20 animate-in zoom-in-95">
+            <div className="glass-card p-12 text-center max-w-xl mx-auto mt-20 animate-in zoom-in-95 border-indigo-500/20">
                <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border border-gray-700">
                  <span className="animate-pulse text-4xl">⏳</span>
                </div>
@@ -88,14 +100,15 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
                
                <div className="flex flex-wrap justify-center gap-3 mb-8">
                  {participants.map(p => (
-                   <div key={p.user_id} className="animate-in fade-in slide-in-from-bottom-2">
-                     <ParticipantAvatar participant={p} className="w-10 h-10 ring-2 ring-gray-900" />
+                   <div key={p.user_id} className="animate-in fade-in slide-in-from-bottom-2 flex flex-col items-center gap-1">
+                     <ParticipantAvatar participant={p} className="w-12 h-12 ring-2 ring-gray-900 shadow-lg" />
+                     <span className="text-[10px] text-gray-500">{p.nickname}</span>
                    </div>
                  ))}
                </div>
 
                {isHost && (
-                 <Button onClick={handleStartSetup} className="btn-primary w-full max-w-xs mx-auto">
+                 <Button onClick={handleStartSetup} className="btn-primary w-full max-w-xs mx-auto animate-pulse">
                    {t('configure_btn')}
                  </Button>
                )}

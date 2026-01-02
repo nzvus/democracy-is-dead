@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { SetupWizardSchema, SetupWizardValues } from './config-schema';
 import { createClient } from '@/shared/api/supabase';
 import { toast } from 'sonner';
+import { omit } from 'lodash'; 
 
 export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -24,10 +25,10 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
       candidates: []
     },
     mode: 'onChange',
-    shouldUnregister: false // [FIX] CRITICAL: Keep data when stepping through the wizard
+    shouldUnregister: false 
   });
 
-  // 1. Load Draft on Mount
+  // 1. Load Draft
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const draft = localStorage.getItem(DRAFT_KEY);
@@ -35,7 +36,7 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
         try {
           const parsed = JSON.parse(draft);
           form.reset(parsed);
-          // toast.info("Restored previous draft"); // Optional: Feedback
+          toast.info("Restored previous draft");
         } catch (e) {
           console.error("Failed to load draft", e);
         }
@@ -43,17 +44,30 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
     }
   }, [DRAFT_KEY, form]);
 
+  // 2. Save Draft
   useEffect(() => {
     const subscription = form.watch((value) => {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+      const safeData = JSON.parse(JSON.stringify(value));
+      
+      if (safeData.candidates) {
+        safeData.candidates.forEach((c: any) => {
+          if (c.image_url?.startsWith('data:')) c.image_url = null;
+        });
+      }
+      if (safeData.settings?.factors) {
+        safeData.settings.factors.forEach((f: any) => {
+          if (f.image_url?.startsWith('data:')) f.image_url = null;
+        });
+      }
+
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(safeData));
     });
     return () => subscription.unsubscribe();
-  }, [form, DRAFT_KEY]);
+  }, [form, DRAFT_KEY]); // [FIX] Added form dependency
 
   const saveConfiguration = async (data: SetupWizardValues) => {
     setIsSaving(true);
     try {
-      // Update Lobby Name & Settings
       const { error: lobbyError } = await supabase
         .from('lobbies')
         .update({ 
@@ -65,8 +79,10 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
 
       if (lobbyError) throw lobbyError;
 
-      // Insert Candidates
       if (data.candidates.length > 0) {
+        // First delete existing candidates to prevent duplicates (simple approach)
+        await supabase.from('candidates').delete().eq('lobby_id', lobbyId);
+
         const cleanCandidates = data.candidates.map(c => ({
           lobby_id: lobbyId,
           name: c.name,
@@ -82,7 +98,6 @@ export const useLobbyConfig = (lobbyId: string, onComplete: () => void) => {
         if (candError) throw candError;
       }
 
-      // Clear draft on success
       localStorage.removeItem(DRAFT_KEY);
       toast.success("Lobby Configured!");
       onComplete();
