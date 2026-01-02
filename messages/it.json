@@ -35,12 +35,29 @@
     "error_generic": "Autenticazione fallita",
     "host_session": "Sessione Host"
   },
+  "Settings": {
+    "title": "Impostazioni",
+    "profile": "Profilo",
+    "language": "Lingua",
+    "leave_lobby": "Esci dalla Lobby",
+    "logout": "Disconnetti",
+    "current_lobby": "Attuale: {code}"
+  },
   "Profile": {
-    "title": "Chi sei?",
-    "subtitle": "Scegli la tua identità per questa sessione.",
-    "tap_shuffle": "Tocca per mischiare 🎲",
-    "change_avatar": "Modifica",
-    "upload_btn": "Carica Foto"
+    "title": "Il Mio Profilo",
+    "update_success": "Profilo aggiornato con successo!",
+    "change_password": "Cambia Password",
+    "new_password": "Nuova Password",
+    "update_btn": "Aggiorna Profilo",
+    "placeholder_name": "Nome Visualizzato"
+  },
+  "Dashboard": {
+    "my_lobbies": "La Mia Cronologia",
+    "host_badge": "HOST",
+    "guest_badge": "OSPITE",
+    "no_lobbies": "Non hai ancora partecipato a nessuna lobby.",
+    "resume": "Riprendi",
+    "view_results": "Vedi Risultati"
   },
   "Setup": {
     "step_1": "Step 1: Candidati",
@@ -177,7 +194,8 @@
       "weighted": "Calcola il punteggio medio (0-10) dato da tutti i votanti, aggiustato per il peso di ogni criterio.",
       "schulze": "Un metodo di Condorcet. Simula duelli a coppie tra ogni candidato. Vince chi batte tutti gli altri nei percorsi più forti.",
       "radar": "Visualizza i punti di forza e debolezza di ogni candidato attraverso i diversi criteri."
-    }
+    },
+    "need_more_factors": "Servono almeno 3 fattori numerici per l'Analisi Radar."
   },
   "Share": {
     "invite": "Invita 🔗",

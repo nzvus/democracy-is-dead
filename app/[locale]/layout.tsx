@@ -1,10 +1,10 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { AuthProvider } from '@/app/providers/AuthProvider';
-import { QueryProvider } from '@/app/providers/QueryProvider';  
-import { ThemeProvider } from '@/app/providers/ThemeProvider';  
+import { QueryProvider } from '@/app/providers/QueryProvider';
+import { ThemeProvider } from '@/app/providers/ThemeProvider';
 import { Toaster } from 'sonner';
-import { LanguageSwitcher } from '@/features/change-language/ui/LanguageSwitcher';  
+import { SettingsMenu } from '@/widgets/global-navigation/ui/SettingsMenu'; // [NEW]
 import { GlobalModalWrapper } from '@/shared/ui/modal/GlobalModalWrapper';
 import '../globals.css';
 
@@ -25,12 +25,13 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className="bg-gray-950 text-white antialiased">
+      <body className="bg-[#030712] text-white antialiased">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
             <QueryProvider>
               <AuthProvider>
-                <LanguageSwitcher />
+                {/* Global Widgets */}
+                <SettingsMenu /> 
                 <GlobalModalWrapper />
                 
                 {children}

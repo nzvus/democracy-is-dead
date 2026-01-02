@@ -10,29 +10,43 @@ interface HostControlPanelProps {
   lobbyId: string;
   settings: LobbySettings;
   status: string;
+  onSuspend: () => void;
+  onEnd: () => void;
 }
 
-export const HostControlPanel = ({ lobbyId, settings, status }: HostControlPanelProps) => {
+export const HostControlPanel = ({ lobbyId, settings, status, onSuspend, onEnd }: HostControlPanelProps) => {
   const t = useTranslations('Host');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const supabase = createClient();
 
   const handleEnd = async () => {
+    // 1. Optimistic Update (Switch View Immediately)
+    onEnd(); 
+    
+    // 2. DB Update
     await supabase.from('lobbies').update({ status: 'ended' }).eq('id', lobbyId);
   };
 
   return (
     <>
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 p-3 glass-card rounded-full scale-90 md:scale-100 origin-bottom border-indigo-500/20">
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 p-3 glass-card rounded-full scale-90 md:scale-100 origin-bottom border-indigo-500/20 shadow-2xl">
+        <div className="pl-3 pr-1 text-[10px] font-black text-indigo-400 uppercase tracking-widest hidden md:block">
+            {t('title')}
+        </div>
+      
+        <div className="w-px h-6 bg-white/10 hidden md:block"></div>
+
+        {/* Settings Trigger */}
         <Button 
             variant="secondary" 
             onClick={() => setIsModalOpen(true)}
-            className="rounded-full px-5 h-10 text-xs font-bold border bg-gray-800 border-gray-700 text-gray-300"
+            className="rounded-full px-5 h-10 text-xs font-bold border bg-gray-800 border-gray-700 text-gray-300 hover:text-white transition-colors"
         >
             <Settings size={16} className="mr-2" />
-            {t('title')}
+            {t('tab_manage')}
         </Button>
 
+        {/* End Vote (Only visible during voting) */}
         {status === 'voting' && (
             <>
                 <div className="w-px h-6 bg-white/10 mx-1"></div>
@@ -53,6 +67,7 @@ export const HostControlPanel = ({ lobbyId, settings, status }: HostControlPanel
         onClose={() => setIsModalOpen(false)} 
         lobbyId={lobbyId} 
         settings={settings}
+        onSuspend={onSuspend}
       />
     </>
   );

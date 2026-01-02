@@ -3,6 +3,8 @@ import { useState, useRef } from 'react';
 import { createClient } from '@/shared/api/supabase';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+// [FIX] Updated import to ImagePicker
+import { ImagePicker } from '@/shared/ui/image-picker';
 import { useTranslations } from 'next-intl';
 import { Upload, RefreshCw, X, Camera } from 'lucide-react';
 import Image from 'next/image';
@@ -17,34 +19,21 @@ export const ProfileSetup = ({ userId, onComplete }: ProfileSetupProps) => {
   const tCommon = useTranslations('Common');
   
   const [nickname, setNickname] = useState('');
-  const [seed, setSeed] = useState(userId);
-  const [customImage, setCustomImage] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(`https://api.dicebear.com/9.x/avataaars/svg?seed=${userId}`);
   const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setCustomImage(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSave = async () => {
     if (!nickname.trim()) return;
     setLoading(true);
-    const metadata = customImage 
-      ? { nickname, avatar_url: customImage, avatar_seed: null } 
-      : { nickname, avatar_url: null, avatar_seed: seed };
-
-    await supabase.auth.updateUser({ data: metadata });
+    
+    await supabase.auth.updateUser({
+      data: { nickname, avatar_url: avatarUrl }
+    });
+    
     setLoading(false);
     onComplete();
   };
-
-  const activeAvatar = customImage || `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}`;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#030712] p-4">
@@ -57,43 +46,16 @@ export const ProfileSetup = ({ userId, onComplete }: ProfileSetupProps) => {
           <p className="text-gray-400 text-sm font-medium">{t('subtitle')}</p>
         </div>
 
-        {/* Big Avatar Centerpiece */}
-        <div className="relative group">
-          <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-indigo-500/30 shadow-2xl bg-black relative">
-            <Image src={activeAvatar} alt="Avatar" fill className="object-cover" />
-            
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                {/* [FIX] Used translation key */}
-                <span className="text-xs font-bold uppercase tracking-widest text-white">{t('change_avatar')}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons Floating Below */}
-          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-             <button 
-                onClick={() => { setSeed(Math.random().toString()); setCustomImage(null); }}
-                className="p-3 bg-gray-800 hover:bg-indigo-600 text-white rounded-full shadow-lg border border-gray-700 transition-all hover:scale-110"
-                title={t('tap_shuffle')}
-             >
-                <RefreshCw size={18} />
-             </button>
-             <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="p-3 bg-gray-800 hover:bg-indigo-600 text-white rounded-full shadow-lg border border-gray-700 transition-all hover:scale-110"
-                title={t('upload_btn')} 
-             >
-                <Camera size={18} />
-             </button>
-             {customImage && (
-               <button onClick={() => setCustomImage(null)} className="p-3 bg-red-900/80 hover:bg-red-600 text-white rounded-full shadow-lg border border-red-700 transition-all hover:scale-110">
-                 <X size={18} />
-               </button>
-             )}
-          </div>
+        {/* Using the new ImagePicker for consistency */}
+        <div className="w-40 h-40">
+            <ImagePicker 
+                value={avatarUrl} 
+                onChange={setAvatarUrl} 
+                allowShuffle={true} 
+                seed={userId}
+                className="w-full h-full rounded-full border-4 border-indigo-500/30 shadow-2xl" 
+            />
         </div>
-
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
 
         <div className="w-full space-y-6 mt-4">
           <Input 

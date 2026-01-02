@@ -1,11 +1,10 @@
 'use client'
 import { useState, useRef } from 'react';
-import { Button } from '@/shared/ui/button';
 import { Image as ImageIcon, Upload, X, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
-interface UniversalImagePickerProps {
+interface ImagePickerProps {
   value: string | null;
   onChange: (val: string | null) => void;
   allowShuffle?: boolean; // For Avatars
@@ -13,13 +12,14 @@ interface UniversalImagePickerProps {
   className?: string;
 }
 
-export const UniversalImagePicker = ({ 
+// [FIX] Renamed component to match import in ConfigForm
+export const ImagePicker = ({ 
   value, 
   onChange, 
   allowShuffle, 
   seed,
   className = ""
-}: UniversalImagePickerProps) => {
+}: ImagePickerProps) => {
   const t = useTranslations('Common');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -35,7 +35,7 @@ export const UniversalImagePicker = ({
       };
       reader.readAsDataURL(file);
     }
-    // [FIX] Reset input value so same file can be selected again if removed
+    // Reset input value so same file can be selected again
     e.target.value = '';
   };
 
@@ -46,9 +46,6 @@ export const UniversalImagePicker = ({
   const handleShuffle = () => {
     const newSeed = Math.random().toString();
     setCurrentSeed(newSeed);
-    // If we are shuffling, we are essentially "removing" the custom uploaded image
-    // and falling back to the seed-based URL logic handled by parent or here.
-    // However, usually "Shuffle" implies generating a DiceBear URL.
     if (allowShuffle) {
         onChange(`https://api.dicebear.com/9.x/avataaars/svg?seed=${newSeed}`);
     }
@@ -60,7 +57,7 @@ export const UniversalImagePicker = ({
 
   return (
     <div className={`relative group ${className}`}>
-      <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-900 border border-gray-700 shadow-inner flex items-center justify-center relative">
+      <div className="w-full h-full min-w-[3rem] min-h-[3rem] rounded-xl overflow-hidden bg-gray-900 border border-gray-700 shadow-inner flex items-center justify-center relative">
         {displaySrc ? (
           <Image src={displaySrc} alt="Preview" fill className="object-cover" />
         ) : (
@@ -68,7 +65,7 @@ export const UniversalImagePicker = ({
         )}
         
         {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
           <button 
             onClick={() => fileInputRef.current?.click()}
             className="p-1.5 bg-indigo-600 rounded-full text-white hover:bg-indigo-500 transition-transform hover:scale-110"

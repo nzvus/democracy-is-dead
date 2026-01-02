@@ -6,13 +6,13 @@ import { createClient } from '@/shared/api/supabase';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { AuthForm } from '@/features/auth/ui/AuthForm';
-import { ArrowRight, LogOut, Clock, Trash2 } from 'lucide-react';
+import { ArrowRight, Clock, Plus, Play } from 'lucide-react';
 import { useSessionAuth } from '@/features/session-auth/model/useSessionAuth';
-import { getHistory, clearHistory, addToHistory } from '@/shared/lib/history-manager';
+import { ProfileEditor } from '@/widgets/user-dashboard/ui/ProfileEditor';
 
 export const HomePage = () => {
   const t = useTranslations('Home');
-  const tAuth = useTranslations('Auth');
+  const tDash = useTranslations('Dashboard');
   const router = useRouter();
   const supabase = createClient();
   const { user } = useSessionAuth();
@@ -20,27 +20,38 @@ export const HomePage = () => {
   const [joinCode, setJoinCode] = useState('');
   const [myLobbies, setMyLobbies] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  
-  const [history, setHistory] = useState<any[]>([]);
 
+  // Fetch User's Lobbies (Correct Join Query)
   useEffect(() => {
     if (user && !user.is_anonymous) {
-      supabase.from('lobby_participants')
-        .select('lobby_id, lobbies(code, name, host_id, status)')
-        .eq('user_id', user.id)
-        .order('last_seen_at', { ascending: false })
-        .limit(5)
-        .then(({ data }) => {
-          if (data) setMyLobbies(data.map((row: any) => row.lobbies));
-        });
-    } else {
-      setHistory(getHistory());
+      const fetchLobbies = async () => {
+        const { data, error } = await supabase
+            .from('lobby_participants')
+            .select(`
+                lobby_id,
+                last_seen_at,
+                lobbies (
+                    id, code, name, host_id, status
+                )
+            `)
+            .eq('user_id', user.id)
+            .order('last_seen_at', { ascending: false })
+            .limit(10);
+
+        if (!error && data) {
+            // Flatten structure
+            const lobbies = data
+                .map((row: any) => row.lobbies)
+                .filter((l: any) => l !== null); // Filter out deleted lobbies
+            setMyLobbies(lobbies);
+        }
+      };
+      fetchLobbies();
     }
   }, [user, supabase]);
 
   const handleCreate = async () => {
     if (!user) return; 
-    
     setIsCreating(true);
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     
@@ -51,12 +62,7 @@ export const HomePage = () => {
         settings: { factors: [] }
     }).select('code').single();
     
-    if (data) {
-        if (!user.is_anonymous) {
-            setMyLobbies(prev => [{ code: data.code, name: "Untitled Lobby", host_id: user.id }, ...prev]);
-        }
-        router.push(`/lobby/${data.code}`);
-    }
+    if (data) router.push(`/lobby/${data.code}`);
     setIsCreating(false);
   };
 
@@ -65,21 +71,17 @@ export const HomePage = () => {
     router.push(`/lobby/${joinCode.toUpperCase()}`);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.reload();
-  };
-
   // --- GUEST VIEW ---
   if (!user || user.is_anonymous) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#030712] text-white">
-        <div className="w-full max-w-md space-y-8 animate-in fade-in zoom-in-95 duration-500">
-          <div className="text-center space-y-2">
-            <h1 className="text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-600">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#030712] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
+        <div className="w-full max-w-md space-y-8 relative z-10">
+          <div className="text-center space-y-4">
+            <h1 className="text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-600">
               {t('title')}
             </h1>
-            <p className="text-gray-400">{t('subtitle')}</p>
+            <p className="text-gray-400 text-lg">{t('subtitle')}</p>
           </div>
           <AuthForm onSuccess={() => window.location.reload()} />
         </div>
@@ -87,88 +89,82 @@ export const HomePage = () => {
     );
   }
 
-  // --- LOGGED IN VIEW ---
+  // --- DASHBOARD VIEW ---
   return (
-    <div className="min-h-screen p-6 bg-[#030712] text-white flex flex-col items-center">
-      
-      {/* Header */}
-      <header className="w-full max-w-md flex justify-between items-center mb-10">
-        <h2 className="text-lg font-bold text-indigo-400">
-          {t('welcome_user', { name: user.user_metadata?.nickname || 'User' })}
-        </h2>
-        <Button variant="ghost" onClick={handleLogout} className="text-xs h-8 px-3">
-          <LogOut size={14} className="mr-2" /> {tAuth('logout')}
-        </Button>
-      </header>
-
-      {/* Main Content */}
-      <div className="w-full max-w-md space-y-10">
+    <div className="min-h-screen p-4 md:p-8 bg-[#030712] text-white">
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-8">
         
-        {/* Actions Card */}
-        <div className="glass-card p-8 space-y-8 border-indigo-500/20 shadow-indigo-900/10">
-          <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-6 text-xl btn-primary shadow-lg shadow-indigo-500/20">
-            {t('create_lobby')}
-          </Button>
-          
-          <div className="relative flex items-center gap-4">
-            <div className="h-px bg-white/10 flex-1"></div>
-            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest">{t('or_join')}</span>
-            <div className="h-px bg-white/10 flex-1"></div>
-          </div>
-
-          <div className="flex gap-2">
-            <Input 
-              value={joinCode} 
-              onChange={e => setJoinCode(e.target.value.toUpperCase())}
-              placeholder={t('join_placeholder')}
-              className="glass-input text-center font-mono tracking-[0.2em] text-xl font-bold uppercase"
-              maxLength={6}
-            />
-            <Button onClick={handleJoin} className="bg-white text-black hover:bg-gray-200 px-6 rounded-xl">
-              <ArrowRight />
-            </Button>
-          </div>
+        {/* LEFT COL: Profile & Actions (4 cols) */}
+        <div className="lg:col-span-4 space-y-8">
+            <ProfileEditor user={user} />
+            
+            <div className="glass-card p-6 space-y-6">
+                <Button onClick={handleCreate} isLoading={isCreating} className="w-full py-4 text-lg btn-primary">
+                    <Plus className="mr-2" /> {t('create_lobby')}
+                </Button>
+                <div className="flex gap-2">
+                    <Input 
+                        value={joinCode} 
+                        onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                        placeholder={t('join_placeholder')}
+                        className="glass-input text-center font-mono font-bold uppercase"
+                        maxLength={6}
+                    />
+                    <Button onClick={handleJoin} className="bg-white text-black hover:bg-gray-200 rounded-xl px-4">
+                        <ArrowRight />
+                    </Button>
+                </div>
+            </div>
         </div>
 
-        {/* My Lobbies */}
-        <div className="space-y-4 animate-in slide-in-from-bottom-8 duration-700">
-          <div className="flex justify-between items-end px-2">
-             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-               <Clock size={14} /> {t('my_lobbies')}
-             </h3>
-             {myLobbies.length > 0 && !user.is_anonymous && (
-               // [FIX] Used translation key
-               <span className="text-[10px] text-gray-600 bg-gray-900 px-2 py-1 rounded">{t('syncing')}</span>
-             )}
-          </div>
-          
-          <div className="grid gap-3">
-            {myLobbies.length === 0 && (
-              <div className="text-center py-8 text-gray-600 italic text-sm border border-dashed border-gray-800 rounded-xl">
-                {t('no_active_lobbies')}
-              </div>
-            )}
-            
-            {myLobbies.map((l) => (
-              <button 
-                key={l.code}
-                onClick={() => router.push(`/lobby/${l.code}`)}
-                className="glass-card p-4 flex justify-between items-center text-left hover:border-indigo-500/40 hover:bg-white/5 transition-all group"
-              >
-                <div>
-                  <div className="font-bold text-base text-gray-200 group-hover:text-white transition-colors">{l.name || "Untitled Lobby"}</div>
-                  <div className="text-[10px] text-gray-500 font-mono mt-1">
-                    {t('lobby_code_display', { code: l.code })}
-                  </div>
+        {/* RIGHT COL: My Lobbies (8 cols) */}
+        <div className="lg:col-span-8">
+            <div className="glass-card p-8 min-h-[600px] flex flex-col animate-in slide-in-from-right-4 duration-500 delay-100">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <Clock className="text-indigo-400" /> {tDash('my_lobbies')}
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    {myLobbies.length === 0 && (
+                        <div className="col-span-2 text-center py-20 text-gray-600 italic border-2 border-dashed border-gray-800 rounded-2xl">
+                            {tDash('no_lobbies')}
+                        </div>
+                    )}
+
+                    {myLobbies.map((l) => (
+                        <div 
+                            key={l.id} 
+                            className="bg-black/20 hover:bg-indigo-900/10 border border-white/5 hover:border-indigo-500/30 rounded-2xl p-5 transition-all group relative overflow-hidden"
+                        >
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="font-bold text-lg text-white group-hover:text-indigo-200 transition-colors truncate max-w-[200px]">
+                                        {l.name || "Untitled Lobby"}
+                                    </h3>
+                                    <span className="text-xs font-mono text-gray-500 bg-black/40 px-2 py-1 rounded">
+                                        {l.code}
+                                    </span>
+                                </div>
+                                <span className={`text-[10px] font-black px-2 py-1 rounded border ${l.host_id === user.id ? 'border-yellow-500/30 text-yellow-500' : 'border-blue-500/30 text-blue-500'}`}>
+                                    {l.host_id === user.id ? tDash('host_badge') : tDash('guest_badge')}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between mt-4">
+                                <span className={`text-xs uppercase font-bold ${l.status === 'voting' ? 'text-green-400 animate-pulse' : 'text-gray-600'}`}>
+                                    {l.status}
+                                </span>
+                                <Button 
+                                    onClick={() => router.push(`/lobby/${l.code}`)} 
+                                    className="h-8 text-xs bg-white text-black hover:bg-gray-200 shadow-none"
+                                >
+                                    {l.status === 'ended' ? tDash('view_results') : tDash('resume')} <Play size={10} className="ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-                {l.host_id === user.id && (
-                  <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded border border-indigo-500/30">
-                    {tAuth('host_session') || 'HOST'}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+            </div>
         </div>
 
       </div>

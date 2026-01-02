@@ -19,39 +19,53 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
   const t = useTranslations('Lobby');
   const tCommon = useTranslations('Common');
   
-  const { lobby, candidates, participants, votes, loading } = useLobbyState(lobbyId);
+  // [FIX] Destructure updateLocalStatus
+  const { lobby, candidates, participants, votes, loading, updateLocalStatus, refreshCandidates } = useLobbyState(lobbyId);
+  
   const { user } = useSessionAuth();
   const [profileSet, setProfileSet] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    // If logged in via AuthForm, user has metadata. 
-    // If anonymous, they might not.
-    if (user?.user_metadata?.nickname) {
-      setProfileSet(true);
-    }
+    if (user?.user_metadata?.nickname) setProfileSet(true);
   }, [user]);
 
-  // Robust Host Check
-  const isHost = Boolean(user && lobby && user.id === lobby.host_id);
+  const isHost = user && lobby && user.id === lobby.host_id;
 
-  // Manual Trigger for Host to force setup start
   const handleStartSetup = useCallback(async () => {
     if (!isHost) return;
+    updateLocalStatus('setup'); // Immediate local update
     await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobbyId);
-  }, [isHost, lobbyId, supabase]);
+  }, [isHost, lobbyId, supabase, updateLocalStatus]);
 
-  // Auto-Redirect Host to Setup if stuck in Waiting
+  // Auto-Redirect Host
   useEffect(() => {
     if (isHost && lobby?.status === 'waiting' && profileSet) {
-      // Add small timeout to ensure UI is ready
       const timer = setTimeout(() => handleStartSetup(), 500);
       return () => clearTimeout(timer);
     }
   }, [isHost, lobby?.status, profileSet, handleStartSetup]);
 
-  // --- Loading States ---
-  if (loading || !lobby) {
+  // [NEW] Handlers for optimistic updates
+  const handleLaunchSuccess = () => {
+    refreshCandidates(); // Ensure we have the latest data
+    updateLocalStatus('voting'); // Switch view immediately
+  };
+
+  const handleSuspend = () => {
+    updateLocalStatus('setup'); // Switch view immediately
+  };
+
+  const handleEnd = () => {
+    updateLocalStatus('ended'); // Switch view immediately
+  };
+
+  const handleResume = async () => {
+    updateLocalStatus('voting'); // Immediate local update
+    await supabase.from('lobbies').update({ status: 'voting' }).eq('id', lobbyId);
+  };
+
+  if (loading || !lobby || !user) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#030712] text-indigo-500 gap-4">
         <div className="animate-spin text-4xl">{t('loading_icon')}</div>
@@ -60,12 +74,6 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
     );
   }
 
-  // If we have lobby but no user yet (auth loading)
-  if (!user) {
-    return <div className="h-screen bg-[#030712]" />;
-  }
-
-  // Profile Setup Guard
   if (!profileSet) {
     return <ProfileSetup userId={user.id} onComplete={() => setProfileSet(true)} />;
   }
@@ -118,7 +126,8 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
           {/* SETUP */}
           {lobby.status === 'setup' && (
             isHost ? (
-               <ConfigForm lobbyId={lobbyId} onSuccess={() => {}} />
+               // [FIX] Pass handleLaunchSuccess
+               <ConfigForm lobbyId={lobbyId} onSuccess={handleLaunchSuccess} />
             ) : (
                <div className="glass-card p-12 text-center max-w-xl mx-auto mt-20 animate-in zoom-in-95">
                   <div className="w-20 h-20 bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border border-indigo-500/30">
@@ -147,11 +156,20 @@ export const LobbyPage = ({ lobbyId }: { lobbyId: string }) => {
               candidates={candidates} 
               votes={votes}
               factors={lobby.settings.factors}
+              onResume={isHost ? handleResume : undefined} // [NEW] Pass Resume handler
             />
           )}
         </div>
 
-        {isHost && <HostControlPanel lobbyId={lobbyId} settings={lobby.settings} status={lobby.status} />}
+        {isHost && (
+            <HostControlPanel 
+                lobbyId={lobbyId} 
+                settings={lobby.settings} 
+                status={lobby.status} 
+                onSuspend={handleSuspend} // [NEW] Optimistic callbacks
+                onEnd={handleEnd}
+            />
+        )}
         <ChatWidget lobbyId={lobbyId} userId={user.id} />
       </main>
     </LobbyFlowLayout>

@@ -13,30 +13,36 @@ interface HostSettingsModalProps {
   onClose: () => void;
   lobbyId: string;
   settings: LobbySettings;
+  onSuspend?: () => void;
 }
 
-export const HostSettingsModal = ({ isOpen, onClose, lobbyId, settings }: HostSettingsModalProps) => {
+export const HostSettingsModal = ({ isOpen, onClose, lobbyId, settings, onSuspend }: HostSettingsModalProps) => {
   const t = useTranslations('Host');
   const [tab, setTab] = useState<'privacy' | 'manage'>('privacy');
   const supabase = createClient();
 
-  // Normalize privacy settings (ensure it's an object)
-  // In a real app, you should update the Zod schema to enforce this structure.
+  // Normalize privacy settings safely
   const currentPrivacy = (typeof settings.privacy === 'object' && settings.privacy !== null)
     ? settings.privacy as Record<string, string>
     : { users: 'visible', candidates: 'visible', factors: 'visible' };
 
   const updatePrivacy = async (key: string, val: string) => {
     const newPrivacy = { ...currentPrivacy, [key]: val };
+    
+    // Optimistic / Fire-and-forget for UI responsiveness
     const { error } = await supabase
       .from('lobbies')
       .update({ settings: { ...settings, privacy: newPrivacy } })
       .eq('id', lobbyId);
       
-    if (!error) toast.success("Privacy Updated");
+    if (!error) toast.success(t('privacy_updated'));
   };
 
   const handleSuspend = async () => {
+    // 1. Optimistic Update (Switch View Immediately)
+    if (onSuspend) onSuspend();
+    
+    // 2. DB Update
     const { error } = await supabase
       .from('lobbies')
       .update({ status: 'setup' })
@@ -50,35 +56,47 @@ export const HostSettingsModal = ({ isOpen, onClose, lobbyId, settings }: HostSe
     }
   };
 
-  // Define the sections strongly typed
+  // Define the sections for the map loop
   const sections = ['users', 'candidates', 'factors'] as const;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
+      {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2">
-        <button onClick={() => setTab('privacy')} className={`px-4 py-2 text-sm font-bold rounded-lg ${tab === 'privacy' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+        <button 
+            onClick={() => setTab('privacy')} 
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${tab === 'privacy' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+        >
             {t('tab_privacy')}
         </button>
-        <button onClick={() => setTab('manage')} className={`px-4 py-2 text-sm font-bold rounded-lg ${tab === 'manage' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+        <button 
+            onClick={() => setTab('manage')} 
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${tab === 'manage' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+        >
             {t('tab_manage')}
         </button>
       </div>
 
+      {/* Privacy Tab */}
       {tab === 'privacy' && (
         <div className="space-y-4">
             {sections.map((section) => (
                 <div key={section} className="flex items-center justify-between bg-gray-800 p-3 rounded-xl border border-gray-700">
-                    <span className="font-bold text-sm text-gray-300 capitalize">{t(`privacy_sections.${section}` as any)}</span>
+                    <span className="font-bold text-sm text-gray-300 capitalize">
+                        {t(`privacy_sections.${section}` as any)}
+                    </span>
                     <div className="flex bg-black/40 rounded-lg p-1">
                         <button 
                             onClick={() => updatePrivacy(section, 'visible')}
-                            className={`p-1.5 rounded-md ${currentPrivacy[section] !== 'hidden' ? 'bg-green-500/20 text-green-400' : 'text-gray-600'}`}
+                            className={`p-1.5 rounded-md transition-all ${currentPrivacy[section] !== 'hidden' ? 'bg-green-500/20 text-green-400' : 'text-gray-600 hover:text-gray-400'}`}
+                            title="Visible"
                         >
                             <Eye size={16} />
                         </button>
                         <button 
                             onClick={() => updatePrivacy(section, 'hidden')}
-                            className={`p-1.5 rounded-md ${currentPrivacy[section] === 'hidden' ? 'bg-red-500/20 text-red-400' : 'text-gray-600'}`}
+                            className={`p-1.5 rounded-md transition-all ${currentPrivacy[section] === 'hidden' ? 'bg-red-500/20 text-red-400' : 'text-gray-600 hover:text-gray-400'}`}
+                            title="Hidden"
                         >
                             <EyeOff size={16} />
                         </button>
@@ -88,6 +106,7 @@ export const HostSettingsModal = ({ isOpen, onClose, lobbyId, settings }: HostSe
         </div>
       )}
 
+      {/* Manage Tab */}
       {tab === 'manage' && (
         <div className="space-y-6 text-center">
             <div className="bg-yellow-900/20 border border-yellow-500/20 p-4 rounded-xl">

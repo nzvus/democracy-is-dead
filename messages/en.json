@@ -35,12 +35,29 @@
     "error_generic": "Authentication failed",
     "host_session": "Host Session"
   },
+  "Settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "language": "Language",
+    "leave_lobby": "Leave Lobby",
+    "logout": "Log Out",
+    "current_lobby": "Current: {code}"
+  },
   "Profile": {
-    "title": "Who are you?",
-    "subtitle": "Choose your identity for this session.",
-    "tap_shuffle": "Tap to Shuffle 🎲",
-    "change_avatar": "Change",
-    "upload_btn": "Upload Photo"
+    "title": "My Profile",
+    "update_success": "Profile updated successfully!",
+    "change_password": "Change Password",
+    "new_password": "New Password",
+    "update_btn": "Update Profile",
+    "placeholder_name": "Display Name"
+  },
+  "Dashboard": {
+    "my_lobbies": "My History",
+    "host_badge": "HOST",
+    "guest_badge": "GUEST",
+    "no_lobbies": "You haven't joined any lobbies yet.",
+    "resume": "Resume",
+    "view_results": "View Results"
   },
   "Setup": {
     "step_1": "Step 1: Candidates",
@@ -177,7 +194,8 @@
       "weighted": "Calculates the average score (0-10) given by all voters, adjusted by the weight of each criteria.",
       "schulze": "A Condorcet method. It simulates pairwise duels between every candidate. The winner is the one who beats everyone else in the strongest paths.",
       "radar": "Visualizes the strengths and weaknesses of each candidate across different criteria."
-    }
+    },
+    "need_more_factors": "Need at least 3 numerical factors for Radar Analysis."
   },
   "Share": {
     "invite": "Invite 🔗",
