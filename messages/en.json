@@ -1,0 +1,178 @@
+{
+  "Common": {
+    "loading": "Loading...",
+    "error": "An error occurred. Please try again.",
+    "save": "Save",
+    "saved": "Saved!",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "remove": "Remove",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "auth_failed": "Authentication failed",
+    "loading_lobby": "Loading Lobby...",
+    "authenticating": "Authenticating...",
+    "placeholder_name": "E.g. John Doe",
+    "upload_image": "Upload Image",
+    "remove_image": "Remove Image",
+    "shuffle": "Shuffle"
+  },
+  "Profile": {
+    "title": "Who are you?",
+    "subtitle": "Choose your identity for this session.",
+    "tap_shuffle": "Tap to Shuffle 🎲"
+  },
+  "Setup": { 
+    "allow_decimals": "Allow Decimals?",
+    "step_label": "Precision",
+    "step_1": "Candidates", 
+    "step_2": "Criteria (Factors)",
+    "step_3": "Final Settings",
+    "max_scale": "Max Voting Scale",
+    "max_scale_desc": "The maximum score a user can give (e.g. 10 or 100).",
+    "privacy_label": "Privacy",
+    "privacy_public": "Public (Show Names)",
+    "privacy_anon": "Anonymous (Hide Names)",
+    "placeholder_name": "Name",
+    "add_candidate": "+ Add Candidate",
+    "add_candidate_desc": "Add options to vote on.",
+    "add_factor": "+ Add Criteria",
+    "add_factor_desc": "Define how candidates are judged.",
+    "launch": "Launch Voting 🚀",
+    "input_type": "Input Type",
+    "active_count": "{count} Active",
+    "type_label": "Type",
+    "control_label": "Control",
+    "weight_label": "Weight (Impact)",
+    "hidden_label": "Hidden?",
+    "static_info_label": "Static Info (Displayed on Card)",
+    "add_candidate_btn": "Add Candidate",
+    "lobby_name": "Lobby Name",
+    "lobby_name_ph": "e.g. Friday Pizza Night",
+    "validation_error": "Please fix errors before proceeding.",
+    "types": {
+      "numerical": "Vote (Numerical)",
+      "constant": "Fixed Info (Constant)"
+    },
+    "controls": {
+      "slider": "Slider",
+      "stars": "Stars",
+      "number": "Number",
+      "toggle": "Yes/No"
+    },
+    "static_placeholder": "Value for {factor}"
+  },
+  "Home": {
+    "title": "Democracy is Dead",
+    "subtitle": "The mathematical way to settle arguments about where to eat dinner.",
+    "create_lobby": "Start New Lobby",
+    "or_join": "Or Join",
+    "join_placeholder": "CODE",
+    "join_btn": "Go",
+    "no_registration": "No registration required. Anonymous voting.",
+    "recent_lobbies": "Recent Sessions",
+    "clear_history": "Clear History",
+    "last_visited": "Last visited: {date}"
+  },
+  "Lobby": {
+    "loading": "Loading Lobby...",
+    "title": "Lobby {code}",
+    "status_waiting": "Waiting for Host",
+    "status_setup": "Setup in Progress",
+    "status_voting": "Voting Open",
+    "status_ended": "Voting Ended",
+    "waiting_title": "Waiting for Host",
+    "waiting_desc": "Participants are joining...",
+    "configure_btn": "Configure Lobby",
+    "host_configuring": "Host is configuring...",
+    "host_configuring_desc": "Grab a drink, this might take a minute.",
+    "loading_icon": "❄️",
+    "setup_icon": "⚙️"
+  },
+  "Host": {
+    "title": "Host Controls",
+    "anon_active": "Anon Active",
+    "public": "Public",
+    "end_vote": "End Vote",
+    "privacy_updated": "Privacy updated",
+    "end_error": "Failed to end voting"
+  },
+  "Voting": {
+    "submit": "Submit All Votes",
+    "submitted": "Votes submitted successfully!",
+    "failed": "Failed to submit votes.",
+    "jolly_title": "Assign your Jolly 🃏",
+    "jolly_desc": "Select your favorite candidate to double their score weight.",
+    "jolly_none": "No Jolly",
+    "static_value": "Fixed Value:",
+    "weight_impact": "Impact: {val}",
+    "negative_impact": "Negative Impact (Lower is better for candidate)",
+    "expand_to_vote": "Tap to Vote",
+    "minimized_view": "Current Distribution"
+  },
+  "Results": {
+    "tabs": {
+      "weighted": "Weighted",
+      "schulze": "Schulze Matrix",
+      "radar": "Radar Analysis",
+      "badges": "Awards"
+    },
+    "no_data": "No data available",
+    "matrix_legend": "Read ROW vs COLUMN. Green = Row wins.",
+    "radar_legend": "Comparison by Criteria",
+    "badges_title": "Voter Awards",
+    "badges_list": {
+      "hater": { "title": "The Hater", "desc": "Gave the lowest average scores." },
+      "lover": { "title": "The Lover", "desc": "Gave the highest average scores." },
+      "contrarian": { "title": "The Contrarian", "desc": "Disagreed most with the group." },
+      "oracle": { "title": "The Oracle", "desc": "Perfectly predicted the winner." },
+      "hive_mind": { "title": "Hive Mind", "desc": "Voted exactly like the average." }
+    }
+  },
+  "Share": {
+    "invite": "Invite 🔗",
+    "label_code": "Lobby Code",
+    "copy": "Copy Link",
+    "copied": "Link copied!"
+  },
+  "Chat": {
+    "title": "Lobby Chat",
+    "send": "Send",
+    "placeholder": "Type a message...",
+    "online_count": "{count} Online",
+    "typing": "{name} is typing...",
+    "edited": "(edited)",
+    "replying_to": "Replying to {name}",
+    "empty": "No messages yet.",
+    "actions": {
+      "reply": "Reply",
+      "edit": "Edit",
+      "delete": "Delete",
+      "copy": "Copy"
+    }
+  },
+  "ImagePicker": {
+    "tab_url": "Link URL",
+    "tab_upload": "Upload",
+    "placeholder_url": "Paste image URL (https://...)",
+    "preview": "Preview",
+    "invalid_url": "Invalid URL"
+  },
+  "Language": {
+    "switch": "Switch Language",
+    "en": "English",
+    "it": "Italiano"
+  },
+  "Modals": {
+    "confirm_title": "Are you sure?",
+    "confirm_btn": "Confirm",
+    "cancel_btn": "Cancel"
+  },
+  "Tooltips": {
+    "desc_prefix": "Description: "
+  }
+}

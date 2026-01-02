@@ -1,5 +1,5 @@
 PROJECT TRANSCRIPT
-Date: 28/12/2025, 22:12:30
+Date: 29/12/2025, 00:34:11
 
 
 
@@ -136,7 +136,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Crown, Users, Loader2 } from 'lucide-react'
 
-// Components
+
 import LobbyOnboarding from '@/components/lobby/lobby-onboarding'
 import SetupWrapper from '@/components/lobby/setup/setup-wrapper'
 import VotingWrapper from '@/components/lobby/voting/voting-wrapper'
@@ -169,12 +169,12 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
   const [nickname, setNickname] = useState<string | null>(null)
   const [participantCount, setParticipantCount] = useState(0)
   
-  // Ref per evitare doppi trigger dell'autosetup in Strict Mode
+  
   const autoSetupTriggered = useRef(false)
 
   useEffect(() => {
     const init = async () => {
-      // 1. Get User
+      
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       let currentUserId = user?.id
 
@@ -186,7 +186,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
       if (!currentUserId) return
 
-      // 2. Get Lobby
+      
       const { data: lobbyData, error: lobbyError } = await supabase
         .from('lobbies')
         .select('*')
@@ -209,7 +209,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
       setLobby(safeLobby)
 
-      // 3. Check Participant & Count
+      
       const { data: participants } = await supabase
         .from('lobby_participants')
         .select('nickname, user_id')
@@ -227,7 +227,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
     init()
   }, [code, supabase])
 
-  // Realtime Subscription
+  
   useEffect(() => {
     if (!lobby) return
 
@@ -260,9 +260,9 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
   const isHost = userId === lobby?.host_id
 
-  // -----------------------------------------------------------
-  // AUTO-START SETUP FIX
-  // -----------------------------------------------------------
+  
+  
+  
   useEffect(() => {
       const handleAutoSetup = async () => {
           if (!lobby || !nickname || !isHost) return
@@ -270,10 +270,10 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
           if (lobby.status === 'waiting' && !autoSetupTriggered.current) {
               autoSetupTriggered.current = true
               
-              // 1. Aggiornamento Ottimistico Locale (FIX INFINITE LOADING)
+              
               setLobby(prev => prev ? { ...prev, status: 'setup' } : null)
 
-              // 2. Aggiornamento DB
+              
               await supabase.from('lobbies').update({ status: 'setup' }).eq('id', lobby.id)
           }
       }
@@ -302,7 +302,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
     )
   }
 
-  // ONBOARDING
+  
   if (!nickname) {
     return <LobbyOnboarding lobbyId={lobby.id} userId={userId!} onJoin={(nick: string) => setNickname(nick)} />
   }
@@ -313,14 +313,14 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white p-6 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10" />
             
-            {/* Se sei Host, loader con testo da dizionario */}
+            {}
             {isHost ? (
                 <div className="z-10 flex flex-col items-center gap-4 animate-in fade-in">
                     <Loader2 size={64} className="text-indigo-500 animate-spin" />
                     <h2 className="text-xl font-bold">{t.lobby.loading_setup}</h2>
                 </div>
             ) : (
-                // GUEST VIEW
+                
                 <div className="relative z-10 flex flex-col items-center text-center space-y-8 max-w-lg">
                     <div className="w-24 h-24 bg-gray-900 rounded-3xl border border-gray-800 flex items-center justify-center shadow-2xl mb-4">
                         <Loader2 size={48} className="text-indigo-500 animate-spin-slow" />
@@ -386,7 +386,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { ArrowRight, History, Vote } from 'lucide-react'
 
-// Helper esterno per purezza
+
 const generateCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
@@ -400,14 +400,14 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState('')
   const [recentLobbies, setRecentLobbies] = useState<{code: string, date: string}[]>([])
 
-  // Carica cronologia
+  
   useEffect(() => {
       const history = localStorage.getItem('did_history')
       if (history) {
           try {
               setRecentLobbies(JSON.parse(history))
           } catch {
-              // Ignore
+              
           }
       }
   }, [])
@@ -433,8 +433,8 @@ export default function Home() {
 
     const code = generateCode()
     
-    // RIMOSSO 'as any' e il commento eslint inutile.
-    // Supabase dovrebbe accettare l'oggetto settings se la colonna è JSONB.
+    
+    
     const { error: lobbyError } = await supabase.from('lobbies').insert({
         code,
         host_id: userId,
@@ -478,7 +478,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden`} style={{ backgroundImage: gridBg }}>
         
-        {/* Language Switcher */}
+        {}
         <div className="absolute top-6 right-6 z-50">
             <button 
                 onClick={() => setLanguage(language === 'it' ? 'en' : 'it')}
@@ -490,7 +490,7 @@ export default function Home() {
 
         <main className="w-full max-w-md relative z-10 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             
-            {/* Header */}
+            {}
             <div className="text-center space-y-4">
                 <div className="mx-auto w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-3xl rotate-3 flex items-center justify-center shadow-2xl shadow-indigo-500/20 mb-6">
                     <Vote size={40} className="text-white -rotate-3" />
@@ -503,7 +503,7 @@ export default function Home() {
                 </p>
             </div>
 
-            {/* Actions Card */}
+            {}
             <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-6 rounded-3xl shadow-2xl space-y-6">
                 
                 <button 
@@ -543,7 +543,7 @@ export default function Home() {
                     {t.home.no_registration}
                 </p>
             </div>            
-            {/* History */}
+            {}
             {recentLobbies.length > 0 && (
                 <div className="space-y-4 pt-4 border-t border-gray-900/50">
                     <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
@@ -589,7 +589,7 @@ type Message = {
 export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId: string }) {
   const { t } = useLanguage()
   const supabase = useMemo(() => createClient(), [])
-  const { confirm } = useConfirm()
+  const { confirm } = useConfirm() 
   
   const [isOpen, setIsOpen] = useState(false) 
   const [activeTab, setActiveTab] = useState<'chat' | 'participants'>('chat')
@@ -615,7 +615,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     })
   }, [])
 
-  // Chiusura con ESC
+  
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
         if (event.key === 'Escape' && isOpen) toggleChat()
@@ -624,7 +624,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isOpen, toggleChat])
 
-  // FIX: Aggiunto supabase alle dipendenze
+  
   useEffect(() => {
     const init = async () => {
         const { data: userData } = await supabase.from('lobby_participants').select('nickname').eq('lobby_id', lobbyId).eq('user_id', userId).maybeSingle()
@@ -657,7 +657,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
         })
       .subscribe()
     return () => { supabase.removeChannel(chatChannel); supabase.removeChannel(partsChannel) }
-  }, [lobbyId, isOpen, userId, supabase]) // <--- Dipendenza corretta
+  }, [lobbyId, isOpen, userId, supabase]) 
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -720,7 +720,7 @@ export default function LobbyChat({ lobbyId, userId }: { lobbyId: string, userId
                         const isMe = msg.user_id === userId
                         const isSequence = index > 0 && messages[index - 1].user_id === msg.user_id
                         const isEditing = editingId === msg.id
-                        // FIX: Recupera immagine utente
+                        
                         const author = participants.find(p => p.user_id === msg.user_id)
                         
                         return (
@@ -816,28 +816,27 @@ export default function LobbyOnboarding({ lobbyId, userId, onJoin }: { lobbyId: 
 
     setLoading(true)
     
-    // FIX ERRORE 400: Rimosso 'joined_at' che non esiste nel tuo DB.
-    // Supabase userà il suo 'created_at' automatico se configurato, altrimenti fa nulla.
+    
+    
     const payload = {
         lobby_id: lobbyId,
         user_id: userId,
         nickname: nickname.trim(),
-        // avatar_url: null // Rimosso per sicurezza, se manca anche questa colonna
+        
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('lobby_participants').upsert(payload as any)
 
     if (error) {
         console.error("Supabase Error:", error)
-        toast.error(`Error: ${error.message}`) // Mostriamo l'errore specifico
+        toast.error(`Error: ${error.message}`) 
         setLoading(false)
     } else {
         onJoin(nickname.trim())
     }
   }
 
-  // Sfondo Grigliato codificato in Base64 per evitare errori 404
+  
   const gridBg = `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`
 
   return (
@@ -898,7 +897,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts'
-import { VotingResult } from '@/core/voting/types' // <--- FIX: Import Type corretto
+import { VotingResult } from '@/core/voting/types' 
 import { useLanguage } from '@/components/providers/language-provider'
 
 interface ComparisonChartProps {
@@ -910,13 +909,13 @@ interface ComparisonChartProps {
 export default function ComparisonChart({ weighted, borda, schulze }: ComparisonChartProps) {
   const { t } = useLanguage()
 
-  // Normalizziamo i dati per il grafico
-  // Prendiamo tutti i candidati univoci
+  
+  
   const allCandidates = weighted.ranking.map(c => c.name)
 
   const data = allCandidates.map(name => {
-    // Troviamo il ranking (posizione) in ogni sistema. 
-    // 1 = Primo posto.
+    
+    
     const getRank = (res: VotingResult) => {
       const idx = res.ranking.findIndex(c => c.name === name)
       return idx === -1 ? 0 : idx + 1
@@ -936,11 +935,11 @@ export default function ComparisonChart({ weighted, borda, schulze }: Comparison
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }} 
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="name" stroke="#9CA3AF" />
-          {/* Invertiamo l'asse Y perché Rank 1 è meglio di Rank 10 */}
+          {}
           <YAxis stroke="#9CA3AF" reversed label={{ value: 'Rank (Lower is Better)', angle: -90, position: 'insideLeft', fill: '#6B7280' }} />
           <Tooltip 
             contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#F3F4F6' }}
@@ -1013,7 +1012,7 @@ export default function Podium({ top3 }: { top3: Candidate[] }) {
             </div>
             <span className="text-4xl font-black text-orange-900/20">3</span>
         </motion.div>
-      )}
+      )} 
     </div>
   )
 }
@@ -1062,11 +1061,11 @@ export default function RankingTable({ results, scores, system }: RankingTablePr
                          <span className="text-gray-600">#{index + 1}</span>}
                     </div>
 
-                    {/* IMAGINE: Se c'è image_url usalo, altrimenti Avatar seed */}
+                    {}
                     <Avatar seed={candidate.name} src={candidate.image_url} className="w-10 h-10 md:w-12 md:h-12 shadow-lg" />
                     
                     <div className="flex-1 min-w-0">
-                        {/* TOOLTIP DESCRIZIONE */}
+                        {}
                         <DescriptionTooltip title={candidate.name} description={candidate.description}>
                             <h4 className={`font-bold truncate cursor-help ${isWinner ? 'text-yellow-500' : 'text-gray-200'}`}>
                                 {candidate.name}
@@ -1087,7 +1086,7 @@ export default function RankingTable({ results, scores, system }: RankingTablePr
         })}
     </div>
   )
-}
+} 
 
 ================================================================================
 FILE: components\lobby\results\results-chart.tsx
@@ -1100,15 +1099,14 @@ interface ResultsChartProps {
   results: Candidate[]
 }
 
-// Componente Placeholder per il Radar Chart (che richiederebbe dati aggregati complessi)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export default function ResultsChart({ results }: ResultsChartProps) {
   return (
       <div className="flex items-center justify-center h-full text-gray-500 text-sm italic p-4 text-center">
           Dettagli Radar disponibili prossimamente.<br/>
           (I dati attuali non sono sufficienti per generare il grafico radar per fattore)
       </div>
-  )
+  ) 
 }
 
 ================================================================================
@@ -1126,7 +1124,7 @@ import { VoteRecord } from '@/core/voting/types'
 interface ResultsMatrixProps {
   candidates: Candidate[]
   participants: Participant[]
-  votes: VoteRecord[] // <--- FIX: Type corretto
+  votes: VoteRecord[] 
   currentUserId: string
   badges: Record<string, BadgeType[]>
 }
@@ -1211,7 +1209,7 @@ export default function ResultsMatrix({ candidates, participants, votes, current
       </table>
     </div>
   )
-}
+} 
 
 ================================================================================
 FILE: components\lobby\results\results-wrapper.tsx
@@ -1224,7 +1222,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/components/providers/language-provider'
 import { UI } from '@/lib/constants'
 import { Candidate, Participant, Factor } from '@/types'
-import { useConfirm } from '@/components/providers/confirm-provider' // IMPORTATO
+import { useConfirm } from '@/components/providers/confirm-provider' 
 
 import { calculateAllSystems } from '@/core/voting/engine'
 import { calculateAwards, BadgeType } from '@/core/gamification/awards'
@@ -1237,7 +1235,7 @@ import InfoButton from '@/components/ui/info-button'
 import ResultsMatrix from './results-matrix'
 import SchulzeMatrix from './schulze-matrix'
 import ComparisonChart from './comparison-chart'
-import { RefreshCcw } from 'lucide-react' // Icona Riapri
+import { RefreshCcw } from 'lucide-react' 
 
 interface LobbySettings {
     factors: Factor[];
@@ -1263,7 +1261,7 @@ interface SchulzeDetails {
 export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapperProps) {
   const { t } = useLanguage()
   const supabase = createClient()
-  const { confirm } = useConfirm() // Hook conferma
+  const { confirm } = useConfirm() 
   
   const [results, setResults] = useState<Record<string, VotingResult> | null>(null)
   const [activeSystem, setActiveSystem] = useState<'weighted' | 'borda' | 'schulze'>('weighted')
@@ -1275,7 +1273,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
 
   const [loading, setLoading] = useState(true)
 
-  // PERSISTENZA: Questo useEffect carica i dati ogni volta che la pagina si apre/aggiorna
+  
   useEffect(() => {
     const init = async () => {
       try {
@@ -1311,10 +1309,10 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
       }
     }
     init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [lobby.id]) 
 
-  // FUNZIONE RIAPRI VOTO
+  
   const handleReopen = async () => {
       const confirmed = await confirm({
           title: t.results.reopen_btn,
@@ -1342,7 +1340,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
         <header className="flex flex-col items-center gap-6 relative z-30">
             <ShareLobby code={lobby.code} compact={true} />
             
-            {/* TABS SISTEMI */}
+            {}
             <div className="flex bg-gray-900 p-1 rounded-2xl border border-gray-800 shadow-xl overflow-x-auto max-w-full">
                 {(['weighted', 'borda', 'schulze'] as const).map((sys) => (
                     <button 
@@ -1389,7 +1387,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
             <ResultsMatrix candidates={rawCandidates} participants={participants} votes={rawVotes} currentUserId={userId} badges={badges} />
         </section>
 
-        {/* BOTTONE RIAPRI (Solo Host) */}
+        {}
         {isHost && (
             <div className="fixed bottom-6 left-0 w-full flex justify-center z-50 pointer-events-none">
                 <button 
@@ -1402,7 +1400,7 @@ export default function ResultsWrapper({ lobby, userId, isHost }: ResultsWrapper
         )}
       </div>
     </div>
-  )
+  ) 
 }
 
 ================================================================================
@@ -1479,7 +1477,7 @@ export default function SchulzeMatrix({ candidates, matrix }: SchulzeMatrixProps
          {t.results.schulze_matrix.subtitle}
       </div>
     </div>
-  )
+  ) 
 }
 
 ================================================================================
@@ -1491,14 +1489,14 @@ import { useState } from 'react'
 import { Candidate } from '@/types'
 import { Trash2, Edit2 } from 'lucide-react'
 import Avatar from '@/components/ui/avatar'
-import ImagePicker from '@/components/ui/image-picker' // <--- IMPORT
+import ImagePicker from '@/components/ui/image-picker' 
 import { UI } from '@/lib/constants'
 import { useLanguage } from '@/components/providers/language-provider'
 
 interface CandidatesManagerProps {
   candidates: Candidate[]
   setCandidates: (c: Candidate[]) => void
-}
+} 
 
 export default function CandidatesManager({ candidates, setCandidates }: CandidatesManagerProps) {
   const { t } = useLanguage()
@@ -1559,7 +1557,7 @@ export default function CandidatesManager({ candidates, setCandidates }: Candida
                         placeholder={t.setup.candidates.placeholder_desc}
                         className={`w-full ${UI.COLORS.BG_INPUT} p-2 rounded-lg border border-gray-700 text-sm focus:border-${UI.COLORS.PRIMARY}-500 outline-none`}
                      />
-                     {/* FIX: Uso del nuovo ImagePicker */}
+                     {}
                      <ImagePicker value={img} onChange={setImg} placeholder={t.setup.candidates.placeholder_url} />
                  </div>
              </div>
@@ -1613,7 +1611,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 interface FactorsManagerProps {
   factors: Factor[]
   setFactors: (f: Factor[]) => void
-}
+} 
 
 export default function FactorsManager({ factors, setFactors }: FactorsManagerProps) {
   const { t } = useLanguage()
@@ -1631,7 +1629,6 @@ export default function FactorsManager({ factors, setFactors }: FactorsManagerPr
          image_url: newImage,
          weight: 1, 
          trend: 'higher_better',
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
          type: 'numerical' as any
      }
 
@@ -1652,7 +1649,7 @@ export default function FactorsManager({ factors, setFactors }: FactorsManagerPr
   return (
     <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             {/* Form Aggiunta */}
+             {}
              <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
                  <h3 className="font-bold text-sm text-gray-400 uppercase">{t.setup.factors.new_title}</h3>
                  <input 
@@ -1682,13 +1679,13 @@ export default function FactorsManager({ factors, setFactors }: FactorsManagerPr
                  </button>
              </div>
 
-             {/* Lista Fattori */}
+             {}
              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                  {factors.map(factor => (
                      <div key={factor.id} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col gap-2">
                          <div className="flex justify-between items-start">
                              <div className="flex items-center gap-2">
-                                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                                 {}
                                  {factor.image_url && <img src={factor.image_url} alt="" className="w-6 h-6 object-cover rounded" />}
                                  <span className="font-bold">{factor.name}</span>
                                  {factor.description && (
@@ -1750,7 +1747,7 @@ interface SettingsFormProps {
 export default function SettingsForm({ scale, setScale }: SettingsFormProps) {
   const { t } = useLanguage()
 
-  return (
+  return ( 
     <div className="space-y-6">
         <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 space-y-4">
             <h3 className="font-bold text-gray-300 uppercase tracking-widest text-sm">{t.setup.settings.title}</h3>
@@ -1804,10 +1801,9 @@ interface SetupWrapperProps {
   lobby: {
       id: string;
       code: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       settings: any; 
   }
-}
+} 
 
 export default function SetupWrapper({ lobby }: SetupWrapperProps) {
   const { t } = useLanguage()
@@ -1871,7 +1867,6 @@ export default function SetupWrapper({ lobby }: SetupWrapperProps) {
 
             <div className="flex justify-between pt-4">
                 <button 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onClick={() => setStep(prev => Math.max(1, prev - 1) as any)}
                     disabled={step === 1}
                     className="px-6 py-3 rounded-xl font-bold text-gray-400 hover:bg-gray-800 disabled:opacity-0 transition-all"
@@ -1881,7 +1876,6 @@ export default function SetupWrapper({ lobby }: SetupWrapperProps) {
 
                 {step < 3 ? (
                     <button 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onClick={() => setStep(prev => Math.min(3, prev + 1) as any)}
                         className={`px-8 py-3 bg-white text-black rounded-xl font-bold hover:scale-105 transition-transform`}
                     >
@@ -1966,7 +1960,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
                 className={`w-full max-w-sm bg-white text-black p-8 rounded-3xl flex flex-col items-center shadow-2xl scale-100 animate-in zoom-in-95 duration-200 relative`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button 
+                <button  
                     onClick={() => setShowQR(false)}
                     className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors font-bold text-xl"
                 >
@@ -2094,7 +2088,7 @@ export default function ShareLobby({ code, className = '', compact = false }: Sh
                 </p>
             </div>
         </div>
-      )}
+      )} 
     </div>
   )
 }
@@ -2112,7 +2106,7 @@ interface JollySelectorProps {
     selectedId: string | null
     onSelect: (id: string) => void
 }
-
+ 
 export default function JollySelector({ candidates, selectedId, onSelect }: JollySelectorProps) {
   if (candidates.length === 0) return null
 
@@ -2149,7 +2143,7 @@ export default function JollySelector({ candidates, selectedId, onSelect }: Joll
                     </button>
                 )
             })}
-        </div>
+        </div> 
     </div>
   )
 }
@@ -2157,7 +2151,7 @@ export default function JollySelector({ candidates, selectedId, onSelect }: Joll
 ================================================================================
 FILE: components\lobby\voting\voting-factor-section.tsx
 ================================================================================
-/* eslint-disable @next/next/no-img-element */
+
 'use client'
 
 import { Factor, Candidate } from '@/types'
@@ -2170,7 +2164,7 @@ interface VotingFactorSectionProps {
     factor: Factor
     isActive: boolean
     candidates: Candidate[]
-    votes: Record<string, Record<string, number>>
+    votes: Record<string, Record<string, number>> 
     maxScale: number
     step: number
     isHost: boolean
@@ -2182,7 +2176,7 @@ interface VotingFactorSectionProps {
 export default function VotingFactorSection({ factor, isActive, candidates, votes, maxScale, step, onToggle, onVote }: VotingFactorSectionProps) {
   const { t } = useLanguage()
 
-  // Calcola statistiche
+  
   const votedCount = candidates.filter(c => (votes[c.id]?.[factor.id] ?? -1) >= 0).length
   const isComplete = votedCount === candidates.length && candidates.length > 0
 
@@ -2204,10 +2198,10 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
         }}
         className={`rounded-3xl border backdrop-blur-md transition-all duration-500 shadow-xl overflow-hidden`}
     >
-        {/* HEADER */}
+        {}
         <div onClick={onToggle} className="p-5 flex items-center justify-between cursor-pointer group hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-4">
-                {/* Icona */}
+                {}
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors duration-300 ${isActive ? 'bg-indigo-600 text-white shadow-indigo-500/40' : 'bg-gray-800 text-gray-400'}`}>
                     {factor.image_url ? (
                         <img src={factor.image_url} alt="" className="w-full h-full object-cover rounded-2xl" />
@@ -2239,7 +2233,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
             </div>
         </div>
 
-        {/* BODY */}
+        {}
         <AnimatePresence>
             {isActive && (
                 <motion.div 
@@ -2251,7 +2245,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                 >
                     <div className="p-5 pt-4 space-y-8">
                         
-                        {/* Info Box */}
+                        {}
                         <div className="bg-gradient-to-r from-blue-950/40 to-indigo-950/40 border border-indigo-500/20 p-4 rounded-xl flex gap-3 items-start">
                             <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-300">
                                 <Info size={18} />
@@ -2266,7 +2260,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                             </div>
                         </div>
 
-                        {/* Candidates Grid */}
+                        {}
                         <div className="grid gap-6 md:grid-cols-2">
                             {candidates.map(cand => {
                                 const currentVal = votes[cand.id]?.[factor.id] ?? 0
@@ -2275,7 +2269,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                 return (
                                     <div key={cand.id} className="bg-gray-900/60 rounded-2xl p-5 border border-gray-800 hover:border-gray-600 transition-all duration-300 relative overflow-hidden group">
                                         
-                                        {/* Background Progress Bar */}
+                                        {}
                                         <div className="absolute bottom-0 left-0 h-1.5 w-full bg-gray-800/50">
                                             <div 
                                                 className={`h-full bg-gradient-to-r ${getBarColor(currentVal)} transition-all duration-500`} 
@@ -2297,10 +2291,10 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                                     {currentVal}
                                                 </span>
                                                 <span className="text-[10px] text-gray-600 font-bold uppercase block -mt-1">su {maxScale}</span>
-                                            </div>
+                                            </div> 
                                         </div>
 
-                                        {/* Slider Container */}
+                                        {}
                                         <div className="relative h-10 flex items-center w-full z-20">
                                             <input 
                                                 type="range"
@@ -2310,7 +2304,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                                 className="absolute w-full h-full opacity-0 cursor-pointer z-30"
                                             />
                                             
-                                            {/* Visual Track */}
+                                            {}
                                             <div className="w-full h-3 bg-gray-950 rounded-full overflow-hidden relative shadow-inner border border-gray-800/50">
                                                 <div 
                                                     className={`absolute top-0 left-0 h-full bg-gradient-to-r ${getBarColor(currentVal)} opacity-50`} 
@@ -2318,7 +2312,7 @@ export default function VotingFactorSection({ factor, isActive, candidates, vote
                                                 />
                                             </div>
                                             
-                                            {/* Thumb (Fake Visual) */}
+                                            {}
                                             <div 
                                                 className="absolute h-6 w-6 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] border-4 border-gray-900 pointer-events-none transition-all duration-75 ease-out flex items-center justify-center"
                                                 style={{ left: `calc(${percentage}% - 12px)` }}
@@ -2358,7 +2352,6 @@ interface VotingWrapperProps {
     lobby: {
         id: string;
         code: string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         settings: any; 
     }
     userId: string
@@ -2394,7 +2387,6 @@ export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperPr
             const voteMap: Record<string, Record<string, number>> = {}
             let savedJolly: string | null = null
             
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             existingVotes.forEach((v: any) => { 
                 voteMap[v.candidate_id] = v.scores
                 if (v.is_jolly) savedJolly = v.candidate_id 
@@ -2408,7 +2400,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperPr
     }
     init()
     
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [lobby.id, userId, supabase]) 
 
   const handleVote = (candId: string, factId: string, val: number) => {
@@ -2492,7 +2484,7 @@ export default function VotingWrapper({ lobby, userId, isHost }: VotingWrapperPr
             {isHost && <button onClick={endVoting} className={`w-full ${UI.LAYOUT.MAX_WIDTH_CONTAINER} mx-auto py-3 bg-red-950/20 text-red-400 border border-red-900/30 ${UI.LAYOUT.ROUNDED_MD} font-bold text-xs uppercase tracking-widest hover:bg-red-900/40 transition-colors`}>{t.lobby.terminate_btn}</button>}
         </div>
     </div>
-  )
+  ) 
 }
 
 ================================================================================
@@ -2517,7 +2509,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
-    // Check active session
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
@@ -2528,7 +2520,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth]) // <--- Dipendenza aggiunta
+  }, [supabase.auth]) 
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
@@ -2537,7 +2529,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => useContext(AuthContext) 
 
 ================================================================================
 FILE: components\providers\confirm-provider.tsx
@@ -2617,7 +2609,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-    </ConfirmContext.Provider>
+    </ConfirmContext.Provider> 
   )
 }
 
@@ -2634,23 +2626,23 @@ FILE: components\providers\language-provider.tsx
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
-// Importiamo i dizionari IT
+
 import itCommon from '@/locales/it/common'
 import itHome from '@/locales/it/home'
 import itSetup from '@/locales/it/setup'
 import itLobby from '@/locales/it/lobby'
 import itResults from '@/locales/it/results'
 import itOnboarding from '@/locales/it/onboarding'
-import itEncyclopedia from '@/locales/it/encyclopedia' // <--- NUOVO IMPORT
+import itEncyclopedia from '@/locales/it/encyclopedia' 
 
-// Importiamo i dizionari EN
+
 import enCommon from '@/locales/en/common'
 import enHome from '@/locales/en/home'
 import enSetup from '@/locales/en/setup'
 import enLobby from '@/locales/en/lobby'
 import enResults from '@/locales/en/results'
 import enOnboarding from '@/locales/en/onboarding'
-import enEncyclopedia from '@/locales/en/encyclopedia' // <--- NUOVO IMPORT
+import enEncyclopedia from '@/locales/en/encyclopedia' 
 
 type Language = 'it' | 'en'
 
@@ -2662,7 +2654,7 @@ const dictionaries = {
     lobby: itLobby,
     results: itResults,
     onboarding: itOnboarding,
-    encyclopedia: itEncyclopedia, // <--- REGISTRAZIONE NECESSARIA
+    encyclopedia: itEncyclopedia, 
   },
   en: {
     common: enCommon,
@@ -2671,14 +2663,14 @@ const dictionaries = {
     lobby: enLobby,
     results: enResults,
     onboarding: enOnboarding,
-    encyclopedia: enEncyclopedia, // <--- REGISTRAZIONE NECESSARIA
+    encyclopedia: enEncyclopedia, 
   }
 }
 
 interface LanguageContextType {
   t: typeof dictionaries['it']
   language: Language
-  setLanguage: (lang: Language) => void
+  setLanguage: (lang: Language) => void 
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
@@ -2706,10 +2698,10 @@ export function useLanguage() {
 ================================================================================
 FILE: components\ui\avatar.tsx
 ================================================================================
-/* eslint-disable @next/next/no-img-element */
+
 'use client'
 
-// Funzione deterministica per colore avatar
+
 const getAvatarColor = (seed: string) => {
     const colors = [
         'bg-red-500', 'bg-orange-500', 'bg-amber-500', 
@@ -2742,7 +2734,7 @@ export default function Avatar({ seed, src, className }: { seed: string, src?: s
             {initials}
         </div>
     )
-}
+} 
 
 ================================================================================
 FILE: components\ui\candidate-tooltip.tsx
@@ -2807,7 +2799,7 @@ export default function CandidateTooltip({ candidate, children, className = '' }
       )}
     </>
   )
-}
+} 
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
   if (typeof window === 'undefined') return null
@@ -2837,7 +2829,7 @@ export default function DescriptionTooltip({ title, description, children }: Des
                 <TooltipPrimitive.Trigger asChild>
                     <span className="cursor-help decoration-dotted underline-offset-2 hover:opacity-80 transition-opacity">
                         {children}
-                    </span>
+                    </span> 
                 </TooltipPrimitive.Trigger>
                 <TooltipPrimitive.Portal>
                     <TooltipPrimitive.Content 
@@ -2863,7 +2855,7 @@ import Modal from './modal'
 import { useLanguage } from '@/components/providers/language-provider'
 import { BookOpen, History, Cog, ThumbsUp, AlertTriangle } from 'lucide-react'
 
-// Rimossa EncyclopediaKey inutilizzata
+
 
 interface EncyclopediaModalProps {
     topicKey: string
@@ -2874,13 +2866,12 @@ interface EncyclopediaModalProps {
 export default function EncyclopediaModal({ topicKey, isOpen, onClose }: EncyclopediaModalProps) {
     const { t } = useLanguage()
     
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
+    
     const data = t.encyclopedia?.[topicKey]
 
     if (!data) return null
 
-    return (
+    return ( 
         <Modal isOpen={isOpen} onClose={onClose} title={data.title}>
             <div className="space-y-8">
                 <div className="bg-indigo-900/20 border-l-4 border-indigo-500 p-4 rounded-r-lg">
@@ -2934,7 +2925,7 @@ export default function EncyclopediaModal({ topicKey, isOpen, onClose }: Encyclo
 ================================================================================
 FILE: components\ui\image-picker.tsx
 ================================================================================
-/* eslint-disable @next/next/no-img-element */
+
 'use client'
 
 import { useState } from 'react'
@@ -2986,7 +2977,7 @@ export default function ImagePicker({ value, onChange, placeholder = "https://..
             onClick={() => setIsOpen(true)}
             className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-400 hover:text-white transition-all border border-gray-700 hover:border-gray-600"
         >
-            <ImageIcon size={14} />
+            <ImageIcon size={14} /> 
             <span>Aggiungi Immagine</span>
         </button>
     )
@@ -3002,8 +2993,8 @@ import { Info } from 'lucide-react'
 import EncyclopediaModal from './encyclopedia-modal'
 
 interface InfoButtonProps {
-  topicKey?: string // Chiave per l'enciclopedia (es. 'schulze')
-  simpleText?: string // Testo semplice di fallback (vecchio comportamento)
+  topicKey?: string 
+  simpleText?: string 
   size?: number
   className?: string
 }
@@ -3011,7 +3002,7 @@ interface InfoButtonProps {
 export default function InfoButton({ topicKey, simpleText, size = 16, className = "" }: InfoButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Se non c'è una chiave topic, usiamo il comportamento tooltip nativo browser per il simpleText
+  
   if (!topicKey && simpleText) {
       return (
           <div className={`group relative inline-flex items-center justify-center cursor-help ${className}`} title={simpleText}>
@@ -3020,7 +3011,7 @@ export default function InfoButton({ topicKey, simpleText, size = 16, className 
       )
   }
 
-  // Se c'è una topicKey, apriamo la modale
+  
   return (
     <>
         <button 
@@ -3035,7 +3026,7 @@ export default function InfoButton({ topicKey, simpleText, size = 16, className 
             <EncyclopediaModal 
                 topicKey={topicKey} 
                 isOpen={isOpen} 
-                onClose={() => setIsOpen(false)} 
+                onClose={() => setIsOpen(false)}  
             />
         )}
     </>
@@ -3072,7 +3063,7 @@ export default function LanguageSwitcher() {
             ? 'bg-white text-black shadow' 
             : 'text-gray-400 hover:text-white'
         }`}
-      >
+      > 
         EN
       </button>
     </div>
@@ -3099,7 +3090,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        
         setMounted(true) 
     }, [])
 
@@ -3133,7 +3124,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
                 </div>
                 <div className="p-6 overflow-y-auto text-gray-300 leading-relaxed space-y-4">
                     {children}
-                </div>
+                </div> 
             </div>
         </div>,
         document.body
@@ -3172,7 +3163,7 @@ export const calculateAwards = (
     participants: Participant[],
     votes: VoteRecord[],
     schulzeResult: VotingResult, 
-    // Parametri rimossi perché inutilizzati: weightedResult, maxScale
+    
 ): Record<string, BadgeType[]> => {
     
     if (participants.length < 3) return {};
@@ -3240,23 +3231,19 @@ export const calculateAwards = (
     const oracles = stats.filter(s => s.agreementScore === 100);
     oracles.forEach(o => result[o.userId].push('oracle'));
 
-    return result;
+    return result; 
 };
 
 ================================================================================
 FILE: core\math\statistics.ts
 ================================================================================
-/**
- * Calcola la media aritmetica
- */
+
 export const calculateMean = (values: number[]): number => {
     if (values.length === 0) return 0;
     return values.reduce((a, b) => a + b, 0) / values.length;
 };
 
-/**
- * Calcola la Deviazione Standard (Popolazione)
- */
+
 export const calculateStdDev = (values: number[], mean?: number): number => {
     if (values.length === 0) return 0;
     const m = mean ?? calculateMean(values);
@@ -3265,58 +3252,48 @@ export const calculateStdDev = (values: number[], mean?: number): number => {
     return Math.sqrt(avgSquareDiff);
 };
 
-/**
- * Calcola lo Z-Score: (Valore - Media) / DeviazioneStandard
- * Indica quante deviazioni standard un valore si discosta dalla media.
- */
+
 export const calculateZScore = (value: number, mean: number, stdDev: number): number => {
-    if (stdDev === 0) return 0; // Evita divisione per zero se tutti i voti sono uguali
+    if (stdDev === 0) return 0; 
     return (value - mean) / stdDev;
 };
 
-/**
- * Normalizza un valore Z-Score in un range 0-100 (Min-Max Scaling)
- * Utile per visualizzare i grafici.
- * Assumiamo un range ragionevole di Z tra -3 e +3.
- */
+
 export const normalizeZScoreToPercent = (zScore: number): number => {
     const MIN_Z = -3;
     const MAX_Z = 3;
-    // Clamping
+    
     const clamped = Math.max(MIN_Z, Math.min(MAX_Z, zScore));
-    // Formula: (x - min) / (max - min) * 100
+    
     return ((clamped - MIN_Z) / (MAX_Z - MIN_Z)) * 100;
-};
+}; 
 
 ================================================================================
 FILE: core\voting\algorithms\schulze-logic.ts
 ================================================================================
-/**
- * Implementazione pura del Metodo Schulze (Beatpath).
- * Calcola i vincitori e la matrice dei percorsi più forti.
- */
+
 
 export interface SchulzeOutput {
     winners: string[];
-    ranking: string[]; // Ordinati dal vincitore
-    matrix: Record<string, Record<string, number>>; // Matrice preferenze (d)
-    strongestPaths: Record<string, Record<string, number>>; // Matrice beatpath (p)
+    ranking: string[]; 
+    matrix: Record<string, Record<string, number>>; 
+    strongestPaths: Record<string, Record<string, number>>; 
 }
 
 export function runSchulzeAlgo(candidates: string[], ballots: string[][]): SchulzeOutput {
     const n = candidates.length;
-    // Mappa ID -> Indice per velocità
+    
     const idMap = new Map<string, number>();
     candidates.forEach((c, i) => idMap.set(c, i));
 
-    // 1. Inizializza matrici d[i][j] a 0
-    // d[i][j] = numero di votanti che preferiscono i a j
+    
+    
     const d: number[][] = Array(n).fill(0).map(() => Array(n).fill(0));
 
-    // 2. Popola la matrice d basandosi sulle schede (ballots)
+    
     for (const ballot of ballots) {
-        // ballot è un array ordinato di ID candidati [1st, 2nd, 3rd...]
-        // Per ogni coppia (A, B) nel ballot dove A appare prima di B, incrementa d[A][B]
+        
+        
         for (let i = 0; i < ballot.length; i++) {
             const winnerId = ballot[i];
             const winnerIdx = idMap.get(winnerId);
@@ -3330,9 +3307,9 @@ export function runSchulzeAlgo(candidates: string[], ballots: string[][]): Schul
                 d[winnerIdx][loserIdx]++;
             }
             
-            // Gestione dei candidati NON presenti nel ballot (assumiamo siano ultimi a pari merito)
-            // Se un candidato non è nel ballot, chi è nel ballot vince contro di lui.
-            // (Logica semplificata: chi vota parzialmente preferisce i votati ai non votati)
+            
+            
+            
             for (const otherCand of candidates) {
                 if (!ballot.includes(otherCand)) {
                     const loserIdx = idMap.get(otherCand)!;
@@ -3342,7 +3319,7 @@ export function runSchulzeAlgo(candidates: string[], ballots: string[][]): Schul
         }
     }
 
-    // 3. Inizializza la matrice p[i][j] (strongest path strengths)
+    
     const p: number[][] = Array(n).fill(0).map(() => Array(n).fill(0));
 
     for (let i = 0; i < n; i++) {
@@ -3357,7 +3334,7 @@ export function runSchulzeAlgo(candidates: string[], ballots: string[][]): Schul
         }
     }
 
-    // 4. Floyd-Warshall Algorithm per trovare i beatpaths più forti
+    
     for (let k = 0; k < n; k++) {
         for (let i = 0; i < n; i++) {
             if (i !== k) {
@@ -3370,8 +3347,8 @@ export function runSchulzeAlgo(candidates: string[], ballots: string[][]): Schul
         }
     }
 
-    // 5. Determina i vincitori e il ranking
-    // Un candidato A batte B se p[A][B] > p[B][A]
+    
+    
     const winsCount: Record<string, number> = {};
     candidates.forEach(c => winsCount[c] = 0);
 
@@ -3385,12 +3362,12 @@ export function runSchulzeAlgo(candidates: string[], ballots: string[][]): Schul
         }
     }
 
-    // Ordina per numero di vittorie Schulze (Copeland method applicato ai beatpaths)
+    
     const ranking = [...candidates].sort((a, b) => winsCount[b] - winsCount[a]);
     const maxWins = winsCount[ranking[0]] || 0;
     const winners = ranking.filter(c => winsCount[c] === maxWins);
 
-    // Formatta le matrici per l'output (usando gli ID come chiavi)
+    
     const matrixOut: Record<string, Record<string, number>> = {};
     const pathsOut: Record<string, Record<string, number>> = {};
 
@@ -3402,7 +3379,7 @@ export function runSchulzeAlgo(candidates: string[], ballots: string[][]): Schul
             pathsOut[ci][cj] = p[i][j];
         });
     });
-
+   
     return { winners, ranking, matrix: matrixOut, strongestPaths: pathsOut };
 }
 
@@ -3432,9 +3409,7 @@ export const calculateResults = (
     return strategy.calculate(candidates, votes, factors, { maxScale });
 };
 
-/**
- * Calcola tutti i sistemi in parallelo (per la dashboard)
- */
+
 export const calculateAllSystems = (
     candidates: Candidate[],
     votes: VoteRecord[],
@@ -3446,7 +3421,7 @@ export const calculateAllSystems = (
         borda: strategies.borda.calculate(candidates, votes, factors, { maxScale }),
         schulze: strategies.schulze.calculate(candidates, votes, factors, { maxScale }),
     };
-};
+}; 
 
 ================================================================================
 FILE: core\voting\strategies\borda.ts
@@ -3459,17 +3434,17 @@ export const BordaStrategy: VotingStrategy = {
         const scores: Record<string, number> = {};
         const maxScale = options?.maxScale || 10;
         
-        // Inizializza a 0
+        
         candidates.forEach(c => scores[c.id] = 0);
 
-        // Raggruppa voti per utente (Simula una scheda elettorale)
+        
         const voterIds = Array.from(new Set(votes.map(v => v.voter_id)));
 
         voterIds.forEach(voterId => {
-            // 1. Calcola il punteggio grezzo che l'utente ha dato a ogni candidato
+            
             const userPreferences = candidates.map(cand => {
                 const vote = votes.find(v => v.voter_id === voterId && v.candidate_id === cand.id);
-                if (!vote) return { id: cand.id, rawScore: -1 }; // Non votato
+                if (!vote) return { id: cand.id, rawScore: -1 }; 
 
                 let rawScore = 0;
                 factors.forEach(f => {
@@ -3478,20 +3453,20 @@ export const BordaStrategy: VotingStrategy = {
                     rawScore += val * f.weight;
                 });
                 
-                // Il Jolly nel Borda potrebbe servire per rompere i pareggi, 
-                // ma tradizionalmente Borda è posizionale. 
-                // Qui usiamo il rawScore solo per ordinare.
-                if (vote.is_jolly) rawScore += 0.001; // Piccolo nudge per preferenza
+                
+                
+                
+                if (vote.is_jolly) rawScore += 0.001; 
 
                 return { id: cand.id, rawScore };
             });
 
-            // 2. Ordina candidati in base al punteggio dell'utente (dal migliore al peggiore)
+            
             userPreferences.sort((a, b) => b.rawScore - a.rawScore);
 
-            // 3. Assegna punti Borda (N-1 al primo, 0 all'ultimo)
+            
             userPreferences.forEach((pref, index) => {
-                // Se rawScore è -1 (non votato), decidi se dare 0 o saltare. Diamo 0.
+                
                 if (pref.rawScore >= 0) {
                     const points = (candidates.length - 1) - index;
                     scores[pref.id] += points;
@@ -3500,7 +3475,7 @@ export const BordaStrategy: VotingStrategy = {
         });
 
         const ranking = [...candidates].sort((a, b) => scores[b.id] - scores[a.id]);
-
+ 
         return { ranking, scores, details: null, stats: {} };
     }
 };
@@ -3516,15 +3491,15 @@ export const SchulzeStrategy: VotingStrategy = {
     calculate(candidates, votes, factors, options) {
         const maxScale = options?.maxScale || 10;
         
-        // 1. Prepara i Ballots (Classifiche)
-        // Convertiamo i voti numerici in liste ordinate di preferenze
+        
+        
         const voterIds = Array.from(new Set(votes.map(v => v.voter_id)));
         const ballots: string[][] = [];
 
         voterIds.forEach(voterId => {
             const userVotes = candidates.map(cand => {
                 const vote = votes.find(v => v.voter_id === voterId && v.candidate_id === cand.id);
-                // Calcola punteggio pesato
+                
                 let score = -1; 
                 if (vote) {
                     score = 0;
@@ -3537,26 +3512,26 @@ export const SchulzeStrategy: VotingStrategy = {
                 return { id: cand.id, score };
             });
 
-            // Filtra solo quelli votati (score >= 0) e ordina
+            
             const validVotes = userVotes.filter(u => u.score >= 0);
             if (validVotes.length > 0) {
-                // Ordina per score decrescente (il punteggio più alto è il preferito)
+                
                 validVotes.sort((a, b) => b.score - a.score);
                 ballots.push(validVotes.map(u => u.id));
             }
         });
 
-        // 2. Esegui algoritmo Schulze proprietario
+        
         const candidateIds = candidates.map(c => c.id);
         const result = runSchulzeAlgo(candidateIds, ballots);
 
-        // 3. Costruisci il risultato finale
-        // Assegna punteggi fittizi per l'ordinamento visuale (numero di vittorie beatpath)
+        
+        
         const scores: Record<string, number> = {};
         
-        // Calcoliamo un punteggio da 0 a 100 basato sulla forza della vittoria
+        
         candidates.forEach(c => {
-            // Per UI: mostriamo quante persone ha battuto nel grafo beatpath
+            
             let beatCount = 0;
             candidates.forEach(opp => {
                 if (c.id !== opp.id) {
@@ -3568,7 +3543,7 @@ export const SchulzeStrategy: VotingStrategy = {
             scores[c.id] = beatCount;
         });
 
-        // Riordina l'array candidates secondo il ranking calcolato
+        
         const ranking = result.ranking
             .map(id => candidates.find(c => c.id === id))
             .filter((c): c is typeof candidates[0] => !!c);
@@ -3577,19 +3552,19 @@ export const SchulzeStrategy: VotingStrategy = {
             ranking, 
             scores, 
             details: { 
-                matrix: result.matrix, // Questa è la matrice pairwise reale (d)
+                matrix: result.matrix, 
                 strongestPaths: result.strongestPaths, 
                 winners: result.winners 
             }, 
             stats: {} 
         };
     }
-};
+}; 
 
 ================================================================================
 FILE: core\voting\strategies\weighted.ts
 ================================================================================
-import { VotingStrategy } from '../types'; // Removed VotingResult
+import { VotingStrategy } from '../types'; 
 import { calculateMean } from '../../math/statistics';
 
 const JOLLY_MULTIPLIER = 1.25; 
@@ -3630,10 +3605,10 @@ export const WeightedStrategy: VotingStrategy = {
 
         const ranking = [...candidates].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
 
-        // Fix: 'details' must be object or null, not undefined implicitly
+        
         return { ranking, scores, details: null, stats: {} };
     }
-};
+}; 
 
 ================================================================================
 FILE: core\voting\types.ts
@@ -3643,14 +3618,14 @@ import { Candidate, Factor } from '@/types';
 export interface VoteRecord {
     candidate_id: string;
     voter_id: string;
-    scores: Record<string, number>; // factor_id -> value
+    scores: Record<string, number>; 
     is_jolly: boolean;
 }
 
 export interface VotingResult {
     ranking: Candidate[]; 
     scores: Record<string, number>; 
-    details: Record<string, unknown> | null; // <--- FIX: unknown invece di any
+    details: Record<string, unknown> | null; 
     stats: {
         min?: number;
         max?: number;
@@ -3665,7 +3640,7 @@ export interface VotingStrategy {
         factors: Factor[],
         options?: { maxScale: number }
     ): VotingResult;
-}
+} 
 
 ================================================================================
 FILE: lib\client.ts
@@ -3685,7 +3660,7 @@ export function createClient() {
     supabaseUrl,
     supabaseKey
   )
-}
+} 
 
 ================================================================================
 FILE: lib\constants.ts
@@ -3700,7 +3675,7 @@ export const UI = {
     ROUNDED_LG: "rounded-3xl",
     ROUNDED_MD: "rounded-xl",
   },
-  
+   
   
   COLORS: {
     PRIMARY: "indigo", 
@@ -3736,7 +3711,7 @@ export const dictionaries = {
   en
 }
 
-export type Locale = keyof typeof dictionaries
+export type Locale = keyof typeof dictionaries 
 
 ================================================================================
 FILE: lib\lobby-utils.ts
@@ -3752,7 +3727,7 @@ export const getScoreColor = (score: number, max: number, isLowerBetter: boolean
   if (normalized < 0.3) return 'bg-red-500' 
   if (normalized < 0.7) return 'bg-yellow-500' 
   return 'bg-green-500' 
-}
+} 
 
 ================================================================================
 FILE: lib\voting-engine.ts
@@ -3760,7 +3735,7 @@ FILE: lib\voting-engine.ts
 import { Candidate, Factor } from '@/types';
 import { VoteRecord } from '@/core/voting/types';
 
-// Helper per normalizzare i voti (0-1)
+
 export const normalizeVotes = (
   candidates: Candidate[],
   votes: VoteRecord[],
@@ -3771,27 +3746,27 @@ export const normalizeVotes = (
 
   candidates.forEach(cand => {
     const candVotes = votes.filter(v => v.candidate_id === cand.id);
-    const allNormalizedScores: number[] = []; // <--- FIX: const
-
+    const allNormalizedScores: number[] = []; 
+ 
     candVotes.forEach(vote => {
       let voteTotal = 0;
       let totalWeight = 0;
 
       factors.forEach(factor => {
         let val = vote.scores[factor.id] || 0;
-        // Inverti se lower_better
+        
         if (factor.trend === 'lower_better') val = maxScale - val;
         
         voteTotal += val * factor.weight;
         totalWeight += factor.weight;
       });
 
-      // Normalizza 0-1
+      
       const normalized = totalWeight > 0 ? (voteTotal / totalWeight) / maxScale : 0;
       allNormalizedScores.push(normalized);
     });
 
-    // Media semplice dei voti normalizzati
+    
     if (allNormalizedScores.length > 0) {
       scores[cand.id] = allNormalizedScores.reduce((a, b) => a + b, 0) / allNormalizedScores.length;
     } else {
@@ -3910,8 +3885,8 @@ import home from './home'
 import lobby from './lobby'
 import results from './results'
 import encyclopedia from './encyclopedia'
-import setup from './setup'       // <--- AGGIUNTO
-import onboarding from './onboarding' // <--- AGGIUNTO
+import setup from './setup'       
+import onboarding from './onboarding' 
 
 const en = {
   common,
@@ -3919,8 +3894,8 @@ const en = {
   lobby,
   results,
   encyclopedia,
-  setup,         // <--- AGGIUNTO
-  onboarding     // <--- AGGIUNTO
+  setup,         
+  onboarding     
 }
 
 export default en
@@ -4192,27 +4167,27 @@ const home = {
   title: "Democracy is Dead",
   subtitle: "Sistemi di voto avanzati per decisioni di gruppo migliori.",
   
-  // Pulsanti e Azioni Principali
+  
   create_lobby: "Crea Nuova Lobby",
   join_lobby: "Unisciti a una Lobby",
   enter_code: "Codice lobby",
   join: "Entra",
   
-  // Sezione Call to Action (CTA)
+  
   cta_button: "Inizia Subito",
   cta_loading: "Creazione...",
   or_divider: "OPPURE",
   join_placeholder: "Inserisci codice (es. ABCD)",
   join_btn: "Vai",
   
-  // Footer / Info
+  
   no_registration: "Nessuna registrazione richiesta. Voto anonimo.",
   
-  // Cronologia
+  
   history: "Cronologia Recente",
   no_history: "Nessuna lobby visitata di recente.",
   
-  // Toast & Errori
+  
   toast_init: "Inizializzazione...",
   toast_success: "Lobby creata con successo!",
   toast_error: "Errore nella creazione della lobby.",
@@ -4231,8 +4206,8 @@ import home from './home'
 import lobby from './lobby'
 import results from './results'
 import encyclopedia from './encyclopedia'
-import setup from './setup'       // <--- AGGIUNTO
-import onboarding from './onboarding' // <--- AGGIUNTO
+import setup from './setup'       
+import onboarding from './onboarding' 
 
 const it = {
   common,
@@ -4240,8 +4215,8 @@ const it = {
   lobby,
   results,
   encyclopedia,
-  setup,         // <--- AGGIUNTO
-  onboarding     // <--- AGGIUNTO
+  setup,         
+  onboarding     
 }
 
 export default it
@@ -4440,12 +4415,23 @@ const setup = {
 export default setup
 
 ================================================================================
+FILE: next-env.d.ts
+================================================================================
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+import "./.next/dev/types/routes.d.ts";
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+
+
+================================================================================
 FILE: next.config.ts
 ================================================================================
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  
 };
 
 export default nextConfig;
@@ -4463,7 +4449,8 @@ FILE: package.json
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "scan": "node scan-codebase.js"
+    "scan": "node scan-codebase.js",
+    "clean:comments": "node clean-comments.js"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",
@@ -4504,7 +4491,11 @@ FILE: tsconfig.json
 {
   "compilerOptions": {
     "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -4514,7 +4505,7 @@ FILE: tsconfig.json
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -4522,7 +4513,9 @@ FILE: tsconfig.json
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "include": [
@@ -4530,10 +4523,13 @@ FILE: tsconfig.json
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "types/**/*.d.ts" 
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
+
 
 ================================================================================
 FILE: types\index.ts

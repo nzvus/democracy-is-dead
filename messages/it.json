@@ -1,0 +1,178 @@
+{
+  "Common": {
+    "loading": "Caricamento...",
+    "error": "Errore. Riprova.",
+    "save": "Salva",
+    "saved": "Salvato!",
+    "cancel": "Annulla",
+    "confirm": "Conferma",
+    "delete": "Elimina",
+    "remove": "Rimuovi",
+    "back": "Indietro",
+    "next": "Avanti",
+    "close": "Chiudi",
+    "yes": "Sì",
+    "no": "No",
+    "auth_failed": "Autenticazione fallita",
+    "loading_lobby": "Caricamento Lobby...",
+    "authenticating": "Autenticazione...",
+    "placeholder_name": "Es. Mario Rossi",
+    "upload_image": "Carica Immagine",
+    "remove_image": "Rimuovi Immagine",
+    "shuffle": "Mischia"
+  },
+  "Profile": {
+    "title": "Chi sei?",
+    "subtitle": "Scegli la tua identità per questa sessione.",
+    "tap_shuffle": "Tocca per mischiare 🎲"
+  },
+  "Setup": {
+    "allow_decimals": "Permetti Decimali?",
+    "step_label": "Precisione",
+    "step_1": "Candidati",
+    "step_2": "Criteri (Fattori)",
+    "step_3": "Impostazioni Finali",
+    "max_scale": "Scala Massima",
+    "max_scale_desc": "Il punteggio massimo assegnabile (es. 10 o 100).",
+    "privacy_label": "Privacy",
+    "privacy_public": "Pubblico (Mostra Nomi)",
+    "privacy_anon": "Anonimo (Nascondi Nomi)",
+    "placeholder_name": "Nome",
+    "add_candidate": "+ Aggiungi Candidato",
+    "add_candidate_desc": "Aggiungi le opzioni su cui votare.",
+    "add_factor": "+ Aggiungi Criterio",
+    "add_factor_desc": "Definisci come giudicare i candidati.",
+    "launch": "Avvia Voto 🚀",
+    "input_type": "Tipo Input",
+    "active_count": "{count} Attivi",
+    "type_label": "Tipo",
+    "control_label": "Controllo",
+    "weight_label": "Peso (Impatto)",
+    "hidden_label": "Nascosto?",
+    "static_info_label": "Info Statiche (Mostrate sulla Carta)",
+    "add_candidate_btn": "Aggiungi Candidato",
+    "lobby_name": "Nome Lobby",
+    "lobby_name_ph": "es. Pizza Venerdì",
+    "validation_error": "Correggi gli errori prima di procedere.",
+    "types": {
+      "numerical": "Voto (Numerico)",
+      "constant": "Info Fissa (Costante)"
+    },
+    "controls": {
+      "slider": "Slider",
+      "stars": "Stelle",
+      "number": "Numero",
+      "toggle": "Sì/No"
+    },
+    "static_placeholder": "Valore per {factor}"
+  },
+  "Home": {
+    "title": "Democracy is Dead",
+    "subtitle": "Il modo matematico per decidere dove andare a cena.",
+    "create_lobby": "Crea Nuova Lobby",
+    "or_join": "O Entra",
+    "join_placeholder": "CODICE",
+    "join_btn": "Vai",
+    "no_registration": "Nessuna registrazione. Voto anonimo.",
+    "recent_lobbies": "Sessioni Recenti",
+    "clear_history": "Cancella Cronologia",
+    "last_visited": "Ultima visita: {date}"
+  },
+  "Lobby": {
+    "loading": "Caricamento Lobby...",
+    "title": "Lobby {code}",
+    "status_waiting": "In attesa dell'Host",
+    "status_setup": "Setup in Corso",
+    "status_voting": "Votazione Aperta",
+    "status_ended": "Votazione Terminata",
+    "waiting_title": "In attesa dell'Host",
+    "waiting_desc": "I partecipanti stanno entrando...",
+    "configure_btn": "Configura Lobby",
+    "host_configuring": "L'Host sta configurando...",
+    "host_configuring_desc": "Prendi da bere, ci vorrà un minuto.",
+    "loading_icon": "❄️",
+    "setup_icon": "⚙️"
+  },
+  "Host": {
+    "title": "Controlli Host",
+    "anon_active": "Anonimo",
+    "public": "Pubblico",
+    "end_vote": "Termina Voto",
+    "privacy_updated": "Privacy aggiornata",
+    "end_error": "Impossibile terminare"
+  },
+  "Voting": {
+    "submit": "Invia Voti",
+    "expand_to_vote": "Tocca per Votare",
+    "minimized_view": "Distribuzione Attuale",
+    "submitted": "Voti inviati con successo!",
+    "failed": "Errore nell'invio voti.",
+    "jolly_title": "Assegna il tuo Jolly 🃏",
+    "jolly_desc": "Scegli il tuo preferito per raddoppiare il peso del voto.",
+    "jolly_none": "Nessun Jolly",
+    "static_value": "Valore Fisso:",
+    "weight_impact": "Impatto: {val}",
+    "negative_impact": "Impatto Negativo (Basso è meglio per il candidato)"
+  },
+  "Results": {
+    "tabs": {
+      "weighted": "Pesata",
+      "schulze": "Matrice Schulze",
+      "radar": "Analisi Radar",
+      "badges": "Premi"
+    },
+    "no_data": "Nessun dato disponibile",
+    "matrix_legend": "Leggi RIGA vs COLONNA. Verde = Riga vince.",
+    "radar_legend": "Confronto per Criteri",
+    "badges_title": "Premi Votanti",
+    "badges_list": {
+      "hater": { "title": "Il Critico", "desc": "Ha dato i voti medi più bassi." },
+      "lover": { "title": "L'Entusiasta", "desc": "Ha dato i voti medi più alti." },
+      "contrarian": { "title": "Bastian Contrario", "desc": "Spesso in disaccordo con il gruppo." },
+      "oracle": { "title": "L'Oracolo", "desc": "Ha predetto perfettamente il vincitore." },
+      "hive_mind": { "title": "Mente Collettiva", "desc": "Ha votato esattamente come la media." }
+    }
+  },
+  "Share": {
+    "invite": "Invita 🔗",
+    "label_code": "Codice Lobby",
+    "copy": "Copia Link",
+    "copied": "Link copiato!"
+  },
+  "Chat": {
+    "title": "Chat Lobby",
+    "send": "Invia",
+    "placeholder": "Scrivi un messaggio...",
+    "online_count": "{count} Online",
+    "typing": "{name} sta scrivendo...",
+    "edited": "(modificato)",
+    "replying_to": "In risposta a {name}",
+    "empty": "Nessun messaggio.",
+    "actions": {
+      "reply": "Rispondi",
+      "edit": "Modifica",
+      "delete": "Elimina",
+      "copy": "Copia"
+    }
+  },
+  "ImagePicker": {
+    "tab_url": "Link URL",
+    "tab_upload": "Carica",
+    "placeholder_url": "Incolla URL immagine (https://...)",
+    "preview": "Anteprima",
+    "invalid_url": "URL non valido"
+  },
+  "Language": {
+    "switch": "Cambia Lingua",
+    "en": "English",
+    "it": "Italiano"
+  },
+  "Modals": {
+    "confirm_title": "Sei sicuro?",
+    "confirm_btn": "Conferma",
+    "cancel_btn": "Annulla"
+  },
+  "Tooltips": {
+    "desc_prefix": "Descrizione: "
+  }
+}
